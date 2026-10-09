@@ -69,6 +69,19 @@ Pour générer le diaporama d'une messe à partir de son index :
 .\.venv\Scripts\python.exe scripts/markdown_to_pptx.py feuilles_de_chant/index_28eme_dimanche_a.md --index -o diaporamas/messe_28eme_dimanche_a.pptx
 ```
 
+## Application web
+
+Installer les dépendances puis lancer l'application en local :
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m streamlit run app.py
+```
+
+Pour la publier sur Streamlit Community Cloud, connecter le dépôt GitHub,
+choisir la branche et indiquer `app.py` comme fichier principal. Régler les
+droits d'accès de l'application selon les utilisateurs prévus.
+
 L'option `--index` lit les lignes du tableau dans leur ordre, puis assemble
 les chants liés dans la dernière colonne. Les chemins sont relatifs au fichier
 index. Les refrains marqués sont répétés à l'intérieur de chaque chant.
