@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Messe : générer le diaporama",
+      "type": "process",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": [
+        "${workspaceFolder}/scripts/markdown_to_pptx.py",
+        "${input:chantsIndex}",
+        "--index",
+        "--output-dir",
+        "${workspaceFolder}/diaporamas"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "chantsIndex",
+      "type": "promptString",
+      "description": "Chemin de l'index des chants (relatif au projet ou absolu, sans guillemets)",
+      "default": "feuilles_de_chant/index_28eme_dimanche_a.md"
+    }
+  ]
+}
