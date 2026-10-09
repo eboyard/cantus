@@ -1,9 +1,11 @@
 import unittest
+from io import BytesIO
 
 from scripts.markdown_to_pptx import BACKGROUND_COLOR, build_slides, convert, read_slides, read_index_slides
 from pptx import Presentation
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from app import create_presentation
 
 
 class RefrainTests(unittest.TestCase):
@@ -77,6 +79,23 @@ class IndexTests(unittest.TestCase):
             index.write_text("# Index sans chants", encoding="utf-8")
             with self.assertRaises(ValueError):
                 read_index_slides(index)
+
+
+class WebAppTests(unittest.TestCase):
+    def test_create_presentation_assembles_songs_in_order(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            first = root / "first.md"
+            second = root / "second.md"
+            first.write_text("Chant d'entrée", encoding="utf-8")
+            second.write_text("Chant d'envoi", encoding="utf-8")
+
+            data, slide_count = create_presentation([("Entrée", first), ("Envoi", second)])
+
+            presentation = Presentation(BytesIO(data))
+            self.assertEqual(slide_count, 3)
+            self.assertIn("Chant d'entrée", presentation.slides[0].shapes[0].text)
+            self.assertIn("Chant d'envoi", presentation.slides[2].shapes[0].text)
 
 
 if __name__ == "__main__":
