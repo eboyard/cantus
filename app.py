@@ -12,6 +12,7 @@ from urllib.parse import quote
 import streamlit as st
 
 from scripts.markdown_to_pptx import convert, read_slides, read_title
+from scripts.song_sheet import create_song_sheet
 
 
 ROOT = Path(__file__).resolve().parent
@@ -54,7 +55,7 @@ def download_name(title: str) -> str:
 
 def main() -> None:
     st.set_page_config(page_title="Préparer les chants", page_icon="🎵")
-    st.title("Préparer un diaporama de chants")
+    st.title("Préparer les chants de la célébration")
 
     catalog = song_catalog()
     if not catalog:
@@ -123,6 +124,28 @@ def main() -> None:
             type="primary",
         )
         st.caption(f"{generated[2]} diapositives")
+
+    st.subheader("Feuille de chants pour téléphone")
+    st.caption("Un fichier HTML avec un sommaire et des paroles adaptées à la largeur de l'écran.")
+    if st.button("Créer la feuille de chants", disabled=not song_order):
+        try:
+            data = create_song_sheet(celebration, [catalog[key] for key in song_order])
+            st.session_state.generated_song_sheet = (signature, data)
+        except (OSError, ValueError) as error:
+            st.error(f"La création de la feuille a échoué : {error}")
+
+    sheet = st.session_state.get("generated_song_sheet")
+    if sheet and sheet[0] == signature:
+        st.download_button(
+            "Télécharger la feuille de chants (.html)",
+            data=sheet[1],
+            file_name="feuille_" + Path(download_name(celebration)).with_suffix(".html").name,
+            mime="text/html",
+        )
+        st.caption(
+            "Transférez le fichier sur le téléphone et ouvrez-le avec un navigateur. "
+            "Une fois enregistré, il se lit sans connexion Internet."
+        )
 
 
 if __name__ == "__main__":

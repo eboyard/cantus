@@ -102,6 +102,18 @@ Pour générer le diaporama d'une messe à partir de son index :
 
 ## Application web
 
+La section **Feuille de chants pour téléphone** permet de créer et télécharger
+un fichier `.html` à partir des chants sélectionnés. La feuille possède un
+sommaire cliquable, une seule colonne adaptée aux petits écrans et des paroles
+en gras lorsque le Markdown le demande. L'ordre des chants et l'alternance
+couplets/refrain sont les mêmes que pour le PowerPoint.
+
+Transférer le fichier sur le téléphone, puis l'ouvrir avec un navigateur.
+Le document contient son style et ses paroles : après téléchargement,
+aucune connexion Internet n'est nécessaire. Pour le partager par un lien,
+il faut héberger ce fichier HTML sur un site ; l'application ne le publie pas.
+La création de cette feuille est indépendante de celle du PowerPoint.
+
 Pour personnaliser le nom affiché dans la liste des chants et l'aperçu,
 ajouter un tag facultatif en tête du fichier Markdown :
 
