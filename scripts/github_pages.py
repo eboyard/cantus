@@ -1,4 +1,4 @@
-"""Prépare des feuilles statiques à publier dans le dossier docs de GitHub Pages."""
+"""Prépare des feuilles statiques pour la source GitHub Pages /docs."""
 
 from dataclasses import dataclass
 from datetime import date
@@ -52,11 +52,11 @@ def prepare_pages_export(document: bytes, parish: str, day: date, base_url: str)
     return PagesExport(relative, url, document, qr, output.getvalue())
 
 
-def save_pages_export(export: PagesExport, docs_root: Path, *, replace: bool = False) -> Path:
-    root = docs_root.resolve()
+def save_pages_export(export: PagesExport, publication_root: Path, *, replace: bool = False) -> Path:
+    root = publication_root.resolve()
     target = (root / export.path / "index.html").resolve()
     if not target.is_relative_to(root):
-        raise ValueError("Le chemin de publication doit rester dans le dossier docs.")
+        raise ValueError("Le chemin de publication doit rester dans le dossier du site.")
     if target.exists() and not replace:
         raise ValueError("Une feuille existe déjà pour cette paroisse et cette date. Cochez le remplacement pour la mettre à jour.")
     target.parent.mkdir(parents=True, exist_ok=True)
