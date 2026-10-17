@@ -1,3 +1,4 @@
+<!-- refrain -->
 Humblement, nous venons à toi,
 Nous t'offrons nos vies.
 Que nos cœurs s'unissent à ta croix.
