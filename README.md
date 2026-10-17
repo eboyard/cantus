@@ -110,9 +110,58 @@ couplets/refrain sont les mêmes que pour le PowerPoint.
 
 Transférer le fichier sur le téléphone, puis l'ouvrir avec un navigateur.
 Le document contient son style et ses paroles : après téléchargement,
-aucune connexion Internet n'est nécessaire. Pour le partager par un lien,
-il faut héberger ce fichier HTML sur un site ; l'application ne le publie pas.
+aucune connexion Internet n'est nécessaire. Le partage public utilise GitHub Pages,
+avec une page HTML par paroisse et date.
 La création de cette feuille est indépendante de celle du PowerPoint.
+
+### Publier les feuilles avec GitHub Pages
+
+GitHub héberge uniquement le contenu du dossier `docs`. Il n'est pas nécessaire
+de déployer Streamlit pour la lecture des feuilles, ni de configurer une base de données.
+
+Configuration initiale du dépôt `eboyard/cantus` :
+
+1. Ouvrir **Settings → Pages** sur GitHub.
+2. Choisir **Deploy from a branch**, la branche **main** et le dossier **/docs**.
+3. Enregistrer. Ces réglages sont décrits dans la
+   [documentation GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
+
+Pour chaque célébration :
+
+1. Préparer les chants dans Streamlit puis cliquer sur **Créer la feuille de chants**.
+2. Dans **Partager avec GitHub Pages**, saisir la paroisse (avec sa commune pour éviter
+   les homonymes), la date et l'adresse du site, puis **Préparer pour GitHub Pages**.
+3. Utiliser **Enregistrer dans docs/** si Streamlit tourne dans votre copie locale du
+   dépôt, ou télécharger le ZIP et l'extraire à la racine de cette copie. Le ZIP contient
+   déjà le dossier `docs` : ne pas l'extraire à l'intérieur de `docs`.
+4. Vérifier les fichiers, puis les envoyer sur GitHub depuis votre outil Git habituel.
+   Exemple, depuis la branche `main`, après avoir intégré les changements de l'application :
+
+   ```powershell
+   git add docs
+   git commit -m "Publier la feuille de chants"
+   git push origin main
+   ```
+
+5. Attendre la fin du déploiement **pages build and deployment** dans l'onglet **Actions**,
+   puis ouvrir le lien pour vérifier la feuille avant de distribuer le QR code.
+
+L'adresse est de la forme
+`https://eboyard.github.io/cantus/saint-pierre/2026-10-18/`.
+Les fichiers correspondants sont `docs/saint-pierre/2026-10-18/index.html` et `qr.svg`.
+Le lien affiché dans Streamlit est une adresse prévue : préparer ou enregistrer les
+fichiers ne les publie pas automatiquement sur GitHub.
+
+Une même paroisse et une même date donnent toujours la même adresse. Pour remplacer
+une feuille locale, cocher le remplacement, puis envoyer la mise à jour sur GitHub.
+Conserver les dossiers des anciennes célébrations pour maintenir leurs liens actifs.
+Les feuilles sont des copies HTML : modifier ensuite le catalogue des chants ne les change pas.
+Pour plusieurs offices le même jour, utiliser des noms distincts comme « Saint-Pierre matin »
+et « Saint-Pierre soir ». Le QR code SVG est téléchargeable pour impression.
+
+Si Streamlit tourne sur Community Cloud, télécharger le ZIP : son enregistrement local
+ne modifie pas le dépôt GitHub. Pour un autre dépôt ou un domaine personnalisé,
+modifier l'adresse dans l'application ou définir la variable `GITHUB_PAGES_URL`.
 
 Pour personnaliser le nom affiché dans la liste des chants et l'aperçu,
 ajouter un tag facultatif en tête du fichier Markdown :
