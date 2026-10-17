@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from pathlib import Path
 import re
 import tempfile
 import unicodedata
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 import streamlit as st
 
 from scripts.markdown_to_pptx import convert, read_slides, read_title
 from scripts.song_sheet import create_song_sheet
+from scripts.github_pages import prepare_pages_export, save_pages_export
 
 
 ROOT = Path(__file__).resolve().parent
@@ -51,6 +54,57 @@ def download_name(title: str) -> str:
     normalized = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode("ascii")
     slug = re.sub(r"[^a-zA-Z0-9]+", "_", normalized).strip("_").lower()
     return f"{slug or 'messe'}.pptx"
+
+
+def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str, Path]]) -> None:
+    st.markdown("**Partager avec GitHub Pages**")
+    parish = st.text_input("Paroisse (ajoutez la commune si nécessaire)", key="pages_parish")
+    day = st.date_input("Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date())
+    base_url = st.text_input(
+        "Adresse du site GitHub Pages",
+        value=os.environ.get("GITHUB_PAGES_URL", "https://eboyard.github.io/cantus/"),
+    )
+    export_signature = (signature, parish.strip(), day, base_url.strip())
+    if st.button("Préparer pour GitHub Pages"):
+        try:
+            heading = f"{parish.strip()} — {celebration.strip() or 'Messe'} — {day.strftime('%d/%m/%Y')}"
+            document = create_song_sheet(heading, songs)
+            export = prepare_pages_export(document, parish, day, base_url)
+            st.session_state.pages_export = (export_signature, export)
+        except (OSError, ValueError) as error:
+            st.error(f"La préparation a échoué : {error}")
+    prepared = st.session_state.get("pages_export")
+    if not prepared or prepared[0] != export_signature:
+        return
+    export = prepared[1]
+    st.caption("Lien prévu : il sera accessible après l'envoi des fichiers sur GitHub et le déploiement Pages.")
+    st.code(export.url, language=None)
+    st.image(export.qr.decode("utf-8"), caption="QR code à distribuer après publication", width=280)
+    st.download_button(
+        "Télécharger les fichiers pour GitHub Pages (.zip)", export.archive,
+        file_name=f"publication_{export.path.replace('/', '_')}.zip", mime="application/zip",
+    )
+    st.download_button(
+        "Télécharger le QR code à imprimer (.svg)", export.qr,
+        file_name=f"qr_{export.path.replace('/', '_')}.svg", mime="image/svg+xml",
+    )
+    with st.expander("Enregistrer les fichiers dans ce dépôt local"):
+        replace = st.checkbox("Remplacer la feuille existante pour cette paroisse et cette date")
+        if st.button("Enregistrer dans docs/"):
+            try:
+                target = save_pages_export(export, ROOT / "docs", replace=replace)
+                st.success(f"Fichiers enregistrés : {target.relative_to(ROOT).as_posix()}")
+            except (OSError, ValueError) as error:
+                st.error(str(error))
+    st.markdown(
+        "Pour publier, décompressez le ZIP à la racine de votre copie du dépôt "
+        "(ou utilisez l'enregistrement local ci-dessus), puis envoyez le dossier **docs** sur GitHub. "
+        "Conservez les anciennes feuilles pour garder leurs liens actifs."
+    )
+    st.caption(
+        "Configuration initiale sur GitHub : Settings → Pages → Deploy from a branch → main → /docs. "
+        "Si Streamlit est hébergé en ligne, téléchargez le ZIP pour récupérer les fichiers sur votre ordinateur."
+    )
 
 
 def main() -> None:
@@ -146,6 +200,7 @@ def main() -> None:
             "Transférez le fichier sur le téléphone et ouvrez-le avec un navigateur. "
             "Une fois enregistré, il se lit sans connexion Internet."
         )
+        show_github_pages(signature, celebration, [catalog[key] for key in song_order])
 
 
 if __name__ == "__main__":
