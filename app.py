@@ -70,7 +70,11 @@ def github_setting(name: str, default: str = "") -> str:
 
 def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str, Path]]) -> None:
     st.markdown("**Partager avec GitHub Pages**")
-    parish = st.text_input("Paroisse (ajoutez la commune si nécessaire)", key="pages_parish")
+    parish = st.selectbox(
+        "Paroisse",
+        options=["Boussy-saint-Antoine", "Quincy-sous-Sénart"],
+        key="pages_parish",
+    )
     day = st.date_input("Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date())
     base_url = st.text_input(
         "Adresse du site GitHub Pages",
