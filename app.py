@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import hmac
 from datetime import datetime
 from pathlib import Path
 import re
@@ -16,6 +17,7 @@ import streamlit as st
 from scripts.markdown_to_pptx import convert, read_slides, read_title
 from scripts.song_sheet import create_song_sheet
 from scripts.github_pages import prepare_pages_export, save_pages_export
+from scripts.github_publish import publish_sheet
 
 
 ROOT = Path(__file__).resolve().parent
@@ -56,6 +58,16 @@ def download_name(title: str) -> str:
     return f"{slug or 'messe'}.pptx"
 
 
+def github_setting(name: str, default: str = "") -> str:
+    environment = {"token": "GITHUB_TOKEN", "repository": "GITHUB_REPOSITORY", "branch": "GITHUB_BRANCH", "publish_password": "SHEET_PUBLISH_PASSWORD"}
+    if value := os.environ.get(environment[name]):
+        return value
+    try:
+        return str(st.secrets["github"].get(name, default))
+    except (FileNotFoundError, KeyError):
+        return default
+
+
 def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str, Path]]) -> None:
     st.markdown("**Partager avec GitHub Pages**")
     parish = st.text_input("Paroisse (ajoutez la commune si nécessaire)", key="pages_parish")
@@ -77,6 +89,28 @@ def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str,
     if not prepared or prepared[0] != export_signature:
         return
     export = prepared[1]
+    token = github_setting("token")
+    password = github_setting("publish_password")
+    repository = github_setting("repository", "eboyard/cantus")
+    branch = github_setting("branch", "main")
+    replace = st.checkbox("Remplacer la feuille existante pour cette paroisse et cette date")
+    if not token or not password:
+        st.info("Pour activer la publication directe, configurez le jeton GitHub et le code de publication dans les secrets Streamlit (voir README).")
+    publication_code = st.text_input("Code de publication", type="password", key="pages_publish_password")
+    if st.button("Publier sur GitHub Pages", type="primary", disabled=not token or not password):
+        try:
+            if not hmac.compare_digest(publication_code.encode("utf-8"), password.encode("utf-8")):
+                raise ValueError("Le code de publication est incorrect.")
+            with st.spinner("Envoi de la feuille sur GitHub…"):
+                commit_url = publish_sheet(export, token, repository=repository, branch=branch, replace=replace)
+            st.session_state.pages_publication = (export_signature, repository, branch, commit_url)
+        except ValueError as error:
+            st.error(str(error))
+    publication = st.session_state.get("pages_publication")
+    if publication and publication[:3] == (export_signature, repository, branch):
+        st.success("La feuille a été envoyée sur GitHub. Elle sera accessible après le déploiement GitHub Pages.")
+        st.link_button("Voir le commit publié", publication[3])
+        st.link_button("Ouvrir la feuille après déploiement", export.url)
     st.caption("Lien prévu : il sera accessible après l'envoi des fichiers sur GitHub et le déploiement Pages.")
     st.code(export.url, language=None)
     st.image(export.qr.decode("utf-8"), caption="QR code à distribuer après publication", width=280)
@@ -89,7 +123,6 @@ def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str,
         file_name=f"qr_{export.path.replace('/', '_')}.svg", mime="image/svg+xml",
     )
     with st.expander("Enregistrer les fichiers dans ce dépôt local"):
-        replace = st.checkbox("Remplacer la feuille existante pour cette paroisse et cette date")
         if st.button("Enregistrer dans docs/"):
             try:
                 target = save_pages_export(export, ROOT / "docs", replace=replace)
@@ -97,12 +130,12 @@ def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str,
             except (OSError, ValueError) as error:
                 st.error(str(error))
     st.markdown(
-        "Pour publier, décompressez le ZIP à la racine de votre copie du dépôt "
-        "(ou utilisez l'enregistrement local ci-dessus), puis envoyez le dossier **docs** sur GitHub. "
+        "Vous pouvez aussi décompresser le ZIP à la racine de votre copie du dépôt "
+        "(ou utiliser l'enregistrement local ci-dessus), puis envoyer les fichiers sur GitHub. "
         "Conservez les anciennes feuilles pour garder leurs liens actifs."
     )
     st.caption(
-        "Configuration initiale sur GitHub : Settings → Pages → Deploy from a branch → main → /docs. "
+        "Configuration GitHub Pages : Settings → Pages → Deploy from a branch → main → /docs. "
         "Si Streamlit est hébergé en ligne, téléchargez le ZIP pour récupérer les fichiers sur votre ordinateur."
     )
 
