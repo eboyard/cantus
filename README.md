@@ -40,6 +40,35 @@ Paroles du pont
 Cet exemple produit : refrain → couplet 1 → refrain → couplet 2 → pont.
 Le refrain n'est pas ajouté automatiquement après le dernier couplet.
 
+Pour choisir précisément l'ordre, ajouter une directive en tête du fichier :
+
+```markdown
+<!-- ordre: R C1 R C2 R -->
+
+<!-- refrain -->
+Paroles du refrain
+
+---
+
+<!-- couplet: C1 -->
+Paroles du premier couplet
+
+---
+
+<!-- couplet: C2 -->
+Paroles du deuxième couplet
+```
+
+Cet exemple produit : refrain → couplet 1 → refrain → couplet 2 → refrain.
+Chaque partie est écrite une seule fois. La directive peut répéter, omettre
+ou réordonner les parties ; aucun refrain supplémentaire n'est inséré.
+`R` désigne le refrain, `C1`, `C2`, etc. les couplets, et `P1`, `P2`, etc.
+les ponts (par exemple `<!-- pont: P1 -->`). Sans identifiant explicite,
+les couplets et les ponts sont numérotés séparément dans leur ordre d'apparition.
+Un identifiant utilisé dans l'ordre doit exister et être défini une seule fois.
+Sans directive `ordre`, le comportement décrit plus haut est conservé.
+L'aperçu Streamlit et le PowerPoint utilisent tous deux cet ordre.
+
 Depuis la racine du projet, sous PowerShell :
 
 ```powershell
@@ -60,8 +89,10 @@ Pour choisir le fichier de sortie et la taille maximale du texte :
 La taille diminue automatiquement lorsque le texte est long. Cet ajustement
 est une estimation : vérifier le rendu dans PowerPoint ou LibreOffice avant
 projection, notamment pour les chants comportant de longues lignes.
-Les titres Markdown, le gras, l'italique et les liens sont convertis en texte
-simple ; les tableaux, images et blocs de code ne sont pas interprétés.
+Le texte entre `**…**` (ou `__…__`) apparaît en gras dans le PowerPoint,
+y compris lorsqu'il ne concerne qu'une partie de la ligne.
+Les titres Markdown, l'italique et les liens sont convertis en texte simple ;
+les tableaux, images et blocs de code ne sont pas interprétés.
 
 Pour générer le diaporama d'une messe à partir de son index :
 
@@ -70,6 +101,30 @@ Pour générer le diaporama d'une messe à partir de son index :
 ```
 
 ## Application web
+
+La section **Feuille de chants pour téléphone** permet de créer et télécharger
+un fichier `.html` à partir des chants sélectionnés. La feuille possède un
+sommaire cliquable, une seule colonne adaptée aux petits écrans et des paroles
+en gras lorsque le Markdown le demande. L'ordre des chants et l'alternance
+couplets/refrain sont les mêmes que pour le PowerPoint.
+
+Transférer le fichier sur le téléphone, puis l'ouvrir avec un navigateur.
+Le document contient son style et ses paroles : après téléchargement,
+aucune connexion Internet n'est nécessaire. Pour le partager par un lien,
+il faut héberger ce fichier HTML sur un site ; l'application ne le publie pas.
+La création de cette feuille est indépendante de celle du PowerPoint.
+
+Pour personnaliser le nom affiché dans la liste des chants et l'aperçu,
+ajouter un tag facultatif en tête du fichier Markdown :
+
+```markdown
+<!-- titre: Kyrie (Messe de Saint Augustin) -->
+```
+
+La casse, les accents et la ponctuation du titre sont conservés. Si le tag
+est absent ou vide, le nom du fichier sert de titre comme auparavant.
+Ce tag n'apparaît pas dans les paroles ni sur les diapositives. Il peut
+précéder ou suivre la directive `ordre`, avant les paroles.
 
 Installer les dépendances puis lancer l'application en local :
 

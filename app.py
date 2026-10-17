@@ -11,7 +11,8 @@ from urllib.parse import quote
 
 import streamlit as st
 
-from scripts.markdown_to_pptx import convert, read_slides
+from scripts.markdown_to_pptx import convert, read_slides, read_title
+from scripts.song_sheet import create_song_sheet
 
 
 ROOT = Path(__file__).resolve().parent
@@ -22,7 +23,7 @@ def song_catalog() -> dict[str, tuple[str, Path]]:
     catalog = {}
     for path in sorted(SONGS_DIR.rglob("*.md")):
         key = path.relative_to(ROOT).as_posix()
-        title = path.stem.replace("_", " ").replace("-", " ").title()
+        title = read_title(path)
         catalog[key] = (title, path)
     return catalog
 
@@ -54,7 +55,7 @@ def download_name(title: str) -> str:
 
 def main() -> None:
     st.set_page_config(page_title="Préparer les chants", page_icon="🎵")
-    st.title("Préparer un diaporama de chants")
+    st.title("Préparer les chants de la célébration")
 
     catalog = song_catalog()
     if not catalog:
@@ -98,7 +99,10 @@ def main() -> None:
             for position, key in enumerate(song_order, start=1):
                 title, path = catalog[key]
                 st.markdown(f"**{position}. {title}**")
-                st.text("\n\n---\n\n".join(read_slides(path)))
+                try:
+                    st.text("\n\n---\n\n".join(read_slides(path)))
+                except (OSError, ValueError) as error:
+                    st.error(f"Impossible de lire {path.name} : {error}")
 
     signature = (celebration.strip(), tuple(song_order))
     generated = st.session_state.get("generated_presentation")
@@ -120,6 +124,28 @@ def main() -> None:
             type="primary",
         )
         st.caption(f"{generated[2]} diapositives")
+
+    st.subheader("Feuille de chants pour téléphone")
+    st.caption("Un fichier HTML avec un sommaire et des paroles adaptées à la largeur de l'écran.")
+    if st.button("Créer la feuille de chants", disabled=not song_order):
+        try:
+            data = create_song_sheet(celebration, [catalog[key] for key in song_order])
+            st.session_state.generated_song_sheet = (signature, data)
+        except (OSError, ValueError) as error:
+            st.error(f"La création de la feuille a échoué : {error}")
+
+    sheet = st.session_state.get("generated_song_sheet")
+    if sheet and sheet[0] == signature:
+        st.download_button(
+            "Télécharger la feuille de chants (.html)",
+            data=sheet[1],
+            file_name="feuille_" + Path(download_name(celebration)).with_suffix(".html").name,
+            mime="text/html",
+        )
+        st.caption(
+            "Transférez le fichier sur le téléphone et ouvrez-le avec un navigateur. "
+            "Une fois enregistré, il se lit sans connexion Internet."
+        )
 
 
 if __name__ == "__main__":

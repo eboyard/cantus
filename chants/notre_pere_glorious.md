@@ -1,3 +1,5 @@
+<!-- titre:  Notre Père (Glorious) -->
+
 Notre Père qui es aux cieux,
 Que Ton nom soit sanctifié.
 Que ton règne vienne.

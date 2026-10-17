@@ -5,10 +5,149 @@ from scripts.markdown_to_pptx import BACKGROUND_COLOR, build_slides, convert, re
 from pptx import Presentation
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from app import create_presentation
+from unittest.mock import patch
+from streamlit.testing.v1 import AppTest
+from app import create_presentation, song_catalog
+
+
+class SongTitleTests(unittest.TestCase):
+    def test_catalog_uses_title_and_falls_back_for_missing_or_empty_tag(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            songs = root / "chants"
+            songs.mkdir()
+            for name, content in {
+                "kyrie.md": "<!-- Titre: Kyrie (Messe de Saint Augustin) -->\r\nParoles",
+                "chant_sans-titre.md": "Paroles",
+                "titre_vide.md": "<!-- titre:   -->\nParoles",
+            }.items():
+                (songs / name).write_text(content, encoding="utf-8-sig")
+            with patch("app.ROOT", root), patch("app.SONGS_DIR", songs):
+                catalog = song_catalog()
+            self.assertEqual(catalog["chants/kyrie.md"][0], "Kyrie (Messe de Saint Augustin)")
+            self.assertEqual(catalog["chants/chant_sans-titre.md"][0], "Chant Sans Titre")
+            self.assertEqual(catalog["chants/titre_vide.md"][0], "Titre Vide")
+
+    def test_title_preserves_explicit_order_and_is_not_projected(self):
+        for header in (
+            "<!-- titre: Grâce (Messe) -->\n<!-- ordre: C1 R -->",
+            "<!-- ordre: C1 R -->\n<!-- titre: Grâce (Messe) -->",
+        ):
+            with self.subTest(header=header):
+                self.assertEqual(
+                    build_slides(header + "\n\n<!-- refrain -->\nR\n---\n<!-- couplet: C1 -->\nA"),
+                    ["A", "R"],
+                )
+
+    def test_kyrie_title_and_export(self):
+        key = "chants/kyrie_messe_de_st_augustin.md"
+        title, path = song_catalog()[key]
+        self.assertEqual(title, "Kyrie (Messe de Saint Augustin)")
+        slides = read_slides(path)
+        self.assertEqual(len(slides), 3)
+        self.assertTrue(slides[0].startswith("Seigneur Jésus"))
+        data, count = create_presentation([(title, path)])
+        self.assertEqual(count, 3)
+        for slide in Presentation(BytesIO(data)).slides:
+            self.assertFalse(any("<!--" in shape.text for shape in slide.shapes if shape.has_text_frame))
+
+
+class BoldPresentationTests(unittest.TestCase):
+    def test_mixed_bold_and_normal_text_survives_export(self):
+        with TemporaryDirectory() as directory:
+            source = Path(directory) / "chant.md"
+            source.write_text(
+                "Avant **Gloire à Toi !** après **Amen !**\n"
+                "**Ligne entière**\n\nTexte *simple* et [lien](https://example.com)\n"
+                "__Autre gras__",
+                encoding="utf-8",
+            )
+            data, count = create_presentation([("Chant", source)])
+        self.assertEqual(count, 1)
+        frame = Presentation(BytesIO(data)).slides[0].shapes[0].text_frame
+        self.assertEqual(frame.text, "Avant Gloire à Toi ! après Amen !\nLigne entière\n\nTexte simple et lien\nAutre gras")
+        self.assertEqual(
+            [(run.text, run.font.bold) for run in frame.paragraphs[0].runs],
+            [("Avant ", False), ("Gloire à Toi !", True), (" après ", False), ("Amen !", True)],
+        )
+        self.assertTrue(frame.paragraphs[1].runs[0].font.bold)
+        self.assertTrue(frame.paragraphs[4].runs[0].font.bold)
+        self.assertEqual(frame.paragraphs[0].font.name, "Comic Sans MS")
+        self.assertEqual(tuple(frame.paragraphs[0].font.color.rgb), (255, 255, 255))
+
+    def test_multiline_bold_is_preserved_for_repeated_refrain(self):
+        with TemporaryDirectory() as directory:
+            source = Path(directory) / "chant.md"
+            source.write_text(
+                "<!-- ordre: R C1 R -->\n<!-- refrain -->\n**Gloire\nà Toi !**\n"
+                "---\n<!-- couplet: C1 -->\nParoles",
+                encoding="utf-8",
+            )
+            data, count = create_presentation([("Chant", source)])
+        self.assertEqual(count, 3)
+        presentation = Presentation(BytesIO(data))
+        for position in (0, 2):
+            frame = presentation.slides[position].shapes[0].text_frame
+            self.assertEqual(frame.text, "Gloire\nà Toi !")
+            self.assertTrue(all(run.font.bold for paragraph in frame.paragraphs for run in paragraph.runs))
+        self.assertFalse(presentation.slides[1].shapes[0].text_frame.paragraphs[0].runs[0].font.bold)
 
 
 class RefrainTests(unittest.TestCase):
+    def test_c_est_par_ta_grace_order_and_export(self):
+        source = Path(__file__).resolve().parents[1] / "chants" / "c_est_par_ta_grâce.md"
+        slides = read_slides(source)
+        self.assertEqual(len(slides), 4)
+        self.assertTrue(slides[0].startswith("Tout mon être"))
+        self.assertTrue(slides[1].startswith("C’est par ta grâce"))
+        self.assertTrue(slides[2].startswith("Tu connais mes craintes"))
+        self.assertEqual(slides[1], slides[3])
+        self.assertFalse(any("<!--" in slide for slide in slides))
+        data, count = create_presentation([("C'est par ta grâce", source)])
+        self.assertEqual(count, 4)
+        presentation = Presentation(BytesIO(data))
+        self.assertTrue(presentation.slides[0].shapes[0].text.startswith("Tout mon être"))
+        self.assertTrue(presentation.slides[3].shapes[0].text.startswith("C’est par ta grâce"))
+
+    def test_explicit_order_can_repeat_skip_and_reorder_parts(self):
+        song = (
+            "<!-- ordre: C2 R R C1 P1 R -->\n"
+            "<!-- refrain -->\nR\n---\n"
+            "<!-- couplet: C1 -->\nA\n---\n"
+            "<!-- couplet: C2 -->\nB\n---\n"
+            "<!-- couplet: C3 -->\nC\n---\n"
+            "<!-- pont: P1 -->\nPont"
+        )
+        self.assertEqual(build_slides(song), ["B", "R", "R", "A", "Pont", "R"])
+
+    def test_order_supports_implicit_numbers_and_windows_newlines(self):
+        song = "\r\n<!-- Ordre: c2 r c1 -->\r\n<!-- Refrain -->\r\nR\r\n---\r\nA\r\n---\r\nB"
+        self.assertEqual(build_slides(song), ["B", "R", "A"])
+
+    def test_numbered_verses_preserve_default_alternation(self):
+        song = "<!-- refrain -->\nR\n---\n<!-- couplet: C1 -->\nA\n---\n<!-- couplet: C2 -->\nB"
+        self.assertEqual(build_slides(song), ["R", "A", "R", "B"])
+
+    def test_invalid_order_is_rejected(self):
+        songs = (
+            "<!-- ordre: -->\nA",
+            "<!-- ordre: R C2 -->\n<!-- refrain -->\nR\n---\nA",
+            "<!-- ordre: C1 -->\n<!-- couplet: C1 -->\nA\n---\n<!-- couplet: C1 -->\nB",
+            "<!-- ordre: P1 -->\n<!-- couplet: P1 -->\nA",
+        )
+        for song in songs:
+            with self.subTest(song=song), self.assertRaises(ValueError):
+                build_slides(song)
+
+    def test_habiter_has_final_refrain(self):
+        source = Path(__file__).resolve().parents[1] / "chants" / "habiter_le_seuil_de_ta_maison_seigneur.md"
+        slides = read_slides(source)
+        self.assertEqual(len(slides), 5)
+        self.assertEqual([slides[i] for i in (0, 2, 4)], [slides[0]] * 3)
+        self.assertTrue(slides[1].startswith("Veiller pour être prêt"))
+        self.assertTrue(slides[3].startswith("Veiller pour accomplir"))
+        self.assertFalse(any("<!--" in slide for slide in slides))
+
     def test_unmarked_song_keeps_original_order(self):
         self.assertEqual(build_slides("A\n---\nB\n---\nC"), ["A", "B", "C"])
 
@@ -82,6 +221,17 @@ class IndexTests(unittest.TestCase):
 
 
 class WebAppTests(unittest.TestCase):
+    def test_preview_error_does_not_interrupt_app(self):
+        app = AppTest.from_string("from app import main\nmain()")
+        app.session_state["song_order"] = ["chants/c_est_par_ta_grâce.md"]
+        with patch("app.read_slides", side_effect=ValueError("Partie C1 absente")):
+            app.run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(len(app.error), 1)
+        self.assertIn("c_est_par_ta_grâce.md", app.error[0].value)
+        self.assertIn("Partie C1 absente", app.error[0].value)
+        self.assertTrue(any(button.label == "Créer le PowerPoint" for button in app.button))
+
     def test_create_presentation_assembles_songs_in_order(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)

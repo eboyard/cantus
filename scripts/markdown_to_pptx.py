@@ -17,10 +17,19 @@ from pptx.util import Inches, Pt
 # lt2 (#000080), avec une luminosité de 50 %, soit #000040.
 BACKGROUND_COLOR = RGBColor(0, 0, 64)
 FONT_NAME = "Comic Sans MS"
+TITLE_TAG = re.compile(r"^[ \t]*<!--[ \t]*titre[ \t]*:([^\r\n]*?)-->[ \t]*\r?$", re.MULTILINE | re.IGNORECASE)
+
+
+def read_title(path: Path) -> str:
+    """Utilise le titre déclaré, sinon le titre déduit du nom du fichier."""
+    marker = TITLE_TAG.search(path.read_text(encoding="utf-8-sig"))
+    if marker and marker.group(1).strip():
+        return marker.group(1).strip()
+    return path.stem.replace("_", " ").replace("-", " ").title()
 
 
 def read_slides(path: Path) -> list[str]:
-    """Lit le chant et insère son refrain entre les couplets successifs."""
+    """Lit le chant selon son ordre explicite ou l'alternance par défaut."""
     return build_slides(path.read_text(encoding="utf-8-sig"))
 
 
@@ -51,26 +60,60 @@ def read_index_slides(path: Path) -> list[str]:
 def build_slides(markdown: str) -> list[str]:
     """Les commentaires de type sont placés au début d'un bloc séparé par ---.
 
-    Un bloc sans marque est un couplet. Le pont interrompt la succession de
-    couplets ; aucun refrain n'est ajouté avant ou après ce bloc.
+    La directive ordre en tête de fichier choisit les parties à projeter.
+    Sans directive, un bloc sans marque est un couplet et le pont interrompt
+    la succession de couplets ; aucun refrain n'est ajouté autour du pont.
     """
+    markdown = TITLE_TAG.sub("", markdown)
+    order_marker = re.match(r"\A\s*<!--[ \t]*ordre[ \t]*:([^\r\n]*?)-->[ \t]*(?:\r?\n|$)", markdown, re.IGNORECASE)
+    order = None
+    if order_marker:
+        order = order_marker.group(1).upper().split()
+        if not order:
+            raise ValueError("La directive ordre ne contient aucune partie.")
+        markdown = markdown[order_marker.end():]
+
     sections = re.split(r"(?m)^[ \t]*---[ \t]*\r?$", markdown)
     blocks: list[tuple[str, str]] = []
+    parts: dict[str, str] = {}
+    counts = {"couplet": 0, "pont": 0}
     for section in sections:
         text = section.strip()
         if not text:
             continue
-        marker = re.match(r"\A<!--[ \t]*(refrain|couplet|pont)[ \t]*-->[ \t]*(?:\r?\n|$)", text, re.IGNORECASE)
+        marker = re.match(r"\A<!--[ \t]*(refrain|couplet|pont)(?:[ \t]*:[ \t]*([CP][1-9][0-9]*))?[ \t]*-->[ \t]*(?:\r?\n|$)", text, re.IGNORECASE)
         kind = marker.group(1).lower() if marker else "couplet"
         if marker:
             text = text[marker.end():].strip()
             if not text:
                 raise ValueError(f"Le bloc marqué {kind} ne contient aucune parole.")
+        if kind == "refrain":
+            identifier = "R"
+            if marker and marker.group(2):
+                raise ValueError("Le refrain utilise l'identifiant R, sans suffixe.")
+        else:
+            counts[kind] += 1
+            prefix = "C" if kind == "couplet" else "P"
+            identifier = marker.group(2).upper() if marker and marker.group(2) else f"{prefix}{counts[kind]}"
+            if not identifier.startswith(prefix):
+                raise ValueError(f"L'identifiant {identifier} ne correspond pas au type {kind}.")
+        if order is not None and identifier in parts:
+            raise ValueError(f"L'identifiant {identifier} est défini plusieurs fois.")
+        parts[identifier] = text
         blocks.append((kind, text))
 
     refrains = [text for kind, text in blocks if kind == "refrain"]
     if len(refrains) > 1:
         raise ValueError("Un chant ne peut contenir qu'un bloc marqué refrain.")
+
+    if order is not None:
+        for identifier in order:
+            if identifier not in parts:
+                raise ValueError(
+                    f"La partie {identifier} indiquée dans l'ordre n'existe pas. "
+                    "Vérifiez son identifiant et séparez les blocs par une ligne contenant uniquement '---'."
+                )
+        return [parts[identifier] for identifier in order]
 
     slides: list[str] = []
     previous_kind = None
@@ -82,14 +125,36 @@ def build_slides(markdown: str) -> list[str]:
     return slides
 
 
-def plain_text(section: str) -> str:
-    """Retire les titres et les marques usuelles de gras/italique du Markdown."""
+def styled_lines(section: str) -> list[list[tuple[str, bool]]]:
+    """Découpe les paroles en fragments de texte, en conservant le gras."""
     section = re.sub(r"(?m)^ {0,3}#{1,6}\s+", "", section)
     section = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", section)
-    for marker in ("**", "__", "*", "_"):
-        escaped = re.escape(marker)
-        section = re.sub(escaped + r"(\S(?:.*?\S)?)" + escaped, r"\1", section)
-    return "\n".join(line.rstrip() for line in section.splitlines()).strip()
+    section = "\n".join(line.rstrip() for line in section.splitlines()).strip()
+    fragments: list[tuple[str, bool]] = []
+    position = 0
+    for match in re.finditer(r"(\*\*|__)(\S(?:.*?\S)?)\1", section, re.DOTALL):
+        fragments.append((section[position:match.start()], False))
+        fragments.append((match.group(2), True))
+        position = match.end()
+    fragments.append((section[position:], False))
+
+    lines: list[list[tuple[str, bool]]] = [[]]
+    for text, bold in fragments:
+        # L'italique reste converti en texte simple.
+        for marker in ("*", "_"):
+            escaped = re.escape(marker)
+            text = re.sub(escaped + r"(\S(?:.*?\S)?)" + escaped, r"\1", text)
+        for index, line in enumerate(text.split("\n")):
+            if index:
+                lines.append([])
+            if line:
+                lines[-1].append((line, bold))
+    return lines
+
+
+def plain_text(section: str) -> str:
+    """Retire la mise en forme Markdown des paroles."""
+    return "\n".join("".join(text for text, _ in line) for line in styled_lines(section))
 
 
 def fit_font(text: str, maximum: int) -> int:
@@ -116,7 +181,8 @@ def convert(source: Path, destination: Path, font_size: int = 40, *, from_index:
     presentation.slide_height = Inches(7.5)
 
     for section in sections:
-        text = plain_text(section)
+        lines = styled_lines(section)
+        text = "\n".join("".join(text for text, _ in line) for line in lines)
         slide = presentation.slides.add_slide(presentation.slide_layouts[6])
         slide.background.fill.solid()
         slide.background.fill.fore_color.rgb = BACKGROUND_COLOR
@@ -131,9 +197,12 @@ def convert(source: Path, destination: Path, font_size: int = 40, *, from_index:
         frame.margin_top = frame.margin_bottom = 0
         size = fit_font(text, font_size)
 
-        for index, line in enumerate(text.splitlines()):
+        for index, line in enumerate(lines):
             paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
-            paragraph.text = line
+            for content, bold in line:
+                run = paragraph.add_run()
+                run.text = content
+                run.font.bold = bold
             paragraph.alignment = PP_ALIGN.CENTER
             paragraph.space_before = Pt(0)
             paragraph.space_after = Pt(0)

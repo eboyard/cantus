@@ -1,3 +1,5 @@
+<!-- titre: Saint est son nom  -->
+
 <!-- refrain -->
 Venez, crions de joie pour le Seigneur,
 Acclamons notre rocher, notre salut !

@@ -1,3 +1,5 @@
+<!-- titre: Kyrie (Messe de la grâce) -->
+
 Seigneur, je viens pour implorer
 Ton pardon sur mon péché.
 De tout mon cœur, de toute ma foi,

@@ -1,3 +1,5 @@
+<!-- titre:  Que vive mon âme à te louer -->
+
 <!-- refrain -->
 Que vive mon âme à te louer !
 Tu as posé une lampe,

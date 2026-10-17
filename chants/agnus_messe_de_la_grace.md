@@ -1,3 +1,5 @@
+<!-- titre:  Agnus (Messe de la grâce) -->
+
 Agneau de Dieu, toi qui enlève
 Le péché de notre monde,
 Entends nos cœurs, vois notre foi.
