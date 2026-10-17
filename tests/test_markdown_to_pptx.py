@@ -52,6 +52,47 @@ class SongTitleTests(unittest.TestCase):
             self.assertFalse(any("<!--" in shape.text for shape in slide.shapes if shape.has_text_frame))
 
 
+class BoldPresentationTests(unittest.TestCase):
+    def test_mixed_bold_and_normal_text_survives_export(self):
+        with TemporaryDirectory() as directory:
+            source = Path(directory) / "chant.md"
+            source.write_text(
+                "Avant **Gloire à Toi !** après **Amen !**\n"
+                "**Ligne entière**\n\nTexte *simple* et [lien](https://example.com)\n"
+                "__Autre gras__",
+                encoding="utf-8",
+            )
+            data, count = create_presentation([("Chant", source)])
+        self.assertEqual(count, 1)
+        frame = Presentation(BytesIO(data)).slides[0].shapes[0].text_frame
+        self.assertEqual(frame.text, "Avant Gloire à Toi ! après Amen !\nLigne entière\n\nTexte simple et lien\nAutre gras")
+        self.assertEqual(
+            [(run.text, run.font.bold) for run in frame.paragraphs[0].runs],
+            [("Avant ", False), ("Gloire à Toi !", True), (" après ", False), ("Amen !", True)],
+        )
+        self.assertTrue(frame.paragraphs[1].runs[0].font.bold)
+        self.assertTrue(frame.paragraphs[4].runs[0].font.bold)
+        self.assertEqual(frame.paragraphs[0].font.name, "Comic Sans MS")
+        self.assertEqual(tuple(frame.paragraphs[0].font.color.rgb), (255, 255, 255))
+
+    def test_multiline_bold_is_preserved_for_repeated_refrain(self):
+        with TemporaryDirectory() as directory:
+            source = Path(directory) / "chant.md"
+            source.write_text(
+                "<!-- ordre: R C1 R -->\n<!-- refrain -->\n**Gloire\nà Toi !**\n"
+                "---\n<!-- couplet: C1 -->\nParoles",
+                encoding="utf-8",
+            )
+            data, count = create_presentation([("Chant", source)])
+        self.assertEqual(count, 3)
+        presentation = Presentation(BytesIO(data))
+        for position in (0, 2):
+            frame = presentation.slides[position].shapes[0].text_frame
+            self.assertEqual(frame.text, "Gloire\nà Toi !")
+            self.assertTrue(all(run.font.bold for paragraph in frame.paragraphs for run in paragraph.runs))
+        self.assertFalse(presentation.slides[1].shapes[0].text_frame.paragraphs[0].runs[0].font.bold)
+
+
 class RefrainTests(unittest.TestCase):
     def test_c_est_par_ta_grace_order_and_export(self):
         source = Path(__file__).resolve().parents[1] / "chants" / "c_est_par_ta_grâce.md"

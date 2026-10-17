@@ -125,14 +125,36 @@ def build_slides(markdown: str) -> list[str]:
     return slides
 
 
-def plain_text(section: str) -> str:
-    """Retire les titres et les marques usuelles de gras/italique du Markdown."""
+def styled_lines(section: str) -> list[list[tuple[str, bool]]]:
+    """Découpe les paroles en fragments de texte, en conservant le gras."""
     section = re.sub(r"(?m)^ {0,3}#{1,6}\s+", "", section)
     section = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", section)
-    for marker in ("**", "__", "*", "_"):
-        escaped = re.escape(marker)
-        section = re.sub(escaped + r"(\S(?:.*?\S)?)" + escaped, r"\1", section)
-    return "\n".join(line.rstrip() for line in section.splitlines()).strip()
+    section = "\n".join(line.rstrip() for line in section.splitlines()).strip()
+    fragments: list[tuple[str, bool]] = []
+    position = 0
+    for match in re.finditer(r"(\*\*|__)(\S(?:.*?\S)?)\1", section, re.DOTALL):
+        fragments.append((section[position:match.start()], False))
+        fragments.append((match.group(2), True))
+        position = match.end()
+    fragments.append((section[position:], False))
+
+    lines: list[list[tuple[str, bool]]] = [[]]
+    for text, bold in fragments:
+        # L'italique reste converti en texte simple.
+        for marker in ("*", "_"):
+            escaped = re.escape(marker)
+            text = re.sub(escaped + r"(\S(?:.*?\S)?)" + escaped, r"\1", text)
+        for index, line in enumerate(text.split("\n")):
+            if index:
+                lines.append([])
+            if line:
+                lines[-1].append((line, bold))
+    return lines
+
+
+def plain_text(section: str) -> str:
+    """Retire la mise en forme Markdown des paroles."""
+    return "\n".join("".join(text for text, _ in line) for line in styled_lines(section))
 
 
 def fit_font(text: str, maximum: int) -> int:
@@ -159,7 +181,8 @@ def convert(source: Path, destination: Path, font_size: int = 40, *, from_index:
     presentation.slide_height = Inches(7.5)
 
     for section in sections:
-        text = plain_text(section)
+        lines = styled_lines(section)
+        text = "\n".join("".join(text for text, _ in line) for line in lines)
         slide = presentation.slides.add_slide(presentation.slide_layouts[6])
         slide.background.fill.solid()
         slide.background.fill.fore_color.rgb = BACKGROUND_COLOR
@@ -174,9 +197,12 @@ def convert(source: Path, destination: Path, font_size: int = 40, *, from_index:
         frame.margin_top = frame.margin_bottom = 0
         size = fit_font(text, font_size)
 
-        for index, line in enumerate(text.splitlines()):
+        for index, line in enumerate(lines):
             paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
-            paragraph.text = line
+            for content, bold in line:
+                run = paragraph.add_run()
+                run.text = content
+                run.font.bold = bold
             paragraph.alignment = PP_ALIGN.CENTER
             paragraph.space_before = Pt(0)
             paragraph.space_after = Pt(0)

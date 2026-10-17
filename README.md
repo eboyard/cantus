@@ -89,8 +89,10 @@ Pour choisir le fichier de sortie et la taille maximale du texte :
 La taille diminue automatiquement lorsque le texte est long. Cet ajustement
 est une estimation : vérifier le rendu dans PowerPoint ou LibreOffice avant
 projection, notamment pour les chants comportant de longues lignes.
-Les titres Markdown, le gras, l'italique et les liens sont convertis en texte
-simple ; les tableaux, images et blocs de code ne sont pas interprétés.
+Le texte entre `**…**` (ou `__…__`) apparaît en gras dans le PowerPoint,
+y compris lorsqu'il ne concerne qu'une partie de la ligne.
+Les titres Markdown, l'italique et les liens sont convertis en texte simple ;
+les tableaux, images et blocs de code ne sont pas interprétés.
 
 Pour générer le diaporama d'une messe à partir de son index :
 
