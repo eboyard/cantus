@@ -20,7 +20,7 @@ FONT_NAME = "Comic Sans MS"
 
 
 def read_slides(path: Path) -> list[str]:
-    """Lit le chant et insère son refrain entre les couplets successifs."""
+    """Lit le chant selon son ordre explicite ou l'alternance par défaut."""
     return build_slides(path.read_text(encoding="utf-8-sig"))
 
 
@@ -51,26 +51,59 @@ def read_index_slides(path: Path) -> list[str]:
 def build_slides(markdown: str) -> list[str]:
     """Les commentaires de type sont placés au début d'un bloc séparé par ---.
 
-    Un bloc sans marque est un couplet. Le pont interrompt la succession de
-    couplets ; aucun refrain n'est ajouté avant ou après ce bloc.
+    La directive ordre en tête de fichier choisit les parties à projeter.
+    Sans directive, un bloc sans marque est un couplet et le pont interrompt
+    la succession de couplets ; aucun refrain n'est ajouté autour du pont.
     """
+    order_marker = re.match(r"\A\s*<!--[ \t]*ordre[ \t]*:([^\r\n]*?)-->[ \t]*(?:\r?\n|$)", markdown, re.IGNORECASE)
+    order = None
+    if order_marker:
+        order = order_marker.group(1).upper().split()
+        if not order:
+            raise ValueError("La directive ordre ne contient aucune partie.")
+        markdown = markdown[order_marker.end():]
+
     sections = re.split(r"(?m)^[ \t]*---[ \t]*\r?$", markdown)
     blocks: list[tuple[str, str]] = []
+    parts: dict[str, str] = {}
+    counts = {"couplet": 0, "pont": 0}
     for section in sections:
         text = section.strip()
         if not text:
             continue
-        marker = re.match(r"\A<!--[ \t]*(refrain|couplet|pont)[ \t]*-->[ \t]*(?:\r?\n|$)", text, re.IGNORECASE)
+        marker = re.match(r"\A<!--[ \t]*(refrain|couplet|pont)(?:[ \t]*:[ \t]*([CP][1-9][0-9]*))?[ \t]*-->[ \t]*(?:\r?\n|$)", text, re.IGNORECASE)
         kind = marker.group(1).lower() if marker else "couplet"
         if marker:
             text = text[marker.end():].strip()
             if not text:
                 raise ValueError(f"Le bloc marqué {kind} ne contient aucune parole.")
+        if kind == "refrain":
+            identifier = "R"
+            if marker and marker.group(2):
+                raise ValueError("Le refrain utilise l'identifiant R, sans suffixe.")
+        else:
+            counts[kind] += 1
+            prefix = "C" if kind == "couplet" else "P"
+            identifier = marker.group(2).upper() if marker and marker.group(2) else f"{prefix}{counts[kind]}"
+            if not identifier.startswith(prefix):
+                raise ValueError(f"L'identifiant {identifier} ne correspond pas au type {kind}.")
+        if order is not None and identifier in parts:
+            raise ValueError(f"L'identifiant {identifier} est défini plusieurs fois.")
+        parts[identifier] = text
         blocks.append((kind, text))
 
     refrains = [text for kind, text in blocks if kind == "refrain"]
     if len(refrains) > 1:
         raise ValueError("Un chant ne peut contenir qu'un bloc marqué refrain.")
+
+    if order is not None:
+        for identifier in order:
+            if identifier not in parts:
+                raise ValueError(
+                    f"La partie {identifier} indiquée dans l'ordre n'existe pas. "
+                    "Vérifiez son identifiant et séparez les blocs par une ligne contenant uniquement '---'."
+                )
+        return [parts[identifier] for identifier in order]
 
     slides: list[str] = []
     previous_kind = None

@@ -5,10 +5,66 @@ from scripts.markdown_to_pptx import BACKGROUND_COLOR, build_slides, convert, re
 from pptx import Presentation
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
+from streamlit.testing.v1 import AppTest
 from app import create_presentation
 
 
 class RefrainTests(unittest.TestCase):
+    def test_c_est_par_ta_grace_order_and_export(self):
+        source = Path(__file__).resolve().parents[1] / "chants" / "c_est_par_ta_grâce.md"
+        slides = read_slides(source)
+        self.assertEqual(len(slides), 4)
+        self.assertTrue(slides[0].startswith("Tout mon être"))
+        self.assertTrue(slides[1].startswith("C’est par ta grâce"))
+        self.assertTrue(slides[2].startswith("Tu connais mes craintes"))
+        self.assertEqual(slides[1], slides[3])
+        self.assertFalse(any("<!--" in slide for slide in slides))
+        data, count = create_presentation([("C'est par ta grâce", source)])
+        self.assertEqual(count, 4)
+        presentation = Presentation(BytesIO(data))
+        self.assertTrue(presentation.slides[0].shapes[0].text.startswith("Tout mon être"))
+        self.assertTrue(presentation.slides[3].shapes[0].text.startswith("C’est par ta grâce"))
+
+    def test_explicit_order_can_repeat_skip_and_reorder_parts(self):
+        song = (
+            "<!-- ordre: C2 R R C1 P1 R -->\n"
+            "<!-- refrain -->\nR\n---\n"
+            "<!-- couplet: C1 -->\nA\n---\n"
+            "<!-- couplet: C2 -->\nB\n---\n"
+            "<!-- couplet: C3 -->\nC\n---\n"
+            "<!-- pont: P1 -->\nPont"
+        )
+        self.assertEqual(build_slides(song), ["B", "R", "R", "A", "Pont", "R"])
+
+    def test_order_supports_implicit_numbers_and_windows_newlines(self):
+        song = "\r\n<!-- Ordre: c2 r c1 -->\r\n<!-- Refrain -->\r\nR\r\n---\r\nA\r\n---\r\nB"
+        self.assertEqual(build_slides(song), ["B", "R", "A"])
+
+    def test_numbered_verses_preserve_default_alternation(self):
+        song = "<!-- refrain -->\nR\n---\n<!-- couplet: C1 -->\nA\n---\n<!-- couplet: C2 -->\nB"
+        self.assertEqual(build_slides(song), ["R", "A", "R", "B"])
+
+    def test_invalid_order_is_rejected(self):
+        songs = (
+            "<!-- ordre: -->\nA",
+            "<!-- ordre: R C2 -->\n<!-- refrain -->\nR\n---\nA",
+            "<!-- ordre: C1 -->\n<!-- couplet: C1 -->\nA\n---\n<!-- couplet: C1 -->\nB",
+            "<!-- ordre: P1 -->\n<!-- couplet: P1 -->\nA",
+        )
+        for song in songs:
+            with self.subTest(song=song), self.assertRaises(ValueError):
+                build_slides(song)
+
+    def test_habiter_has_final_refrain(self):
+        source = Path(__file__).resolve().parents[1] / "chants" / "habiter_le_seuil_de_ta_maison_seigneur.md"
+        slides = read_slides(source)
+        self.assertEqual(len(slides), 5)
+        self.assertEqual([slides[i] for i in (0, 2, 4)], [slides[0]] * 3)
+        self.assertTrue(slides[1].startswith("Veiller pour être prêt"))
+        self.assertTrue(slides[3].startswith("Veiller pour accomplir"))
+        self.assertFalse(any("<!--" in slide for slide in slides))
+
     def test_unmarked_song_keeps_original_order(self):
         self.assertEqual(build_slides("A\n---\nB\n---\nC"), ["A", "B", "C"])
 
@@ -82,6 +138,17 @@ class IndexTests(unittest.TestCase):
 
 
 class WebAppTests(unittest.TestCase):
+    def test_preview_error_does_not_interrupt_app(self):
+        app = AppTest.from_string("from app import main\nmain()")
+        app.session_state["song_order"] = ["chants/c_est_par_ta_grâce.md"]
+        with patch("app.read_slides", side_effect=ValueError("Partie C1 absente")):
+            app.run()
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(len(app.error), 1)
+        self.assertIn("c_est_par_ta_grâce.md", app.error[0].value)
+        self.assertIn("Partie C1 absente", app.error[0].value)
+        self.assertTrue(any(button.label == "Créer le PowerPoint" for button in app.button))
+
     def test_create_presentation_assembles_songs_in_order(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)

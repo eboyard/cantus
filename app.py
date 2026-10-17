@@ -98,7 +98,10 @@ def main() -> None:
             for position, key in enumerate(song_order, start=1):
                 title, path = catalog[key]
                 st.markdown(f"**{position}. {title}**")
-                st.text("\n\n---\n\n".join(read_slides(path)))
+                try:
+                    st.text("\n\n---\n\n".join(read_slides(path)))
+                except (OSError, ValueError) as error:
+                    st.error(f"Impossible de lire {path.name} : {error}")
 
     signature = (celebration.strip(), tuple(song_order))
     generated = st.session_state.get("generated_presentation")

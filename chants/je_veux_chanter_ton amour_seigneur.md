@@ -6,4 +6,4 @@ et glorifier ton nom.
 Avec Toi Seigneur, je n’ai peur de rien, 
 Tu es là sur tous mes chemins,  
 Tu m’apprends à vivre l’amour, 
-Gloire à Toi !
+**Gloire à Toi !**

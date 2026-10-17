@@ -40,6 +40,35 @@ Paroles du pont
 Cet exemple produit : refrain → couplet 1 → refrain → couplet 2 → pont.
 Le refrain n'est pas ajouté automatiquement après le dernier couplet.
 
+Pour choisir précisément l'ordre, ajouter une directive en tête du fichier :
+
+```markdown
+<!-- ordre: R C1 R C2 R -->
+
+<!-- refrain -->
+Paroles du refrain
+
+---
+
+<!-- couplet: C1 -->
+Paroles du premier couplet
+
+---
+
+<!-- couplet: C2 -->
+Paroles du deuxième couplet
+```
+
+Cet exemple produit : refrain → couplet 1 → refrain → couplet 2 → refrain.
+Chaque partie est écrite une seule fois. La directive peut répéter, omettre
+ou réordonner les parties ; aucun refrain supplémentaire n'est inséré.
+`R` désigne le refrain, `C1`, `C2`, etc. les couplets, et `P1`, `P2`, etc.
+les ponts (par exemple `<!-- pont: P1 -->`). Sans identifiant explicite,
+les couplets et les ponts sont numérotés séparément dans leur ordre d'apparition.
+Un identifiant utilisé dans l'ordre doit exister et être défini une seule fois.
+Sans directive `ordre`, le comportement décrit plus haut est conservé.
+L'aperçu Streamlit et le PowerPoint utilisent tous deux cet ordre.
+
 Depuis la racine du projet, sous PowerShell :
 
 ```powershell
