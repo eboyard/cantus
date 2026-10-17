@@ -81,7 +81,7 @@ class GitHubPublishTests(unittest.TestCase):
                 app.session_state["song_order"] = ["chant"]
                 app.run()
                 next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
-                app.text_input(key="pages_parish").set_value("Saint-Pierre").run()
+                app.selectbox(key="pages_parish").select("Boussy-saint-Antoine").run()
                 next(button for button in app.button if button.label == "Préparer pour GitHub Pages").click().run()
                 next(button for button in app.button if button.label == "Publier sur GitHub Pages").click().run()
                 publish.assert_not_called()
@@ -93,7 +93,7 @@ class GitHubPublishTests(unittest.TestCase):
                 self.assertEqual(len(app.error), 0)
                 self.assertIn("envoyée sur GitHub", app.success[0].value)
                 self.assertTrue(any(button.proto.label == "Voir le commit publié" for button in app.get("link_button")))
-                app.text_input(key="pages_parish").set_value("Saint-Paul").run()
+                app.selectbox(key="pages_parish").select("Quincy-sous-Sénart").run()
                 self.assertEqual(len(app.get("link_button")), 0)
 
 

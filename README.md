@@ -129,8 +129,8 @@ Configuration initiale du dépôt `eboyard/cantus` :
 Pour chaque célébration :
 
 1. Préparer les chants dans Streamlit puis cliquer sur **Créer la feuille de chants**.
-2. Dans **Partager avec GitHub Pages**, saisir la paroisse (avec sa commune pour éviter
-   les homonymes), la date et l'adresse du site, puis **Préparer pour GitHub Pages**.
+2. Dans **Partager avec GitHub Pages**, choisir **Boussy-saint-Antoine** ou
+   **Quincy-sous-Sénart**, saisir la date et l'adresse du site, puis **Préparer pour GitHub Pages**.
 3. Saisir le **Code de publication**, puis cliquer sur **Publier sur GitHub Pages**.
    L'application crée directement un commit contenant la feuille HTML sur `main`.
 4. Attendre la fin du déploiement **pages build and deployment** dans l'onglet **Actions**,

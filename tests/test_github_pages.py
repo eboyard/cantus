@@ -65,7 +65,8 @@ class GitHubPagesTests(unittest.TestCase):
                 app.session_state["song_order"] = ["chant"]
                 app.run()
                 next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
-                app.text_input(key="pages_parish").set_value("Saint-Pierre")
+                self.assertEqual(app.selectbox(key="pages_parish").options, ["Boussy-saint-Antoine", "Quincy-sous-Sénart"])
+                app.selectbox(key="pages_parish").select("Quincy-sous-Sénart")
                 app.date_input[0].set_value(date(2026, 10, 18)).run()
                 next(button for button in app.button if button.label == "Préparer pour GitHub Pages").click().run()
                 self.assertEqual(len(app.exception), 0)
@@ -73,11 +74,13 @@ class GitHubPagesTests(unittest.TestCase):
                 export = app.session_state["pages_export"][1]
                 self.assertIn(b"<strong>Gloire", export.document)
                 self.assertIn("18/10/2026", export.document.decode("utf-8"))
+                self.assertIn("Quincy-sous-Sénart", export.document.decode("utf-8"))
+                self.assertEqual(export.url, "https://eboyard.github.io/cantus/quincy-sous-senart/2026-10-18/")
                 self.assertEqual(len(app.get("image")), 1)
                 next(button for button in app.button if button.label == "Enregistrer dans docs/").click().run()
                 self.assertEqual(len(app.error), 0)
-                self.assertEqual((root / "docs/saint-pierre/2026-10-18/index.html").read_bytes(), export.document)
-                app.text_input(key="pages_parish").set_value("Saint-Paul").run()
+                self.assertEqual((root / "docs/quincy-sous-senart/2026-10-18/index.html").read_bytes(), export.document)
+                app.selectbox(key="pages_parish").select("Boussy-saint-Antoine").run()
                 self.assertFalse(any(button.label == "Enregistrer dans docs/" for button in app.button))
 
 
