@@ -1,3 +1,5 @@
+<!-- titre: Je veux chanter ton amour Seigneur -->
+
 Je veux chanter ton amour Seigneur, 
 chaque instant de ma vie,  
 danser pour toi en chantant ma joie 

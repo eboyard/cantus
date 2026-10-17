@@ -11,7 +11,7 @@ from urllib.parse import quote
 
 import streamlit as st
 
-from scripts.markdown_to_pptx import convert, read_slides
+from scripts.markdown_to_pptx import convert, read_slides, read_title
 
 
 ROOT = Path(__file__).resolve().parent
@@ -22,7 +22,7 @@ def song_catalog() -> dict[str, tuple[str, Path]]:
     catalog = {}
     for path in sorted(SONGS_DIR.rglob("*.md")):
         key = path.relative_to(ROOT).as_posix()
-        title = path.stem.replace("_", " ").replace("-", " ").title()
+        title = read_title(path)
         catalog[key] = (title, path)
     return catalog
 

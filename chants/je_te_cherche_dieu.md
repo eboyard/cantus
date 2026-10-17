@@ -1,3 +1,5 @@
+<!-- titre:  Je te cherche Dieu -->
+
 Je te cherche, Dieu, tu es mon Dieu,
 Et je t'appelle,
 Je te cherche, Dieu,

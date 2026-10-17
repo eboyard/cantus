@@ -1,3 +1,5 @@
+<!-- titre:  Gloria (Messe de la grâce) -->
+
 Gloire à Dieu au plus haut des cieux,
 Gloire à Dieu au plus haut des cieux.
 Paix sur terre aux hommes qu'il aime,

@@ -100,6 +100,18 @@ Pour générer le diaporama d'une messe à partir de son index :
 
 ## Application web
 
+Pour personnaliser le nom affiché dans la liste des chants et l'aperçu,
+ajouter un tag facultatif en tête du fichier Markdown :
+
+```markdown
+<!-- titre: Kyrie (Messe de Saint Augustin) -->
+```
+
+La casse, les accents et la ponctuation du titre sont conservés. Si le tag
+est absent ou vide, le nom du fichier sert de titre comme auparavant.
+Ce tag n'apparaît pas dans les paroles ni sur les diapositives. Il peut
+précéder ou suivre la directive `ordre`, avant les paroles.
+
 Installer les dépendances puis lancer l'application en local :
 
 ```powershell

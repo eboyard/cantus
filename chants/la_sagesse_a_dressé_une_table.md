@@ -1,3 +1,5 @@
+<!-- titre:  La Sagesse a dressé une table -->
+
 <!-- ordre: R C1 R C2 R C3 R-->
 
 <!-- refrain -->

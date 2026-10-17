@@ -7,7 +7,49 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from streamlit.testing.v1 import AppTest
-from app import create_presentation
+from app import create_presentation, song_catalog
+
+
+class SongTitleTests(unittest.TestCase):
+    def test_catalog_uses_title_and_falls_back_for_missing_or_empty_tag(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            songs = root / "chants"
+            songs.mkdir()
+            for name, content in {
+                "kyrie.md": "<!-- Titre: Kyrie (Messe de Saint Augustin) -->\r\nParoles",
+                "chant_sans-titre.md": "Paroles",
+                "titre_vide.md": "<!-- titre:   -->\nParoles",
+            }.items():
+                (songs / name).write_text(content, encoding="utf-8-sig")
+            with patch("app.ROOT", root), patch("app.SONGS_DIR", songs):
+                catalog = song_catalog()
+            self.assertEqual(catalog["chants/kyrie.md"][0], "Kyrie (Messe de Saint Augustin)")
+            self.assertEqual(catalog["chants/chant_sans-titre.md"][0], "Chant Sans Titre")
+            self.assertEqual(catalog["chants/titre_vide.md"][0], "Titre Vide")
+
+    def test_title_preserves_explicit_order_and_is_not_projected(self):
+        for header in (
+            "<!-- titre: Grâce (Messe) -->\n<!-- ordre: C1 R -->",
+            "<!-- ordre: C1 R -->\n<!-- titre: Grâce (Messe) -->",
+        ):
+            with self.subTest(header=header):
+                self.assertEqual(
+                    build_slides(header + "\n\n<!-- refrain -->\nR\n---\n<!-- couplet: C1 -->\nA"),
+                    ["A", "R"],
+                )
+
+    def test_kyrie_title_and_export(self):
+        key = "chants/kyrie_messe_de_st_augustin.md"
+        title, path = song_catalog()[key]
+        self.assertEqual(title, "Kyrie (Messe de Saint Augustin)")
+        slides = read_slides(path)
+        self.assertEqual(len(slides), 3)
+        self.assertTrue(slides[0].startswith("Seigneur Jésus"))
+        data, count = create_presentation([(title, path)])
+        self.assertEqual(count, 3)
+        for slide in Presentation(BytesIO(data)).slides:
+            self.assertFalse(any("<!--" in shape.text for shape in slide.shapes if shape.has_text_frame))
 
 
 class RefrainTests(unittest.TestCase):

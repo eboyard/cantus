@@ -1,3 +1,5 @@
+<!-- titre:  Tu fais ta demeure en nous -->
+
 <!-- refrain -->
 Tu es là présent, livré pour nous.
 Toi le tout petit, le serviteur.

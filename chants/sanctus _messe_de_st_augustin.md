@@ -1,3 +1,5 @@
+<!-- titre:  Sanctus (Messe de St Augustin) -->
+
 **Sanctus, sanctus, sanctus Dominus Deus Sabaoth. (bis)**
 Pleni sunt coeli et terra gloria tua  
 **Hosanna, hosanna, hosanna in excelsis.**  

@@ -1,3 +1,5 @@
+<!-- titre:  Sanctus (Messe de la grâce) -->
+
 Tu es Saint, Dieu de l'univers,
 Tu es Saint, Dieu de l'univers.
 Hosanna au plus haut des cieux,
