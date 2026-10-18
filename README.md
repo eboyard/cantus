@@ -112,7 +112,7 @@ et créer une nouvelle feuille HTML, un PDF ou un PowerPoint. Le nom de la nouve
 célébration et sa date restent à choisir pour cette nouvelle feuille.
 
 Les feuilles présentes dans `docs/` sont proposées au démarrage. Le bouton
-**Actualiser les feuilles depuis GitHub** récupère la liste sur le dépôt et la branche
+**↻**, à droite de la liste, récupère les feuilles sur le dépôt et la branche
 configurés, notamment les feuilles publiées après le démarrage de Streamlit. La lecture
 utilise le jeton configuré côté serveur ; un dépôt public peut aussi être lu sans jeton.
 

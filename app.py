@@ -153,7 +153,8 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
         repository = github_setting("repository", "eboyard/cantus")
         branch = github_setting("branch", "main")
         source_signature = (repository, branch)
-        if st.button("Actualiser les feuilles depuis GitHub"):
+        choice_column, refresh_column = st.columns([8, 1], vertical_alignment="bottom")
+        if refresh_column.button("↻", key="refresh_existing_sheets", help="Actualiser les feuilles depuis GitHub"):
             try:
                 with st.spinner("Recherche des feuilles publiées…"):
                     sheets = published_sheets(github_setting("token"), repository, branch)
@@ -180,7 +181,7 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
             except (OSError, ValueError) as error:
                 st.session_state.sheet_import_status = (False, str(error))
 
-        st.selectbox(
+        choice_column.selectbox(
             "Choisir une feuille de chants existante", options=list(choices),
             format_func=lambda path: choices[path].label, index=None,
             placeholder="Choisir une feuille", key="existing_sheet_choice", on_change=import_sheet,

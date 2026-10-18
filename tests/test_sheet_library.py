@@ -121,7 +121,7 @@ class SheetLibraryTests(unittest.TestCase):
         sheet = ExistingSheet("quincy-sous-senart/2026-10-25/index.html", "a" * 40)
         with patch("app.published_sheets", return_value=[sheet]), patch("app.read_existing_sheet", return_value=contents("Agnus Dei")):
             app = AppTest.from_string("from app import main\nmain()").run()
-            next(button for button in app.button if button.label == "Actualiser les feuilles depuis GitHub").click().run()
+            app.button(key="refresh_existing_sheets").click().run()
             app.selectbox(key="existing_sheet_choice").select(sheet.path).run()
             self.assertFalse(app.exception)
             self.assertEqual(app.session_state["song_order"], ["chants/agnus_dei.md"])
