@@ -19,6 +19,7 @@ from scripts.song_sheet import create_song_sheet
 from scripts.print_song_sheet import create_print_song_sheet
 from scripts.github_pages import prepare_pages_export, save_pages_export
 from scripts.github_publish import publish_sheet
+from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents
 
 
 ROOT = Path(__file__).resolve().parent
@@ -146,6 +147,54 @@ def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str,
     )
 
 
+def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
+    with st.expander("Repartir d’une feuille existante"):
+        st.caption("Choisissez une feuille : son sommaire remplacera la liste actuelle des chants, dans le même ordre.")
+        repository = github_setting("repository", "eboyard/cantus")
+        branch = github_setting("branch", "main")
+        source_signature = (repository, branch)
+        choice_column, refresh_column = st.columns([8, 1], vertical_alignment="bottom")
+        if refresh_column.button("↻", key="refresh_existing_sheets", help="Actualiser les feuilles depuis GitHub"):
+            try:
+                with st.spinner("Recherche des feuilles publiées…"):
+                    sheets = published_sheets(github_setting("token"), repository, branch)
+                st.session_state.existing_remote_sheets = (source_signature, sheets)
+                st.session_state.existing_sheet_choice = None
+                st.session_state.pop("sheet_import_status", None)
+            except ValueError as error:
+                st.error(str(error))
+        remote = st.session_state.get("existing_remote_sheets")
+        sheets = remote[1] if remote and remote[0] == source_signature else local_sheets(ROOT / "docs")
+        choices = {sheet.path: sheet for sheet in sheets}
+
+        def import_sheet():
+            chosen = st.session_state.existing_sheet_choice
+            if chosen is None:
+                return
+            try:
+                document = read_existing_sheet(choices[chosen], ROOT / "docs", github_setting("token"), repository)
+                order = songs_from_contents(document, catalog)
+                st.session_state.song_order = order
+                for key in ("generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
+                    st.session_state.pop(key, None)
+                st.session_state.sheet_import_status = (True, f"{len(order)} chant(s) chargés. Vous pouvez modifier cette liste pour préparer la nouvelle feuille.")
+            except (OSError, ValueError) as error:
+                st.session_state.sheet_import_status = (False, str(error))
+
+        choice_column.selectbox(
+            "Choisir une feuille de chants existante", options=list(choices),
+            format_func=lambda path: choices[path].label, index=None,
+            placeholder="Choisir une feuille", key="existing_sheet_choice", on_change=import_sheet,
+        )
+        if not sheets:
+            st.info("Aucune feuille disponible. Actualisez depuis GitHub pour rechercher les feuilles publiées.")
+        if not remote or remote[0] != source_signature:
+            st.caption("Les feuilles de cette copie du projet sont proposées. Actualisez depuis GitHub pour récupérer les dernières publications.")
+        status = st.session_state.get("sheet_import_status")
+        if status:
+            (st.success if status[0] else st.error)(status[1])
+
+
 def main() -> None:
     st.set_page_config(page_title="Préparer les chants", page_icon="🎵")
     st.title("Préparer les chants de la célébration")
@@ -156,6 +205,7 @@ def main() -> None:
         return
 
     st.session_state.setdefault("song_order", [])
+    show_existing_sheets(catalog)
     celebration = st.text_input("Nom de la célébration", value="Messe")
     selected = st.selectbox(
         "Choisir un chant à ajouter",

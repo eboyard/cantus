@@ -17,7 +17,12 @@ def create_song_sheet(title: str, songs: list[tuple[str, Path]]) -> bytes:
         if not blocks:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
         song_id = f"chant-{position}"
-        contents.append(f'<li><a href="#{song_id}">{escape(song_title)}</a></li>')
+        try:
+            song_key = path.resolve().relative_to(Path(__file__).resolve().parents[1]).as_posix()
+        except ValueError:
+            song_key = ""
+        source = f' data-song-key="{escape(song_key, quote=True)}"' if song_key else ""
+        contents.append(f'<li><a href="#{song_id}"{source}>{escape(song_title)}</a></li>')
         lyrics = []
         for block in blocks:
             lines = []
