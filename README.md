@@ -102,6 +102,33 @@ Pour générer le diaporama d'une messe à partir de son index :
 
 ## Application web
 
+### Feuille de chants à imprimer
+
+Après avoir choisi et ordonné les chants, cliquer sur **Créer la version à imprimer**,
+puis **Télécharger la version à imprimer (.pdf)**. Cette génération est indépendante
+du PowerPoint et de la feuille pour téléphone.
+
+Le PDF utilise le format A4 portrait, deux colonnes, des marges de 12 mm et du texte
+noir sur fond blanc. Choisir **11 points** pour une feuille compacte ou **12 points**
+pour des caractères plus grands. Les couplets sont numérotés ; chaque refrain est
+écrit en gras à sa première occurrence, puis remplacé par « Refrain » aux reprises.
+L'ordre explicite des parties et les ponts sont conservés. Les couplets sont gardés
+ensemble lorsqu'ils tiennent dans une colonne.
+
+Imprimer à **taille réelle (100 %)**, avec **une page par face**, en **recto verso,
+retournement sur le bord long**. Le nombre de pages est affiché avant téléchargement :
+le document ajoute des pages si nécessaire sans réduire la taille choisie.
+
+La génération PDF utilise ReportLab, inclus dans `requirements.txt`, et ses polices
+Unicode embarquées. Pour lancer les tests, y compris la vérification des PDF :
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m unittest discover -s tests
+```
+
+### Feuille de chants pour téléphone
+
 La section **Feuille de chants pour téléphone** permet de créer et télécharger
 un fichier `.html` à partir des chants sélectionnés. La feuille possède un
 sommaire cliquable, une seule colonne adaptée aux petits écrans et des paroles

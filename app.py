@@ -16,6 +16,7 @@ import streamlit as st
 
 from scripts.markdown_to_pptx import convert, read_slides, read_title
 from scripts.song_sheet import create_song_sheet
+from scripts.print_song_sheet import create_print_song_sheet
 from scripts.github_pages import prepare_pages_export, save_pages_export
 from scripts.github_publish import publish_sheet
 
@@ -216,6 +217,25 @@ def main() -> None:
             type="primary",
         )
         st.caption(f"{generated[2]} diapositives")
+
+    st.subheader("Feuille de chants à imprimer")
+    st.caption("PDF A4 en deux colonnes, en noir et blanc. Chaque refrain est écrit une fois par chant.")
+    print_size = st.selectbox("Taille du texte imprimé", options=[11, 12], format_func=lambda size: f"{size} points")
+    print_signature = (signature, print_size)
+    if st.button("Créer la version à imprimer", disabled=not song_order):
+        try:
+            pdf, pages = create_print_song_sheet(celebration, [catalog[key] for key in song_order], font_size=print_size)
+            st.session_state.generated_print_sheet = (print_signature, pdf, pages)
+        except (OSError, ValueError) as error:
+            st.error(f"La création du PDF a échoué : {error}")
+    printed = st.session_state.get("generated_print_sheet")
+    if printed and printed[0] == print_signature:
+        st.download_button(
+            "Télécharger la version à imprimer (.pdf)", data=printed[1],
+            file_name="feuille_" + Path(download_name(celebration)).with_suffix(".pdf").name,
+            mime="application/pdf",
+        )
+        st.caption(f"{printed[2]} page(s) A4 — Imprimer à taille réelle (100 %), en recto verso, retournement sur le bord long.")
 
     st.subheader("Feuille de chants pour téléphone")
     st.caption("Un fichier HTML avec un sommaire et des paroles adaptées à la largeur de l'écran.")
