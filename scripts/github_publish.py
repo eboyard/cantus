@@ -19,7 +19,7 @@ def _request(method: str, url: str, token: str, payload: dict | None = None) -> 
         url, method=method,
         data=json.dumps(payload).encode("utf-8") if payload is not None else None,
         headers={
-            "Authorization": f"Bearer {token}",
+            **({"Authorization": f"Bearer {token}"} if token.strip() else {}),
             "Accept": "application/vnd.github+json",
             "Content-Type": "application/json",
             "X-GitHub-Api-Version": "2026-03-10",

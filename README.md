@@ -102,6 +102,26 @@ Pour générer le diaporama d'une messe à partir de son index :
 
 ## Application web
 
+### Repartir d’une feuille existante
+
+Ouvrir **Repartir d’une feuille existante**, puis choisir une paroisse et une date
+dans **Choisir une feuille de chants existante**. La sélection remplace immédiatement
+la liste des chants par ceux du sommaire, dans le même ordre, y compris les chants
+présents plusieurs fois. Vous pouvez ensuite ajouter, retirer ou déplacer des chants
+et créer une nouvelle feuille HTML, un PDF ou un PowerPoint. Le nom de la nouvelle
+célébration et sa date restent à choisir pour cette nouvelle feuille.
+
+Les feuilles présentes dans `docs/` sont proposées au démarrage. Le bouton
+**Actualiser les feuilles depuis GitHub** récupère la liste sur le dépôt et la branche
+configurés, notamment les feuilles publiées après le démarrage de Streamlit. La lecture
+utilise le jeton configuré côté serveur ; un dépôt public peut aussi être lu sans jeton.
+
+Les anciennes feuilles sont reconnues à partir des titres de leur sommaire
+(en tolérant les différences de casse, d’accents et de ponctuation). Les nouvelles
+feuilles conservent aussi la référence du chant dans ce sommaire pour permettre sa
+reprise même si son titre change. Si un chant manque ou si plusieurs chants ont le même
+titre, un message les signale et la liste actuelle reste intacte.
+
 ### Feuille de chants à imprimer
 
 Après avoir choisi et ordonné les chants, cliquer sur **Créer la version à imprimer**,
