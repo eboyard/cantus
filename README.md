@@ -132,7 +132,8 @@ Pour chaque célébration :
 2. Dans **Partager avec GitHub Pages**, choisir **Boussy-saint-Antoine** ou
    **Quincy-sous-Sénart**, saisir la date et l'adresse du site, puis **Préparer pour GitHub Pages**.
 3. Saisir le **Code de publication**, puis cliquer sur **Publier sur GitHub Pages**.
-   L'application crée directement un commit contenant la feuille HTML sur `main`.
+   L'application crée directement un commit contenant la feuille HTML et l'index
+   de la paroisse sur `main`.
 4. Attendre la fin du déploiement **pages build and deployment** dans l'onglet **Actions**,
    puis ouvrir le lien pour vérifier la feuille avant de distribuer le QR code.
 
@@ -141,6 +142,21 @@ L'adresse est de la forme
 Le fichier publié est `docs/saint-pierre/2026-10-18/index.html`. Le dossier `docs` ne figure
 pas dans l'URL publique. Le QR code peut être téléchargé
 dans Streamlit pour impression ; il n'est pas nécessaire de le publier dans le dépôt.
+
+Chaque paroisse possède aussi une page regroupant ses feuilles, de la date la plus
+récente à la plus ancienne :
+
+- [Boussy-saint-Antoine](https://eboyard.github.io/cantus/boussy-saint-antoine/)
+- [Quincy-sous-Sénart](https://eboyard.github.io/cantus/quincy-sous-senart/)
+
+À chaque publication directe, cet index est reconstruit à partir des feuilles
+présentes sur la branche GitHub et de la nouvelle feuille. Un remplacement ne crée
+pas de doublon. La feuille et l'index sont publiés ensemble ; si la branche change
+pendant l'envoi, la publication est refusée pour conserver les modifications concurrentes.
+Le bouton **Toutes les feuilles de la paroisse** permet d'ouvrir cet index après publication.
+L'enregistrement local met également l'index à jour à partir des feuilles locales.
+Le ZIP contient uniquement la nouvelle feuille et son QR code : après un envoi manuel,
+l'index distant sera actualisé lors de la prochaine publication directe pour cette paroisse.
 Le lien affiché après préparation est une adresse prévue : seul le bouton **Publier**
 envoie la feuille à GitHub. Le succès de l'envoi confirme le commit, pas la fin du déploiement Pages.
 

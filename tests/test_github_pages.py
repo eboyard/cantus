@@ -10,10 +10,18 @@ from xml.etree import ElementTree
 
 from streamlit.testing.v1 import AppTest
 
-from scripts.github_pages import prepare_pages_export, save_pages_export
+from scripts.github_pages import create_parish_index, prepare_pages_export, save_pages_export
 
 
 class GitHubPagesTests(unittest.TestCase):
+    def test_parish_index_escapes_name_sorts_dates_and_handles_empty_parish(self):
+        html = create_parish_index('Saint <Pierre> & Paul', ["2026-10-18", "2026-10-25", "2026-10-18"]).decode()
+        self.assertIn("Saint &lt;Pierre&gt; &amp; Paul", html)
+        self.assertEqual(html.count('href="2026-10-18/"'), 1)
+        self.assertLess(html.index('href="2026-10-25/"'), html.index('href="2026-10-18/"'))
+        self.assertIn("18/10/2026", html)
+        self.assertIn("Aucune feuille", create_parish_index("Quincy-sous-Sénart", []).decode())
+
     def prepare(self, document=b"<!doctype html><html>Paroles</html>", parish="Sainte-Thérèse Lyon", day=date(2026, 10, 18)):
         return prepare_pages_export(document, parish, day, "https://eboyard.github.io/cantus/")
 
@@ -44,6 +52,10 @@ class GitHubPagesTests(unittest.TestCase):
             self.assertEqual(next_week.read_bytes(), export.document)
             self.assertEqual(other_parish.read_bytes(), export.document)
             self.assertTrue((root / ".nojekyll").exists())
+            index = (root / "sainte-therese-lyon/index.html").read_text(encoding="utf-8")
+            self.assertEqual(index.count('href="2026-10-18/"'), 1)
+            self.assertIn('href="2026-10-25/"', index)
+            self.assertNotIn("Saint-Pierre", index)
 
     def test_invalid_configuration_and_escaping_output_path_are_rejected(self):
         for url in ("", "http://example.org", "https://site.org/?query=1", "https://site.org/#fragment", "https://user:secret@site.org"):
