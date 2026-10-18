@@ -115,6 +115,7 @@ def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str,
         st.success("La feuille a été envoyée sur GitHub. Elle sera accessible après le déploiement GitHub Pages.")
         st.link_button("Voir le commit publié", publication[3])
         st.link_button("Ouvrir la feuille après déploiement", export.url)
+        st.link_button("Toutes les feuilles de la paroisse", export.parish_url)
     st.caption("Lien prévu : il sera accessible après l'envoi des fichiers sur GitHub et le déploiement Pages.")
     st.code(export.url, language=None)
     st.image(export.qr.decode("utf-8"), caption="QR code à distribuer après publication", width=280)
