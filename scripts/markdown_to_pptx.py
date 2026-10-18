@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 from pathlib import Path
 import re
 from urllib.parse import unquote
@@ -57,7 +58,18 @@ def read_index_slides(path: Path) -> list[str]:
     return slides
 
 
+@dataclass(frozen=True)
+class SongPart:
+    identifier: str
+    kind: str
+    text: str
+
+
 def build_slides(markdown: str) -> list[str]:
+    return [part.text for part in build_song_parts(markdown)]
+
+
+def build_song_parts(markdown: str) -> list[SongPart]:
     """Les commentaires de type sont placés au début d'un bloc séparé par ---.
 
     La directive ordre en tête de fichier choisit les parties à projeter.
@@ -74,8 +86,8 @@ def build_slides(markdown: str) -> list[str]:
         markdown = markdown[order_marker.end():]
 
     sections = re.split(r"(?m)^[ \t]*---[ \t]*\r?$", markdown)
-    blocks: list[tuple[str, str]] = []
-    parts: dict[str, str] = {}
+    blocks: list[SongPart] = []
+    parts: dict[str, SongPart] = {}
     counts = {"couplet": 0, "pont": 0}
     for section in sections:
         text = section.strip()
@@ -99,10 +111,11 @@ def build_slides(markdown: str) -> list[str]:
                 raise ValueError(f"L'identifiant {identifier} ne correspond pas au type {kind}.")
         if order is not None and identifier in parts:
             raise ValueError(f"L'identifiant {identifier} est défini plusieurs fois.")
-        parts[identifier] = text
-        blocks.append((kind, text))
+        part = SongPart(identifier, kind, text)
+        parts[identifier] = part
+        blocks.append(part)
 
-    refrains = [text for kind, text in blocks if kind == "refrain"]
+    refrains = [part for part in blocks if part.kind == "refrain"]
     if len(refrains) > 1:
         raise ValueError("Un chant ne peut contenir qu'un bloc marqué refrain.")
 
@@ -115,13 +128,13 @@ def build_slides(markdown: str) -> list[str]:
                 )
         return [parts[identifier] for identifier in order]
 
-    slides: list[str] = []
+    slides: list[SongPart] = []
     previous_kind = None
-    for kind, text in blocks:
-        if refrains and kind == previous_kind == "couplet":
+    for part in blocks:
+        if refrains and part.kind == previous_kind == "couplet":
             slides.append(refrains[0])
-        slides.append(text)
-        previous_kind = kind
+        slides.append(part)
+        previous_kind = part.kind
     return slides
 
 
