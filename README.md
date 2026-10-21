@@ -102,6 +102,18 @@ Pour générer le diaporama d'une messe à partir de son index :
 
 ## Application web
 
+### Aide en ligne
+
+L’onglet **Aide en ligne** de l’application propose un guide destiné aux
+utilisateurs, consultable en entier ou par rubrique, tout en conservant la
+préparation dans l’onglet **Préparer la célébration**. Il couvre la sélection
+des chants, la reprise d’une feuille, les exports PowerPoint, HTML et PDF,
+la publication et les difficultés courantes.
+
+Son contenu est maintenu dans [help/guide_utilisateur.md](help/guide_utilisateur.md)
+et intégré directement au déploiement Streamlit, sans service supplémentaire.
+Lors d’un changement du parcours utilisateur, mettre aussi à jour ce guide.
+
 ### Repartir d’une feuille existante
 
 Ouvrir **Repartir d’une feuille existante**, puis choisir une paroisse et une date

@@ -24,6 +24,7 @@ from scripts.sheet_library import local_sheets, published_sheets, read_existing_
 
 ROOT = Path(__file__).resolve().parent
 SONGS_DIR = ROOT / "chants"
+USER_HELP_PATH = ROOT / "help" / "guide_utilisateur.md"
 
 
 def song_catalog() -> dict[str, tuple[str, Path]]:
@@ -195,8 +196,17 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
             (st.success if status[0] else st.error)(status[1])
 
 
-def main() -> None:
-    st.set_page_config(page_title="Préparer les chants", page_icon="🎵")
+def show_user_help() -> None:
+    st.title("Aide Cantus")
+    st.caption("Retrouvez les étapes pour préparer et partager les chants de votre célébration.")
+    document = USER_HELP_PATH.read_text(encoding="utf-8")
+    _, *sections = document.split("\n## ")
+    topics = {section.split("\n", 1)[0]: "## " + section for section in sections}
+    topic = st.selectbox("Consulter une rubrique", ["Toutes les rubriques", *topics], key="user_help_topic")
+    st.markdown(document if topic == "Toutes les rubriques" else topics[topic])
+
+
+def show_preparation() -> None:
     st.title("Préparer les chants de la célébration")
 
     catalog = song_catalog()
@@ -309,6 +319,15 @@ def main() -> None:
             mime="application/pdf",
         )
         st.caption(f"{printed[2]} page(s) A4 — Imprimer à taille réelle (100 %), en recto verso, retournement sur le bord long.")
+
+
+def main() -> None:
+    st.set_page_config(page_title="Cantus — Préparer les chants", page_icon="🎵")
+    preparation, help_tab = st.tabs(["Préparer la célébration", "Aide en ligne"])
+    with preparation:
+        show_preparation()
+    with help_tab:
+        show_user_help()
 
 
 if __name__ == "__main__":
