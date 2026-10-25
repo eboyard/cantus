@@ -36,6 +36,18 @@ changements de diapositive.
 Après une modification de la sélection, de son ordre ou du nom de la célébration,
 créez à nouveau les fichiers souhaités pour télécharger une version à jour.
 
+## Consulter les paroles d’un chant
+
+1. Ouvrez l’onglet **Consulter les paroles**.
+2. Dans **Choisir un chant à consulter**, saisissez une partie du titre et
+   sélectionnez le chant souhaité dans le catalogue.
+3. Vérifiez les paroles affichées. Les parties sont séparées par un trait et
+   suivent l’ordre de projection, avec les reprises du refrain.
+
+Vous pouvez consulter tous les chants du catalogue sans les ajouter à une
+célébration. La consultation conserve votre préparation en cours. Pour
+signaler une correction, indiquez le titre du chant au responsable du catalogue.
+
 ## Repartir d’une feuille existante
 
 1. Ouvrez **Repartir d’une feuille existante**.
