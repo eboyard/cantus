@@ -102,6 +102,14 @@ Pour générer le diaporama d'une messe à partir de son index :
 
 ## Application web
 
+### Consulter les paroles
+
+L’onglet **Consulter les paroles** permet de rechercher un chant par son titre
+dans tout le catalogue, puis de vérifier ses paroles sans l’ajouter à une
+célébration. Les parties sont affichées dans l’ordre de projection, avec les
+reprises du refrain et la mise en forme Markdown. La préparation en cours est
+conservée pendant la consultation.
+
 ### Aide en ligne
 
 L’onglet **Aide en ligne** de l’application propose un guide destiné aux

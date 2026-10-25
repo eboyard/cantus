@@ -196,6 +196,43 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
             (st.success if status[0] else st.error)(status[1])
 
 
+def show_lyrics() -> None:
+    st.title("Consulter les paroles")
+    st.caption("Choisissez un chant du catalogue pour vérifier ses paroles avant de préparer la célébration.")
+    catalog = song_catalog()
+    if not catalog:
+        st.info("Aucun chant n’a été trouvé dans le catalogue.")
+        return
+
+    selected = st.selectbox(
+        "Choisir un chant à consulter",
+        options=sorted(catalog, key=lambda key: (catalog[key][0].casefold(), key)),
+        format_func=lambda key: catalog[key][0],
+        index=None,
+        placeholder="Rechercher un chant par son titre",
+        key="lyrics_song",
+    )
+    if selected is None:
+        return
+
+    title, path = catalog[selected]
+    st.subheader(title)
+    try:
+        slides = read_slides(path)
+    except (OSError, ValueError) as error:
+        st.error(f"Impossible de lire les paroles de {title} : {error}")
+        return
+    if not slides:
+        st.info("Ce chant ne contient aucune parole.")
+        return
+
+    st.caption("Les parties sont présentées dans l’ordre de projection, avec les reprises du refrain.")
+    for position, text in enumerate(slides):
+        if position:
+            st.divider()
+        st.markdown(text.replace("\n", "  \n"))
+
+
 def show_user_help() -> None:
     st.title("Aide Cantus")
     st.caption("Retrouvez les étapes pour préparer et partager les chants de votre célébration.")
@@ -323,9 +360,11 @@ def show_preparation() -> None:
 
 def main() -> None:
     st.set_page_config(page_title="Cantus — Préparer les chants", page_icon="🎵")
-    preparation, help_tab = st.tabs(["Préparer la célébration", "Aide en ligne"])
+    preparation, lyrics_tab, help_tab = st.tabs(["Préparer la célébration", "Consulter les paroles", "Aide en ligne"])
     with preparation:
         show_preparation()
+    with lyrics_tab:
+        show_lyrics()
     with help_tab:
         show_user_help()
 

@@ -1,6 +1,6 @@
 <!-- titre: Abba Père -->
 
-<!-- ordre: C1 C2 R C3 C4 R P R -->
+<!-- ordre: C1 C2 R C3 C4 R P1 R -->
 
 <!-- refrain -->
 **Abba Père, je suis à toi.**
