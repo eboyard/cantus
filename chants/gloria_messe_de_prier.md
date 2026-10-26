@@ -1,0 +1,35 @@
+<!-- titre: Gloire à Dieu (Messe de Prier) -->
+
+**Gloire à Dieu, au plus haut des cieux,**
+**et paix sur la terre aux hommes qu'il aime.**
+
+---
+
+Nous te louons, nous te bénissons,
+nous t'adorons,
+nous te glorifions,
+nous te rendons grâce pour ton immense gloire,
+Seigneur Dieu, Roi du ciel,
+Dieu le Père tout-puissant.
+
+---
+
+Seigneur, Fils unique, Jésus Christ,
+Seigneur Dieu, Agneau de Dieu, le Fils du Père ;
+toi qui enlèves le péché du monde,
+prends pitié de nous ;
+
+---
+
+Toi qui enlèves le péché du monde,
+reçois notre prière ;
+toi qui es assis à la droite du Père,
+prends pitié de nous.
+
+---
+
+Car toi seul es Saint, toi seul es Seigneur,
+toi seul es le Très-Haut :
+Jésus Christ, avec le Saint-Esprit,
+dans la gloire de Dieu le Père.
+**Amen, amen.**
