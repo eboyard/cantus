@@ -102,13 +102,20 @@ Pour générer le diaporama d'une messe à partir de son index :
 
 ## Application web
 
-### Consulter les paroles
+### carnet de chants
 
-L’onglet **Consulter les paroles** permet de rechercher un chant par son titre
+L’onglet **carnet de chants** permet de rechercher un chant par son titre
 dans tout le catalogue, puis de vérifier ses paroles sans l’ajouter à une
 célébration. Les parties sont affichées dans l’ordre de projection, avec les
 reprises du refrain et la mise en forme Markdown. La préparation en cours est
 conservée pendant la consultation.
+
+### Feuilles publiées
+
+L’onglet **Feuilles publiées** intègre le site GitHub Pages dans un cadre avec
+défilement et propose aussi un bouton pour l’ouvrir dans un nouvel onglet.
+L’adresse est définie par `GITHUB_PAGES_URL` et vaut par défaut
+`https://eboyard.github.io/cantus/`. La consultation nécessite Internet.
 
 ### Aide en ligne
 

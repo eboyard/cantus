@@ -38,7 +38,7 @@ créez à nouveau les fichiers souhaités pour télécharger une version à jour
 
 ## Consulter les paroles d’un chant
 
-1. Ouvrez l’onglet **Consulter les paroles**.
+1. Ouvrez l’onglet **carnet de chants**.
 2. Dans **Choisir un chant à consulter**, saisissez une partie du titre et
    sélectionnez le chant souhaité dans le catalogue.
 3. Vérifiez les paroles affichées. Les parties sont séparées par un trait et
@@ -47,6 +47,15 @@ créez à nouveau les fichiers souhaités pour télécharger une version à jour
 Vous pouvez consulter tous les chants du catalogue sans les ajouter à une
 célébration. La consultation conserve votre préparation en cours. Pour
 signaler une correction, indiquez le titre du chant au responsable du catalogue.
+
+## Consulter les feuilles publiées
+
+L’onglet **Feuilles publiées** affiche le site des feuilles de chants dans Cantus.
+Choisissez une paroisse, puis une date pour consulter une feuille. Faites défiler
+la page dans le cadre pour parcourir son contenu.
+
+Le bouton **Ouvrir le site dans un nouvel onglet** permet aussi de consulter le
+site dans une page séparée. Une connexion Internet est nécessaire.
 
 ## Repartir d’une feuille existante
 

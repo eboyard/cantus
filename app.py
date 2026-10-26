@@ -13,6 +13,7 @@ from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from scripts.markdown_to_pptx import convert, read_slides, read_title
 from scripts.song_sheet import create_song_sheet
@@ -197,7 +198,7 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
 
 
 def show_lyrics() -> None:
-    st.title("Consulter les paroles")
+    st.title("carnet de chants")
     st.caption("Choisissez un chant du catalogue pour vérifier ses paroles avant de préparer la célébration.")
     catalog = song_catalog()
     if not catalog:
@@ -231,6 +232,17 @@ def show_lyrics() -> None:
         if position:
             st.divider()
         st.markdown(text.replace("\n", "  \n"))
+
+
+def show_published_sheets() -> None:
+    st.title("Feuilles de chants publiées")
+    st.caption("Retrouvez les feuilles de chants par paroisse et par date.")
+    url = os.environ.get("GITHUB_PAGES_URL", "https://eboyard.github.io/cantus/")
+    st.link_button("Ouvrir le site dans un nouvel onglet", url)
+    if hasattr(st, "iframe"):
+        st.iframe(url, height=800, alt="Feuilles de chants publiées")
+    else:
+        components.iframe(url, height=800, scrolling=True)
 
 
 def show_user_help() -> None:
@@ -360,11 +372,15 @@ def show_preparation() -> None:
 
 def main() -> None:
     st.set_page_config(page_title="Cantus — Préparer les chants", page_icon="🎵")
-    preparation, lyrics_tab, help_tab = st.tabs(["Préparer la célébration", "Consulter les paroles", "Aide en ligne"])
+    preparation, lyrics_tab, published_tab, help_tab = st.tabs(
+        ["Préparer la célébration", "carnet de chants", "Feuilles publiées", "Aide en ligne"]
+    )
     with preparation:
         show_preparation()
     with lyrics_tab:
         show_lyrics()
+    with published_tab:
+        show_published_sheets()
     with help_tab:
         show_user_help()
 
