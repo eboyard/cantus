@@ -110,6 +110,46 @@ célébration. Les parties sont affichées dans l’ordre de projection, avec le
 reprises du refrain et la mise en forme Markdown. La préparation en cours est
 conservée pendant la consultation.
 
+### Modifier un chant sur GitHub
+
+Dans **carnet de chants**, sélectionner un chant, cliquer sur **Modifier**,
+renseigner le formulaire et le **Code d’édition**, puis cliquer sur **Enregistrer**.
+Le formulaire charge la dernière version du fichier sur GitHub. Un enregistrement
+crée un commit dans le même fichier `chants/*.md`, sur la branche configurée.
+Le nom du fichier reste stable lorsque son titre change.
+
+Configurer `edit_password` dans la section `[github]` des secrets Streamlit,
+ou la variable d’environnement `SONG_EDIT_PASSWORD`. Le jeton, le dépôt et la
+branche sont les mêmes que pour la publication des feuilles : le jeton doit
+avoir la permission **Contents: Read and write**. Le bouton reste désactivé
+tant que le jeton et le code d’édition ne sont pas configurés. Le jeton reste
+côté serveur. Ce premier accès utilise un code partagé, sans comptes individuels.
+
+```toml
+[github]
+token = "VOTRE_JETON_GITHUB"
+repository = "eboyard/cantus"
+branch = "main"
+edit_password = "UN_CODE_LONG_RESERVE_AUX_EDITEURS"
+```
+
+Les paroles conservent les séparateurs `---`, les marques de parties et la
+directive `ordre`. L’auteur, les accords, la tonalité et les autres informations
+sont enregistrés dans des commentaires Markdown (`auteur`, `accords`, `tonalite`,
+`informations`), dont les valeurs sont des chaînes JSON pour conserver les
+retours à la ligne. Ces informations ne sont pas projetées dans les exports.
+
+Si le fichier change pendant l’édition, GitHub refuse l’écriture grâce au SHA
+de la version chargée. Le brouillon reste affiché : le copier avant d’annuler
+et de rouvrir la dernière version. Une erreur d’envoi ne modifie pas la copie
+locale. Après succès, la copie utilisée par l’application est actualisée et
+les exports en cours doivent être régénérés. Les feuilles déjà publiées
+conservent leur contenu. Les autres instances de l’application récupèrent les
+changements au prochain déploiement ; la lecture du catalogue reste locale.
+
+L’API utilisée est documentée dans
+[GitHub Contents](https://docs.github.com/en/rest/repos/contents#create-or-update-file-contents).
+
 ### Feuilles publiées
 
 L’onglet **Feuilles publiées** intègre le site GitHub Pages dans un cadre avec

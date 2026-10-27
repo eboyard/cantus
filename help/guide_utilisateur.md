@@ -46,7 +46,32 @@ créez à nouveau les fichiers souhaités pour télécharger une version à jour
 
 Vous pouvez consulter tous les chants du catalogue sans les ajouter à une
 célébration. La consultation conserve votre préparation en cours. Pour
-signaler une correction, indiquez le titre du chant au responsable du catalogue.
+signaler une correction sans accès à l’édition, indiquez le titre du chant au responsable du catalogue.
+
+## Modifier un chant
+
+1. Dans **carnet de chants**, choisissez un chant puis cliquez sur **Modifier**.
+2. Corrigez son titre, son auteur ou compositeur, ses paroles, ses accords,
+   sa tonalité ou les autres informations.
+3. Dans les paroles, conservez les séparateurs `---` et les repères de refrain,
+   de couplet et d’ordre : ils organisent la projection.
+4. Saisissez le **Code d’édition** fourni par le responsable et cliquez sur
+   **Enregistrer**. Un message confirme l’enregistrement et propose un lien
+   vers la modification sur GitHub.
+
+**Annuler** ferme le formulaire sans enregistrer. Si le bouton **Modifier** est
+désactivé, demandez au responsable de configurer l’accès GitHub et le code d’édition.
+Une connexion Internet est nécessaire pour modifier un chant.
+
+Si une autre personne a modifié le chant entre-temps, vos changements ne sont
+pas envoyés. Copiez vos corrections, cliquez sur **Annuler**, puis sur
+**Modifier** pour les reporter sur la dernière version. En cas d’erreur réseau,
+vérifiez le lien du dépôt avec le responsable avant de réessayer.
+
+La préparation de la célébration est conservée. Après modification, créez à
+nouveau ses exports. Les feuilles déjà publiées conservent leurs anciennes paroles.
+Les accords et les autres informations sont conservés dans le carnet ; ils ne
+figurent pas dans les paroles projetées.
 
 ## Consulter les feuilles publiées
 

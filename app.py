@@ -20,6 +20,7 @@ from scripts.song_sheet import create_song_sheet
 from scripts.print_song_sheet import create_print_song_sheet
 from scripts.github_pages import prepare_pages_export, save_pages_export
 from scripts.github_publish import publish_sheet
+from scripts.song_editor import SongDraft, load_song, parse_song, save_song, serialize_song
 from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents
 
 
@@ -63,7 +64,7 @@ def download_name(title: str) -> str:
 
 
 def github_setting(name: str, default: str = "") -> str:
-    environment = {"token": "GITHUB_TOKEN", "repository": "GITHUB_REPOSITORY", "branch": "GITHUB_BRANCH", "publish_password": "SHEET_PUBLISH_PASSWORD"}
+    environment = {"token": "GITHUB_TOKEN", "repository": "GITHUB_REPOSITORY", "branch": "GITHUB_BRANCH", "publish_password": "SHEET_PUBLISH_PASSWORD", "edit_password": "SONG_EDIT_PASSWORD"}
     if value := os.environ.get(environment[name]):
         return value
     try:
@@ -197,6 +198,77 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
             (st.success if status[0] else st.error)(status[1])
 
 
+def show_song_editor(selected: str, path: Path, title: str) -> bool:
+    """Charge la version distante, conserve le brouillon et protège les écritures."""
+    token = github_setting("token")
+    password = github_setting("edit_password")
+    repository = github_setting("repository", "eboyard/cantus")
+    branch = github_setting("branch", "main")
+    signature = (selected, repository, branch)
+    editor = st.session_state.get("song_editor")
+    if editor and editor[0] != signature:
+        st.session_state.pop("song_editor", None)
+        editor = None
+    if not editor:
+        if st.button("Modifier", disabled=not token or not password):
+            try:
+                with st.spinner("Chargement du chant depuis GitHub…"):
+                    document, sha = load_song(token, repository, branch, selected)
+                st.session_state.song_editor = (signature, document, sha)
+                st.session_state.pop("song_edit_result", None)
+                # Un nouveau formulaire ne récupère jamais les champs d'un autre chant.
+                for key in list(st.session_state):
+                    if key.startswith("song_edit_"):
+                        del st.session_state[key]
+                st.rerun()
+            except ValueError as error:
+                st.error(str(error))
+        if not token or not password:
+            st.caption("L’édition sera disponible après configuration de l’accès GitHub et du code d’édition.")
+        return False
+
+    draft = parse_song(editor[1], title)
+    st.caption("Modifiez le chant puis enregistrez-le dans le carnet.")
+    with st.form("song_editor_form"):
+        new_title = st.text_input("Titre du chant", value=draft.title, key="song_edit_title")
+        author = st.text_input("Auteur ou compositeur", value=draft.author, key="song_edit_author")
+        lyrics = st.text_area("Paroles", value=draft.lyrics, height=360, key="song_edit_lyrics",
+                              help="Conservez les séparateurs --- et les repères de refrain, de couplet et d’ordre.")
+        chords = st.text_area("Accords", value=draft.chords, key="song_edit_chords")
+        musical_key = st.text_input("Tonalité", value=draft.key, key="song_edit_key")
+        information = st.text_area("Autres informations", value=draft.information, key="song_edit_information")
+        code = st.text_input("Code d’édition", type="password", key="song_edit_code")
+        submitted = st.form_submit_button("Enregistrer", type="primary", disabled=not token or not password)
+        cancelled = st.form_submit_button("Annuler")
+    if cancelled:
+        st.session_state.pop("song_editor", None)
+        st.rerun()
+    if submitted:
+        try:
+            if not password or not hmac.compare_digest(code.encode("utf-8"), password.encode("utf-8")):
+                raise ValueError("Le code d’édition est incorrect.")
+            document = serialize_song(SongDraft(new_title, lyrics, author, chords, musical_key, information))
+            if parse_song(document) == parse_song(editor[1], title):
+                st.info("Aucune modification à enregistrer.")
+                return True
+            with st.spinner("Enregistrement sur GitHub…"):
+                commit_url = save_song(token, repository, branch, selected, document, editor[2])
+        except ValueError as error:
+            st.error(str(error))
+            return True
+        # L'écriture locale n'a lieu qu'après confirmation de GitHub.
+        warning = ""
+        try:
+            path.write_text(document, encoding="utf-8")
+        except OSError:
+            warning = "Le chant est enregistré sur GitHub, mais la copie locale n’a pas pu être actualisée. Rechargez le déploiement pour le consulter."
+        for key in ("song_editor", "generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
+            st.session_state.pop(key, None)
+        st.session_state.song_edit_result = (selected, commit_url, warning)
+        st.rerun()
+    return True
+
+
 def show_lyrics() -> None:
     st.title("carnet de chants")
     st.caption("Choisissez un chant du catalogue pour vérifier ses paroles avant de préparer la célébration.")
@@ -218,6 +290,14 @@ def show_lyrics() -> None:
 
     title, path = catalog[selected]
     st.subheader(title)
+    result = st.session_state.get("song_edit_result")
+    if result and result[0] == selected:
+        st.success("Le chant a été enregistré sur GitHub.")
+        st.link_button("Voir la modification", result[1])
+        if result[2]:
+            st.warning(result[2])
+    if show_song_editor(selected, path, title):
+        return
     try:
         slides = read_slides(path)
     except (OSError, ValueError) as error:

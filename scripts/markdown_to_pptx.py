@@ -19,6 +19,10 @@ from pptx.util import Inches, Pt
 BACKGROUND_COLOR = RGBColor(0, 0, 64)
 FONT_NAME = "Comic Sans MS"
 TITLE_TAG = re.compile(r"^[ \t]*<!--[ \t]*titre[ \t]*:([^\r\n]*?)-->[ \t]*\r?$", re.MULTILINE | re.IGNORECASE)
+METADATA_TAG = re.compile(
+    r"^[ \t]*<!--[ \t]*(auteur|accords|tonalite|informations)[ \t]*:([^\r\n]*?)-->[ \t]*\r?$",
+    re.MULTILINE | re.IGNORECASE,
+)
 
 
 def read_title(path: Path) -> str:
@@ -76,7 +80,7 @@ def build_song_parts(markdown: str) -> list[SongPart]:
     Sans directive, un bloc sans marque est un couplet et le pont interrompt
     la succession de couplets ; aucun refrain n'est ajouté autour du pont.
     """
-    markdown = TITLE_TAG.sub("", markdown)
+    markdown = METADATA_TAG.sub("", TITLE_TAG.sub("", markdown))
     order_marker = re.match(r"\A\s*<!--[ \t]*ordre[ \t]*:([^\r\n]*?)-->[ \t]*(?:\r?\n|$)", markdown, re.IGNORECASE)
     order = None
     if order_marker:
