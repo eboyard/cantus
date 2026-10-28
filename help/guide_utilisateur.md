@@ -52,8 +52,11 @@ signaler une correction sans accès à l’édition, indiquez le titre du chant 
 
 1. Dans **carnet de chants**, choisissez un chant puis cliquez sur **Modifier**.
 2. Corrigez son titre et ses paroles.
-3. Dans les paroles, conservez les séparateurs `---` et les repères de refrain,
-   de couplet et d’ordre : ils organisent la projection.
+3. Modifiez directement les paroles dans le refrain ou le couplet souhaité.
+   Pour mettre des mots en forme, sélectionnez-les puis cliquez sur **Gras**
+   ou **Souligner**. Le résultat apparaît immédiatement dans le texte.
+   Cliquez de nouveau sur le même bouton pour retirer cette mise en forme.
+   Aucune syntaxe Markdown n’est nécessaire ; les parties et leur ordre sont conservés.
 4. Cliquez sur **Enregistrer**. Un message confirme l’enregistrement et propose un lien
    vers la modification sur GitHub.
 
@@ -68,6 +71,7 @@ vérifiez le lien du dépôt avec le responsable avant de réessayer.
 
 La préparation de la célébration est conservée. Après modification, créez à
 nouveau ses exports. Les feuilles déjà publiées conservent leurs anciennes paroles.
+Le gras et le soulignement sont repris dans les feuilles et les PowerPoint.
 Les accords et les autres informations sont conservés dans le carnet ; ils ne
 figurent pas dans les paroles projetées.
 

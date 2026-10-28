@@ -70,18 +70,19 @@ class SongEditorTests(unittest.TestCase):
             with patch("app.song_catalog", return_value={"chants/song.md": ("Chant", song)}), \
                     patch("app.github_setting", side_effect=lambda name, default="": settings.get(name, default)), \
                     patch("app.load_song", return_value=(song.read_text(encoding="utf-8"), "a" * 40)), \
-                    patch("app.save_song", return_value="https://github.com/owner/repo/commit/" + "b" * 40) as save:
+                    patch("app.save_song", return_value="https://github.com/owner/repo/commit/" + "b" * 40) as save, \
+                    patch("app.visual_song_editor", return_value=("Ancien", "")) as visual:
                 app = AppTest.from_string("from app import show_lyrics\nshow_lyrics()").run()
                 app.session_state["song_order"] = ["chants/song.md"]
                 app.selectbox[0].select("chants/song.md").run()
                 next(button for button in app.button if button.label == "Modifier").click().run()
                 self.assertEqual([field.label for field in app.text_input], ["Titre du chant"])
-                self.assertEqual([field.label for field in app.text_area], ["Paroles"])
-                app.text_area(key="song_edit_lyrics").set_value("Nouveau")
-                next(button for button in app.button if button.label == "Enregistrer").click().run()
+                self.assertFalse(app.text_area)
+                visual.return_value = ("**Nouveau** <u>texte</u>", "save")
+                app.run()
                 self.assertFalse(app.exception)
                 save.assert_called_once()
-                self.assertEqual(parse_song(song.read_text(encoding="utf-8")), SongDraft("Chant", "Nouveau", "Auteur", "Do Sol", "Do", "Licence"))
+                self.assertEqual(parse_song(song.read_text(encoding="utf-8")), SongDraft("Chant", "**Nouveau** <u>texte</u>", "Auteur", "Do Sol", "Do", "Licence"))
                 self.assertEqual(app.session_state["song_order"], ["chants/song.md"])
                 self.assertIn("enregistré", app.success[0].value)
 
@@ -94,17 +95,19 @@ class SongEditorTests(unittest.TestCase):
             with patch("app.song_catalog", return_value={"chants/song.md": ("Chant", song)}), \
                     patch("app.github_setting", side_effect=lambda name, default="": settings.get(name, default)), \
                     patch("app.load_song", return_value=(original, "a" * 40)), \
-                    patch("app.save_song", side_effect=ValueError("Le chant a changé sur GitHub.")):
+                    patch("app.save_song", side_effect=ValueError("Le chant a changé sur GitHub.")), \
+                    patch("app.visual_song_editor", return_value=("Ancien", "")) as visual:
                 app = AppTest.from_string("from app import show_lyrics\nshow_lyrics()").run()
                 app.selectbox[0].select("chants/song.md").run()
                 next(button for button in app.button if button.label == "Modifier").click().run()
-                app.text_area(key="song_edit_lyrics").set_value("Mon brouillon")
-                next(button for button in app.button if button.label == "Enregistrer").click().run()
+                visual.return_value = ("Mon brouillon", "save")
+                app.run()
                 self.assertFalse(app.exception)
                 self.assertIn("changé", app.error[0].value)
-                self.assertEqual(app.text_area(key="song_edit_lyrics").value, "Mon brouillon")
+                self.assertIn("song_editor", app.session_state)
                 self.assertEqual(song.read_text(encoding="utf-8"), original)
-                next(button for button in app.button if button.label == "Annuler").click().run()
+                visual.return_value = ("Mon brouillon", "cancel")
+                app.run()
                 self.assertFalse(app.exception)
                 self.assertFalse(app.text_area)
                 self.assertEqual(song.read_text(encoding="utf-8"), original)

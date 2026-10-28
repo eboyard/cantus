@@ -3,7 +3,8 @@
 from html import escape
 from pathlib import Path
 
-from scripts.markdown_to_pptx import read_slides, styled_lines
+from scripts.markdown_to_pptx import read_slides
+from scripts.lyrics_format import formatted_lines, fragment_html
 
 
 def create_song_sheet(title: str, songs: list[tuple[str, Path]]) -> bytes:
@@ -26,10 +27,10 @@ def create_song_sheet(title: str, songs: list[tuple[str, Path]]) -> bytes:
         lyrics = []
         for block in blocks:
             lines = []
-            for line in styled_lines(block):
+            for line in formatted_lines(block):
                 lines.append("".join(
-                    f"<strong>{escape(text)}</strong>" if bold else escape(text)
-                    for text, bold in line
+                    fragment_html(fragment).replace("<b>", "<strong>").replace("</b>", "</strong>")
+                    for fragment in line
                 ))
             lyrics.append('<p class="paroles">' + "<br>\n".join(lines) + "</p>")
         sections.append(

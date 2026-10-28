@@ -1,8 +1,9 @@
-<!-- titre:  Psaume  62-->
+<!-- titre: Psaume  62 -->
 
-O dieu Tu es mon Dieu  
-Je te cherche dès l’aube :  
-Mon âme a soif de Toi ;  
+**Hommes :** O dieu Tu es mon Dieu
+   **Femmes :** O dieu Tu es mon Dieu 
+Je te cherche dès l’aube :
+Mon âme a soif de Toi ;
 après Toi languit ma chair, terre aride, altérée sans eau.
 
 ---

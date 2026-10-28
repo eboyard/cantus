@@ -114,6 +114,17 @@ conservée pendant la consultation.
 
 Dans **carnet de chants**, sélectionner un chant, cliquer sur **Modifier**,
 renseigner le titre et les paroles, puis cliquer sur **Enregistrer**.
+Les paroles sont modifiées dans un éditeur visuel : sélectionner des mots et
+utiliser **Gras** ou **Souligner** pour voir immédiatement la mise en forme.
+Les refrains, couplets et ponts sont présentés séparément ; leurs repères
+Markdown et l’ordre de projection sont conservés automatiquement. Le collage
+ajoute du texte simple. Les raccourcis Ctrl+B, Ctrl+U et Ctrl+Z sont disponibles
+(Cmd sur Mac). Le composant HTML/JavaScript est servi par Streamlit depuis
+`scripts/visual_editor/`, sans CDN ni dépendance supplémentaire.
+
+Le gras est enregistré en Markdown (`**texte**`) et le soulignement avec `<u>`.
+Les deux styles sont conservés dans la consultation, les feuilles HTML et PDF
+et les exports PowerPoint. L’utilisateur n’a pas à saisir ces balises.
 Le formulaire charge la dernière version du fichier sur GitHub. Un enregistrement
 crée un commit dans le même fichier `chants/*.md`, sur la branche configurée.
 Le nom du fichier reste stable lorsque son titre change.
