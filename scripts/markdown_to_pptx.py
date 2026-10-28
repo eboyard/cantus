@@ -8,6 +8,11 @@ from pathlib import Path
 import re
 from urllib.parse import unquote
 
+if __package__:
+    from scripts.lyrics_format import formatted_lines
+else:
+    from lyrics_format import formatted_lines
+
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
@@ -143,30 +148,9 @@ def build_song_parts(markdown: str) -> list[SongPart]:
 
 
 def styled_lines(section: str) -> list[list[tuple[str, bool]]]:
-    """Découpe les paroles en fragments de texte, en conservant le gras."""
-    section = re.sub(r"(?m)^ {0,3}#{1,6}\s+", "", section)
-    section = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", section)
-    section = "\n".join(line.rstrip() for line in section.splitlines()).strip()
-    fragments: list[tuple[str, bool]] = []
-    position = 0
-    for match in re.finditer(r"(\*\*|__)(\S(?:.*?\S)?)\1", section, re.DOTALL):
-        fragments.append((section[position:match.start()], False))
-        fragments.append((match.group(2), True))
-        position = match.end()
-    fragments.append((section[position:], False))
-
-    lines: list[list[tuple[str, bool]]] = [[]]
-    for text, bold in fragments:
-        # L'italique reste converti en texte simple.
-        for marker in ("*", "_"):
-            escaped = re.escape(marker)
-            text = re.sub(escaped + r"(\S(?:.*?\S)?)" + escaped, r"\1", text)
-        for index, line in enumerate(text.split("\n")):
-            if index:
-                lines.append([])
-            if line:
-                lines[-1].append((line, bold))
-    return lines
+    """Compatibilité des lecteurs de texte et de gras existants."""
+    return [[(fragment.text, fragment.bold) for fragment in line]
+            for line in formatted_lines(section)]
 
 
 def plain_text(section: str) -> str:
@@ -198,8 +182,8 @@ def convert(source: Path, destination: Path, font_size: int = 40, *, from_index:
     presentation.slide_height = Inches(7.5)
 
     for section in sections:
-        lines = styled_lines(section)
-        text = "\n".join("".join(text for text, _ in line) for line in lines)
+        lines = formatted_lines(section)
+        text = "\n".join("".join(fragment.text for fragment in line) for line in lines)
         slide = presentation.slides.add_slide(presentation.slide_layouts[6])
         slide.background.fill.solid()
         slide.background.fill.fore_color.rgb = BACKGROUND_COLOR
@@ -216,10 +200,11 @@ def convert(source: Path, destination: Path, font_size: int = 40, *, from_index:
 
         for index, line in enumerate(lines):
             paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
-            for content, bold in line:
+            for content, bold, underline in line:
                 run = paragraph.add_run()
                 run.text = content
                 run.font.bold = bold
+                run.font.underline = underline
             paragraph.alignment = PP_ALIGN.CENTER
             paragraph.space_before = Pt(0)
             paragraph.space_after = Pt(0)

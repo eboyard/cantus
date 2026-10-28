@@ -113,31 +113,41 @@ conservée pendant la consultation.
 ### Modifier un chant sur GitHub
 
 Dans **carnet de chants**, sélectionner un chant, cliquer sur **Modifier**,
-renseigner le formulaire et le **Code d’édition**, puis cliquer sur **Enregistrer**.
+renseigner le titre et les paroles, puis cliquer sur **Enregistrer**.
+Les paroles sont modifiées dans un éditeur visuel : sélectionner des mots et
+utiliser **Gras** ou **Souligner** pour voir immédiatement la mise en forme.
+Les refrains, couplets et ponts sont présentés séparément ; leurs repères
+Markdown et l’ordre de projection sont conservés automatiquement. Le collage
+ajoute du texte simple. Les raccourcis Ctrl+B, Ctrl+U et Ctrl+Z sont disponibles
+(Cmd sur Mac). Le composant HTML/JavaScript est servi par Streamlit depuis
+`scripts/visual_editor/`, sans CDN ni dépendance supplémentaire.
+
+Le gras est enregistré en Markdown (`**texte**`) et le soulignement avec `<u>`.
+Les deux styles sont conservés dans la consultation, les feuilles HTML et PDF
+et les exports PowerPoint. L’utilisateur n’a pas à saisir ces balises.
 Le formulaire charge la dernière version du fichier sur GitHub. Un enregistrement
 crée un commit dans le même fichier `chants/*.md`, sur la branche configurée.
 Le nom du fichier reste stable lorsque son titre change.
 
-Configurer `edit_password` dans la section `[github]` des secrets Streamlit,
-ou la variable d’environnement `SONG_EDIT_PASSWORD`. Le jeton, le dépôt et la
-branche sont les mêmes que pour la publication des feuilles : le jeton doit
-avoir la permission **Contents: Read and write**. Le bouton reste désactivé
-tant que le jeton et le code d’édition ne sont pas configurés. Le jeton reste
-côté serveur. Ce premier accès utilise un code partagé, sans comptes individuels.
+Le jeton, le dépôt et la branche sont les mêmes que pour la publication des
+feuilles : le jeton doit avoir la permission **Contents: Read and write**.
+Le bouton reste désactivé tant que le jeton n’est pas configuré. Le jeton reste
+côté serveur. L’édition ne demande aucun code : les personnes qui ont accès
+à l’application peuvent enregistrer des modifications du carnet.
+Le paramètre `edit_password` n’est plus utilisé et peut être retiré des secrets.
 
 ```toml
 [github]
 token = "VOTRE_JETON_GITHUB"
 repository = "eboyard/cantus"
 branch = "main"
-edit_password = "UN_CODE_LONG_RESERVE_AUX_EDITEURS"
 ```
 
 Les paroles conservent les séparateurs `---`, les marques de parties et la
-directive `ordre`. L’auteur, les accords, la tonalité et les autres informations
-sont enregistrés dans des commentaires Markdown (`auteur`, `accords`, `tonalite`,
-`informations`), dont les valeurs sont des chaînes JSON pour conserver les
-retours à la ligne. Ces informations ne sont pas projetées dans les exports.
+directive `ordre`. L’auteur, les accords, la tonalité et les autres informations déjà présents sont conservés
+lors de l’enregistrement, sans champs dédiés dans le formulaire. Les valeurs
+des commentaires de métadonnées sont des chaînes JSON pour conserver les retours
+à la ligne. Ces informations ne sont pas projetées dans les exports.
 
 Si le fichier change pendant l’édition, GitHub refuse l’écriture grâce au SHA
 de la version chargée. Le brouillon reste affiché : le copier avant d’annuler

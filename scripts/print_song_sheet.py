@@ -12,7 +12,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import BaseDocTemplate, Frame, KeepTogether, PageTemplate, Paragraph
 
-from scripts.markdown_to_pptx import build_song_parts, styled_lines
+from scripts.markdown_to_pptx import build_song_parts
+from scripts.lyrics_format import formatted_lines, fragment_html
 
 
 def _register_fonts() -> None:
@@ -26,9 +27,8 @@ def _register_fonts() -> None:
 
 def _lyrics(text: str, *, bold: bool = False) -> str:
     return "<br/>".join(
-        "".join(f"<b>{escape(fragment)}</b>" if bold or emphasis else escape(fragment)
-                for fragment, emphasis in line)
-        for line in styled_lines(text)
+        "".join(fragment_html(fragment, force_bold=bold) for fragment in line)
+        for line in formatted_lines(text)
     )
 
 

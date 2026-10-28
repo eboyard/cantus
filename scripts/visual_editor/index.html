@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root { color-scheme: light dark; --background: #fff; --color: #202124; --border: #b8bec9; --accent: #3156b8; }
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--color); background: var(--background); font: 16px/1.5 system-ui, sans-serif; }
+p { margin: 0 0 12px; }
+.toolbar { display: flex; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 8px 8px 0 0; }
+button { font: inherit; padding: 7px 14px; border: 1px solid var(--border); border-radius: 6px; color: inherit; background: var(--background); cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button:focus-visible, .lyrics:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); }
+button:disabled { opacity: .5; cursor: default; }
+#sections { border: 1px solid var(--border); border-top: 0; border-radius: 0 0 8px 8px; max-height: 430px; overflow-y: auto; padding: 8px 16px; }
+section + section { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 10px; }
+h3 { font-size: 13px; opacity: .7; margin: 4px 0 8px; font-weight: 600; }
+.lyrics { min-height: 65px; padding: 5px; border-radius: 3px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+#save { background: var(--accent); color: white; border-color: var(--accent); }
+#status { font-size: 13px; opacity: .75; min-height: 22px; margin: 7px 0 0; }
+</style>
+</head>
+<body>
+<p>Sélectionnez des mots, puis cliquez sur <b>Gras</b> ou <u>Souligner</u>.</p>
+<div class="toolbar" role="toolbar" aria-label="Mise en forme des paroles">
+  <button id="bold" type="button" aria-pressed="false" title="Gras (Ctrl+B)"><b>Gras</b></button>
+  <button id="underline" type="button" aria-pressed="false" title="Souligner (Ctrl+U)"><u>Souligner</u></button>
+</div>
+<div id="sections" aria-label="Paroles"></div>
+<div class="actions">
+  <button id="save" type="button">Enregistrer</button>
+  <button id="cancel" type="button">Annuler</button>
+</div>
+<p id="status" role="status" aria-live="polite"></p>
+<script>
+"use strict";
+let initialized = false, active = null, pending = null, serial = 0;
+const changes = {}, originals = {};
+const sections = document.getElementById("sections");
+const status = document.getElementById("status");
+function send(type, data = {}) {
+  window.parent.postMessage({isStreamlitMessage: true, type, ...data}, "*");
+}
+function resize() { send("streamlit:setFrameHeight", {height: document.body.scrollHeight + 4}); }
+function remember(editor) {
+  if (editor.innerHTML === originals[editor.dataset.id]) delete changes[editor.dataset.id];
+  else changes[editor.dataset.id] = editor.innerHTML;
+}
+function emit(action) {
+  clearTimeout(pending);
+  // Le clic sur Enregistrer transmet aussi la toute dernière frappe.
+  for (const editor of sections.querySelectorAll(".lyrics")) remember(editor);
+  send("streamlit:setComponentValue", {
+    value: {changes: {...changes}, action, event_id: `${Date.now()}-${++serial}`}, dataType: "json"
+  });
+  if (action === "save") status.textContent = "Enregistrement en cours…";
+}
+function selectionIsInside() {
+  const selection = window.getSelection();
+  return active && selection.rangeCount && active.contains(selection.anchorNode) && active.contains(selection.focusNode);
+}
+function updateToolbar() {
+  for (const command of ["bold", "underline"]) {
+    document.getElementById(command).setAttribute("aria-pressed", String(!!selectionIsInside() && document.queryCommandState(command)));
+  }
+}
+function format(command) {
+  if (!selectionIsInside()) {
+    status.textContent = "Sélectionnez d’abord le texte à mettre en forme.";
+    return;
+  }
+  // Le DOM est conservé lors des échanges avec Streamlit, y compris l'annulation native.
+  document.execCommand("styleWithCSS", false, false);
+  document.execCommand(command, false);
+  remember(active);
+  emit("change");
+  updateToolbar();
+  status.textContent = "Modifications à enregistrer.";
+}
+for (const command of ["bold", "underline"]) {
+  const button = document.getElementById(command);
+  button.addEventListener("mousedown", event => event.preventDefault());
+  button.addEventListener("click", () => format(command));
+}
+document.addEventListener("selectionchange", updateToolbar);
+document.getElementById("save").addEventListener("click", () => emit("save"));
+document.getElementById("cancel").addEventListener("click", () => emit("cancel"));
+window.addEventListener("message", event => {
+  if (event.source !== window.parent || event.data.type !== "streamlit:render") return;
+  const args = event.data.args;
+  const theme = event.data.theme;
+  if (theme) {
+    document.documentElement.style.setProperty("--background", theme.backgroundColor);
+    document.documentElement.style.setProperty("--color", theme.textColor);
+    document.documentElement.style.setProperty("--accent", theme.primaryColor);
+  }
+  document.getElementById("save").disabled = !!args.disabled;
+  // Un rerun ne remplace jamais la sélection, le curseur ou le brouillon.
+  if (!initialized) {
+    initialized = true;
+    for (const part of args.sections) {
+      const section = document.createElement("section");
+      const heading = document.createElement("h3");
+      heading.textContent = part.label;
+      const editor = document.createElement("div");
+      editor.className = "lyrics";
+      editor.contentEditable = "true";
+      editor.setAttribute("role", "textbox");
+      editor.setAttribute("aria-multiline", "true");
+      editor.setAttribute("aria-label", part.label);
+      editor.spellcheck = true;
+      editor.dataset.id = part.id;
+      // HTML limité à b/u/br, échappé et produit par le serveur.
+      editor.innerHTML = part.html;
+      originals[part.id] = editor.innerHTML;
+      editor.addEventListener("focus", () => { active = editor; updateToolbar(); });
+      editor.addEventListener("input", () => {
+        remember(editor);
+        status.textContent = "Modifications à enregistrer.";
+        clearTimeout(pending);
+        pending = setTimeout(() => emit("change"), 250);
+        resize();
+      });
+      editor.addEventListener("keydown", event => {
+        if ((event.ctrlKey || event.metaKey) && ["b", "u"].includes(event.key.toLowerCase())) {
+          event.preventDefault();
+          format(event.key.toLowerCase() === "b" ? "bold" : "underline");
+        } else if (event.key === "Enter") {
+          event.preventDefault();
+          document.execCommand("insertLineBreak");
+        }
+      });
+      editor.addEventListener("paste", event => {
+        event.preventDefault();
+        document.execCommand("insertText", false, event.clipboardData.getData("text/plain"));
+      });
+      section.append(heading, editor);
+      sections.append(section);
+    }
+  } else if (status.textContent === "Enregistrement en cours…") {
+    status.textContent = "Vérifiez le message sous l’éditeur.";
+  }
+  resize();
+});
+new ResizeObserver(resize).observe(document.body);
+send("streamlit:componentReady", {apiVersion: 1});
+</script>
+</body>
+</html>
