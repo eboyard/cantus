@@ -51,16 +51,14 @@ signaler une correction sans accès à l’édition, indiquez le titre du chant 
 ## Modifier un chant
 
 1. Dans **carnet de chants**, choisissez un chant puis cliquez sur **Modifier**.
-2. Corrigez son titre, son auteur ou compositeur, ses paroles, ses accords,
-   sa tonalité ou les autres informations.
+2. Corrigez son titre et ses paroles.
 3. Dans les paroles, conservez les séparateurs `---` et les repères de refrain,
    de couplet et d’ordre : ils organisent la projection.
-4. Saisissez le **Code d’édition** fourni par le responsable et cliquez sur
-   **Enregistrer**. Un message confirme l’enregistrement et propose un lien
+4. Cliquez sur **Enregistrer**. Un message confirme l’enregistrement et propose un lien
    vers la modification sur GitHub.
 
 **Annuler** ferme le formulaire sans enregistrer. Si le bouton **Modifier** est
-désactivé, demandez au responsable de configurer l’accès GitHub et le code d’édition.
+désactivé, demandez au responsable de configurer l’accès GitHub.
 Une connexion Internet est nécessaire pour modifier un chant.
 
 Si une autre personne a modifié le chant entre-temps, vos changements ne sont
