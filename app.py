@@ -15,13 +15,12 @@ from zoneinfo import ZoneInfo
 import streamlit as st
 import streamlit.components.v1 as components
 
-from scripts.markdown_to_pptx import convert, read_slides, read_title
+from scripts.markdown_to_pptx import build_slides, convert, read_slides, read_title
 from scripts.song_sheet import create_song_sheet
 from scripts.print_song_sheet import create_print_song_sheet
 from scripts.github_pages import prepare_pages_export, save_pages_export
 from scripts.github_publish import publish_sheet
-from scripts.song_editor import SongDraft, load_song, parse_song, save_song, serialize_song
-from scripts.visual_editor import visual_song_editor
+from scripts.song_editor import load_song, save_song
 from scripts.lyrics_format import lyrics_html
 from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents
 
@@ -216,7 +215,6 @@ def show_song_editor(selected: str, path: Path, title: str) -> bool:
                 with st.spinner("Chargement du chant depuis GitHub…"):
                     document, sha = load_song(token, repository, branch, selected)
                 st.session_state.song_editor = (signature, document, sha)
-                st.session_state.song_editor_generation = st.session_state.get("song_editor_generation", 0) + 1
                 st.session_state.pop("song_edit_result", None)
                 # Un nouveau formulaire ne récupère jamais les champs d'un autre chant.
                 for key in list(st.session_state):
@@ -229,26 +227,20 @@ def show_song_editor(selected: str, path: Path, title: str) -> bool:
             st.caption("L’édition sera disponible après configuration de l’accès GitHub.")
         return False
 
-    draft = parse_song(editor[1], title)
-    st.caption("Modifiez le chant puis enregistrez-le dans le carnet.")
-    new_title = st.text_input("Titre du chant", value=draft.title, key="song_edit_title")
-    st.markdown("**Paroles**")
-    try:
-        lyrics, action = visual_song_editor(
-            draft.lyrics, key=f"song_visual_{st.session_state.get('song_editor_generation', 0)}", disabled=not token,
-        )
-    except ValueError as error:
-        st.error(str(error))
-        return True
-    if action == "cancel":
+    with st.form("song_editor_form"):
+        document = st.text_area("Contenu Markdown", value=editor[1], height=500, key="song_edit_markdown")
+        submitted = st.form_submit_button("Enregistrer", type="primary", disabled=not token)
+        cancelled = st.form_submit_button("Annuler")
+    if cancelled:
         st.session_state.pop("song_editor", None)
         st.rerun()
-    if action == "save":
+    if submitted:
         try:
-            document = serialize_song(SongDraft(new_title, lyrics, draft.author, draft.chords, draft.key, draft.information))
-            if parse_song(document) == parse_song(editor[1], title):
+            if document == editor[1]:
                 st.info("Aucune modification à enregistrer.")
                 return True
+            if not document.strip() or not any(part.strip() for part in build_slides(document)):
+                raise ValueError("Le chant ne peut pas être vide.")
             with st.spinner("Enregistrement sur GitHub…"):
                 commit_url = save_song(token, repository, branch, selected, document, editor[2])
         except ValueError as error:
