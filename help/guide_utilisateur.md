@@ -51,12 +51,10 @@ signaler une correction sans accès à l’édition, indiquez le titre du chant 
 ## Modifier un chant
 
 1. Dans **carnet de chants**, choisissez un chant puis cliquez sur **Modifier**.
-2. Corrigez son titre et ses paroles.
-3. Modifiez directement les paroles dans le refrain ou le couplet souhaité.
-   Pour mettre des mots en forme, sélectionnez-les puis cliquez sur **Gras**
-   ou **Souligner**. Le résultat apparaît immédiatement dans le texte.
-   Cliquez de nouveau sur le même bouton pour retirer cette mise en forme.
-   Aucune syntaxe Markdown n’est nécessaire ; les parties et leur ordre sont conservés.
+2. Modifiez le document dans la zone **Contenu Markdown**. Elle contient
+   l’ensemble du fichier, y compris le titre et les paroles.
+3. Conservez les repères de parties et les séparateurs `---` pour organiser
+   la projection. Le contenu saisi est enregistré tel quel.
 4. Cliquez sur **Enregistrer**. Un message confirme l’enregistrement et propose un lien
    vers la modification sur GitHub.
 

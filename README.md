@@ -113,18 +113,15 @@ conservée pendant la consultation.
 ### Modifier un chant sur GitHub
 
 Dans **carnet de chants**, sélectionner un chant, cliquer sur **Modifier**,
-renseigner le titre et les paroles, puis cliquer sur **Enregistrer**.
-Les paroles sont modifiées dans un éditeur visuel : sélectionner des mots et
-utiliser **Gras** ou **Souligner** pour voir immédiatement la mise en forme.
-Les refrains, couplets et ponts sont présentés séparément ; leurs repères
-Markdown et l’ordre de projection sont conservés automatiquement. Le collage
-ajoute du texte simple. Les raccourcis Ctrl+B, Ctrl+U et Ctrl+Z sont disponibles
-(Cmd sur Mac). Le composant HTML/JavaScript est servi par Streamlit depuis
-`scripts/visual_editor/`, sans CDN ni dépendance supplémentaire.
+modifier directement le fichier dans **Contenu Markdown**, puis cliquer sur
+**Enregistrer**. Une seule zone de texte contient le document complet : titre,
+métadonnées, ordre, repères de parties, séparateurs et paroles. Le texte saisi
+est enregistré sans réécriture automatique. **Annuler** abandonne le brouillon.
+L’éditeur ne comporte ni barre de mise en forme ni aperçu pendant la saisie.
 
 Le gras est enregistré en Markdown (`**texte**`) et le soulignement avec `<u>`.
 Les deux styles sont conservés dans la consultation, les feuilles HTML et PDF
-et les exports PowerPoint. L’utilisateur n’a pas à saisir ces balises.
+et les exports PowerPoint. Ces balises se modifient directement dans le Markdown.
 Le formulaire charge la dernière version du fichier sur GitHub. Un enregistrement
 crée un commit dans le même fichier `chants/*.md`, sur la branche configurée.
 Le nom du fichier reste stable lorsque son titre change.
@@ -143,9 +140,9 @@ repository = "eboyard/cantus"
 branch = "main"
 ```
 
-Les paroles conservent les séparateurs `---`, les marques de parties et la
-directive `ordre`. L’auteur, les accords, la tonalité et les autres informations déjà présents sont conservés
-lors de l’enregistrement, sans champs dédiés dans le formulaire. Les valeurs
+Les séparateurs `---`, les marques de parties et la directive `ordre` sont
+éditables dans le document. Les éventuels commentaires d’auteur, d’accords,
+de tonalité et d’informations sont également visibles dans la zone de texte. Les valeurs
 des commentaires de métadonnées sont des chaînes JSON pour conserver les retours
 à la ligne. Ces informations ne sont pas projetées dans les exports.
 

@@ -62,7 +62,7 @@ class SongEditorTests(unittest.TestCase):
                 save_song("token", "owner/repo", "main", path, "texte", "a" * 40)
         request.assert_not_called()
 
-    def test_simplified_form_saves_without_code_and_preserves_existing_metadata(self):
+    def test_raw_markdown_is_shown_and_saved_without_rewriting(self):
         with TemporaryDirectory() as directory:
             song = Path(directory) / "song.md"
             song.write_text(serialize_song(SongDraft("Chant", "Ancien", "Auteur", "Do Sol", "Do", "Licence")), encoding="utf-8")
@@ -70,19 +70,22 @@ class SongEditorTests(unittest.TestCase):
             with patch("app.song_catalog", return_value={"chants/song.md": ("Chant", song)}), \
                     patch("app.github_setting", side_effect=lambda name, default="": settings.get(name, default)), \
                     patch("app.load_song", return_value=(song.read_text(encoding="utf-8"), "a" * 40)), \
-                    patch("app.save_song", return_value="https://github.com/owner/repo/commit/" + "b" * 40) as save, \
-                    patch("app.visual_song_editor", return_value=("Ancien", "")) as visual:
+                    patch("app.save_song", return_value="https://github.com/owner/repo/commit/" + "b" * 40) as save:
                 app = AppTest.from_string("from app import show_lyrics\nshow_lyrics()").run()
                 app.session_state["song_order"] = ["chants/song.md"]
                 app.selectbox[0].select("chants/song.md").run()
                 next(button for button in app.button if button.label == "Modifier").click().run()
-                self.assertEqual([field.label for field in app.text_input], ["Titre du chant"])
-                self.assertFalse(app.text_area)
-                visual.return_value = ("**Nouveau** <u>texte</u>", "save")
-                app.run()
+                self.assertFalse(app.text_input)
+                self.assertEqual([field.label for field in app.text_area], ["Contenu Markdown"])
+                original = song.read_text(encoding="utf-8")
+                self.assertEqual(app.text_area[0].value, original)
+                edited = original.replace("Ancien", "**Nouveau** <u>texte</u>").replace("titre: Chant", "titre: Nouveau titre") + "\n\n"
+                app.text_area[0].set_value(edited)
+                next(button for button in app.button if button.label == "Enregistrer").click().run()
                 self.assertFalse(app.exception)
                 save.assert_called_once()
-                self.assertEqual(parse_song(song.read_text(encoding="utf-8")), SongDraft("Chant", "**Nouveau** <u>texte</u>", "Auteur", "Do Sol", "Do", "Licence"))
+                self.assertEqual(save.call_args.args[4], edited)
+                self.assertEqual(song.read_text(encoding="utf-8"), edited)
                 self.assertEqual(app.session_state["song_order"], ["chants/song.md"])
                 self.assertIn("enregistré", app.success[0].value)
 
@@ -95,19 +98,18 @@ class SongEditorTests(unittest.TestCase):
             with patch("app.song_catalog", return_value={"chants/song.md": ("Chant", song)}), \
                     patch("app.github_setting", side_effect=lambda name, default="": settings.get(name, default)), \
                     patch("app.load_song", return_value=(original, "a" * 40)), \
-                    patch("app.save_song", side_effect=ValueError("Le chant a changé sur GitHub.")), \
-                    patch("app.visual_song_editor", return_value=("Ancien", "")) as visual:
+                    patch("app.save_song", side_effect=ValueError("Le chant a changé sur GitHub.")):
                 app = AppTest.from_string("from app import show_lyrics\nshow_lyrics()").run()
                 app.selectbox[0].select("chants/song.md").run()
                 next(button for button in app.button if button.label == "Modifier").click().run()
-                visual.return_value = ("Mon brouillon", "save")
-                app.run()
+                app.text_area[0].set_value("Mon brouillon")
+                next(button for button in app.button if button.label == "Enregistrer").click().run()
                 self.assertFalse(app.exception)
                 self.assertIn("changé", app.error[0].value)
                 self.assertIn("song_editor", app.session_state)
+                self.assertEqual(app.text_area[0].value, "Mon brouillon")
                 self.assertEqual(song.read_text(encoding="utf-8"), original)
-                visual.return_value = ("Mon brouillon", "cancel")
-                app.run()
+                next(button for button in app.button if button.label == "Annuler").click().run()
                 self.assertFalse(app.exception)
                 self.assertFalse(app.text_area)
                 self.assertEqual(song.read_text(encoding="utf-8"), original)
@@ -122,6 +124,28 @@ class SongEditorTests(unittest.TestCase):
                 app.selectbox[0].select("chants/song.md").run()
                 self.assertTrue(next(button for button in app.button if button.label == "Modifier").disabled)
                 load.assert_not_called()
+
+    def test_invalid_raw_markdown_keeps_draft_without_saving(self):
+        with TemporaryDirectory() as directory:
+            song = Path(directory) / "song.md"
+            original = "<!-- titre: Chant -->\nAncien"
+            song.write_text(original, encoding="utf-8")
+            settings = {"token": "token", "repository": "owner/repo", "branch": "main"}
+            with patch("app.song_catalog", return_value={"chants/song.md": ("Chant", song)}), \
+                    patch("app.github_setting", side_effect=lambda name, default="": settings.get(name, default)), \
+                    patch("app.load_song", return_value=(original, "a" * 40)), patch("app.save_song") as save:
+                app = AppTest.from_string("from app import show_lyrics\nshow_lyrics()").run()
+                app.selectbox[0].select("chants/song.md").run()
+                next(button for button in app.button if button.label == "Modifier").click().run()
+                for invalid in ("", "<!-- titre: Chant -->", "<!-- ordre: C2 -->\nUn seul couplet"):
+                    with self.subTest(document=invalid):
+                        app.text_area[0].set_value(invalid)
+                        next(button for button in app.button if button.label == "Enregistrer").click().run()
+                        self.assertFalse(app.exception)
+                        self.assertTrue(app.error)
+                        self.assertEqual(app.text_area[0].value, invalid)
+                        save.assert_not_called()
+                        self.assertEqual(song.read_text(encoding="utf-8"), original)
 
 
 if __name__ == "__main__":
