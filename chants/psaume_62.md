@@ -30,11 +30,11 @@ H : la joie sur les l**è**vres,
 **H+F : je dirai ta louange .**
 
 ---
-H : Dans la nuit je me souviens d**e** Toi
-                                               F : Dans la nuit je me souviens d**e** Toi
-H :  et je reste des heures à Te p**a**rler.
-                                              F :  et je reste des heures à T**e** parler.
-H : Oui, Tu es venu à mon s**e**cours
- 	                                  F : Oui, Tu es venu à mon se**cours…**
-H : Je crie de joie 
+H : Dans la nuit je me souviens d**e&#42;&#42; Toi**
+                                               **F : Dans la nuit je me souviens d**e&#42;&#42; Toi
+H :  et je reste des heures à Te p**a&#42;&#42;rler.**
+                                              **F :  et je reste des heures à Te**&#42;&#42; p**a**rler.
+H : Oui, Tu es venu à mon s**e&#42;&#42;cours**
+ 	                                  **F : Oui, Tu es venu à mon se**cours…&#42;&#42;
+H : Je crie de joie
 **H+F : à l’ombre de tes ailes.**
