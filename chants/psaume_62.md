@@ -4,9 +4,9 @@ Hommes : O dieu Tu es m**<u>o</u>**n Dieu
 Femmes : O Dieu Tu es m**<u>o</u>**n Dieu
 H : Je te cherche d**<u>è</u>**s l’aube
 F : Je te cherche d**<u>è</u>**s l’aube
-H : Mon âme a so**<u>i</u>**f d**<u>e</u>** Toi 
+H : Mon âme a so**<u>i</u>**f d**<u>e</u>** Toi
 F : Mon âme a soif de **<u>Toi…</u>**
-H : après Toi languit ma cha**i**r**,**
+H : après Toi languit ma cha**<u>i</u>**r
 **H+F : terre aride, altérée sans eau.**
 
 ---
@@ -15,7 +15,7 @@ F :  Je T’ai contemplé au sanctua**<u>i</u>**re,
 H : J’ai vu ta force et t**<u>a</u>** gloire.
 F : J’ai vu ta force et t**<u>a</u>** gloire.
 H : Ton amour vaut mie**<u>u</u>**x qu**<u>e</u>** la vie :
-F : Ton amour vaut mieux que la **vie :…**
+F : Ton amour vaut mieux que la **<u>vie :…</u>**
 H : Tu ser**<u>a</u>**s
 **H+F : la louange de mes lèvres**
 
