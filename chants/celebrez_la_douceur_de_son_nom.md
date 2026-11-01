@@ -5,3 +5,35 @@ Louez le Nom du Seigneur !
 Louez, serviteurs du Seigneur !
 Louez le Nom du Seigneur, car il est bon !
 Célébrez la douceur de son Nom !
+
+---
+
+<!-- couplet: C1 -->
+Venez, crions de joie, pour le Seigneur ;
+Acclamons le Rocher, Dieu de notre Salut.
+Approchons-nous de lui, chantons pour lui !
+Au son des instruments, jouons pour notre Roi !
+
+---
+
+<!-- couplet: C2 -->
+Il est grand, il est bon notre Seigneur.
+Par-dessus tous les dieux, il domine les cieux.
+Il est Roi tout-puissant, Dieu créateur,
+L'univers tout entier ses mains l'ont façonné.
+
+---
+
+<!-- couplet: C3 -->
+Entrez, inclinez-vous, prosternez-vous.
+Adorons le Seigneur, c'est lui qui nous a fait.
+Oui, il est notre Dieu, il nous conduit ;
+En ses mains sont nos vies et nous sommes à lui !
+
+---
+
+<!-- couplet: C4 -->
+Accueillons sa Parole, écoutons-la :
+Ne fermons pas nos cœurs, et méditons sa loi.
+Dieu de fidélité, reste avec nous !
+Affermis notre foi, nous espérons en toi !
