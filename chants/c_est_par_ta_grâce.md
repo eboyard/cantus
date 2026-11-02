@@ -3,6 +3,7 @@
 <!-- ordre: C1 R C2 R -->
 
 <!-- refrain -->
+C'est par ta grâce que je peux m'approcher de Toi.
 C’est par ta grâce que je suis racheté. 
 Tu fais de moi une nouvelle création,  
 de la mort Tu m’as sauvé par ta résurrection.
