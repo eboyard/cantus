@@ -270,6 +270,11 @@ récente à la plus ancienne :
 - [Boussy-saint-Antoine](https://eboyard.github.io/cantus/boussy-saint-antoine/)
 - [Quincy-sous-Sénart](https://eboyard.github.io/cantus/quincy-sous-senart/)
 
+Dans chaque index, « Afficher le QR code » sous une feuille publiée permet de
+présenter son QR code et de le télécharger au format SVG pour impression.
+Le QR code est intégré à l’index et reste disponible pour les anciennes feuilles.
+
+
 À chaque publication directe, cet index est reconstruit à partir des feuilles
 présentes sur la branche GitHub et de la nouvelle feuille. Un remplacement ne crée
 pas de doublon. La feuille et l'index sont publiés ensemble ; si la branche change

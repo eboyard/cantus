@@ -1,4 +1,6 @@
+from base64 import b64decode, b64encode
 from dataclasses import replace
+from html.parser import HTMLParser
 from datetime import date
 from io import BytesIO
 from pathlib import Path
@@ -21,6 +23,47 @@ class GitHubPagesTests(unittest.TestCase):
         self.assertLess(html.index('href="2026-10-25/"'), html.index('href="2026-10-18/"'))
         self.assertIn("18/10/2026", html)
         self.assertIn("Aucune feuille", create_parish_index("Quincy-sous-Sénart", []).decode())
+
+    def test_index_contains_downloadable_qr_for_each_sheet_on_configured_site(self):
+        class Images(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.images = []
+                self.downloads = []
+
+            def handle_starttag(self, tag, attrs):
+                attrs = dict(attrs)
+                if tag == "img":
+                    self.images.append(attrs)
+                if tag == "a" and "download" in attrs:
+                    self.downloads.append(attrs)
+
+        days = ["2026-10-18", "2026-10-25"]
+        for parish in ("Quincy-sous-Sénart", "Boussy-saint-Antoine"):
+            with self.subTest(parish=parish):
+                exports = [prepare_pages_export(b"HTML", parish, date.fromisoformat(day),
+                           "https://chants.example.org/autre-site/") for day in reversed(days)]
+                html = create_parish_index(parish, days, parish_url=exports[0].parish_url).decode()
+                parser = Images()
+                parser.feed(html)
+                self.assertEqual(html.count("<details>"), 2)
+                self.assertNotIn("<details open", html)
+                self.assertEqual(len(parser.images), 2)
+                self.assertEqual(len(parser.downloads), 2)
+                for image, download, export in zip(parser.images, parser.downloads, exports):
+                    self.assertEqual(b64decode(image["src"].split(",", 1)[1]), export.qr)
+                    self.assertEqual(download["href"], image["src"])
+                    self.assertIn(export.path.split("/")[1], download["download"])
+                    self.assertTrue(image["alt"])
+        self.assertNotIn("<details>", create_parish_index("Quincy-sous-Sénart", []).decode())
+
+    def test_local_index_qr_uses_configured_publication_address(self):
+        export = prepare_pages_export(b"HTML", "Quincy-sous-Sénart", date(2026, 11, 8),
+                                      "https://chants.example.org/paroisses/")
+        with TemporaryDirectory() as directory:
+            target = save_pages_export(export, Path(directory))
+            index = (target.parent.parent / "index.html").read_text(encoding="utf-8")
+            self.assertIn(b64encode(export.qr).decode("ascii"), index)
 
     def prepare(self, document=b"<!doctype html><html>Paroles</html>", parish="Sainte-Thérèse Lyon", day=date(2026, 10, 18)):
         return prepare_pages_export(document, parish, day, "https://eboyard.github.io/cantus/")

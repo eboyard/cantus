@@ -1,5 +1,6 @@
 """Prépare des feuilles statiques pour la source GitHub Pages /docs."""
 
+from base64 import b64encode
 from dataclasses import dataclass
 from datetime import date
 from html import escape
@@ -28,14 +29,27 @@ class PagesExport:
         return self.url.rstrip("/").rsplit("/", 1)[0] + "/"
 
 
-def create_parish_index(parish: str, dates: list[str]) -> bytes:
-    """Liste les feuilles par date décroissante, avec des liens relatifs."""
+def create_parish_index(parish: str, dates: list[str], *, parish_url: str | None = None) -> bytes:
+    """Liste les feuilles par date décroissante avec leur QR code dépliable."""
     days = sorted({date.fromisoformat(day) for day in dates}, reverse=True)
-    links = "\n".join(
-        f'<li><a href="{day.isoformat()}/">Feuille du '
-        f'<time datetime="{day.isoformat()}">{day.strftime("%d/%m/%Y")}</time></a></li>'
-        for day in days
-    )
+    parish_url = parish_url or f"https://eboyard.github.io/cantus/{parish_slug(parish)}/"
+    items = []
+    for day in days:
+        iso = day.isoformat()
+        label = day.strftime("%d/%m/%Y")
+        qr = b64encode(_create_qr(f"{parish_url.rstrip('/')}/{iso}/")).decode("ascii")
+        image_url = f"data:image/svg+xml;base64,{qr}"
+        items.append(
+            f'<li><a href="{iso}/">Feuille du '
+            f'<time datetime="{iso}">{label}</time></a>'
+            f'<details><summary>Afficher le QR code'
+            f'<span class="sr-only"> de la feuille du {label}</span></summary>'
+            f'<div class="qr-code"><img src="{image_url}" width="280" height="280" '
+            f'alt="QR code vers la feuille de chants du {label}" loading="lazy">'
+            f'<a href="{image_url}" download="qr-{iso}.svg">Télécharger le QR code (SVG)</a>'
+            f'</div></details></li>'
+        )
+    links = "\n".join(items)
     title = escape(parish)
     listing = f'<ul>{links}</ul>' if days else '<p>Aucune feuille de chants publiée pour le moment.</p>'
     return f'''<!doctype html>
@@ -49,7 +63,14 @@ main {{ max-width: 42rem; margin: auto; padding: 1.25rem; overflow-wrap: anywher
 h1 {{ font-size: 2rem; line-height: 1.2; }}
 ul {{ padding-left: 1.5rem; }}
 a {{ color: #204a83; text-underline-offset: .2em; }}
-li a {{ display: block; padding: .75rem 0; }}
+li {{ padding: .75rem 0; }}
+li > a {{ display: block; padding-bottom: .35rem; }}
+summary {{ color: #204a83; cursor: pointer; padding: .35rem 0; }}
+.qr-code {{ margin-top: .5rem; }}
+.qr-code img {{ display: block; width: 280px; max-width: 100%; height: auto; background: white; }}
+.qr-code a {{ display: inline-block; padding: .5rem 0; }}
+.sr-only {{ position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }}
+summary:focus-visible {{ outline: 3px solid #204a83; outline-offset: 3px; }}
 a:focus-visible {{ outline: 3px solid #204a83; outline-offset: 3px; }}
 </style></head>
 <body><main><h1>{title}</h1><h2>Feuilles de chants</h2>
@@ -66,6 +87,13 @@ def parish_slug(name: str) -> str:
     return slug
 
 
+def _create_qr(url: str) -> bytes:
+    image = qrcode.make(url, image_factory=SvgPathFillImage, border=4)
+    output = BytesIO()
+    image.save(output)
+    return output.getvalue()
+
+
 def prepare_pages_export(document: bytes, parish: str, day: date, base_url: str) -> PagesExport:
     slug = parish_slug(parish)
     parsed = urlsplit(base_url.strip())
@@ -76,10 +104,7 @@ def prepare_pages_export(document: bytes, parish: str, day: date, base_url: str)
     url = f"{base}/{relative}/"
     if len(url.encode("utf-8")) > 1000:
         raise ValueError("L'adresse du site est trop longue pour créer un QR code lisible.")
-    image = qrcode.make(url, image_factory=SvgPathFillImage, border=4)
-    qr_output = BytesIO()
-    image.save(qr_output)
-    qr = qr_output.getvalue()
+    qr = _create_qr(url)
     output = BytesIO()
     with ZipFile(output, "w", compression=ZIP_DEFLATED) as archive:
         archive.writestr(f"docs/{relative}/index.html", document)
@@ -105,7 +130,7 @@ def save_pages_export(export: PagesExport, publication_root: Path, *, replace: b
     dates = [entry.parent.name for entry in target.parent.parent.glob("????-??-??/index.html")
              if _valid_date(entry.parent.name)]
     parish_index.write_bytes(
-        create_parish_index(export.parish or target.parent.parent.name, dates)
+        create_parish_index(export.parish or target.parent.parent.name, dates, parish_url=export.parish_url)
     )
     return target
 
