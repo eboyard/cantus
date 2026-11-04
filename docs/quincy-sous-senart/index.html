@@ -9,7 +9,14 @@ main { max-width: 42rem; margin: auto; padding: 1.25rem; overflow-wrap: anywhere
 h1 { font-size: 2rem; line-height: 1.2; }
 ul { padding-left: 1.5rem; }
 a { color: #204a83; text-underline-offset: .2em; }
-li a { display: block; padding: .75rem 0; }
+li { padding: .75rem 0; }
+li > a { display: block; padding-bottom: .35rem; }
+summary { color: #204a83; cursor: pointer; padding: .35rem 0; }
+.qr-code { margin-top: .5rem; }
+.qr-code img { display: block; width: 280px; max-width: 100%; height: auto; background: white; }
+.qr-code a { display: inline-block; padding: .5rem 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+summary:focus-visible { outline: 3px solid #204a83; outline-offset: 3px; }
 a:focus-visible { outline: 3px solid #204a83; outline-offset: 3px; }
 </style></head>
 <body><main><h1>Quincy-sous-Sénart</h1><h2>Feuilles de chants</h2>

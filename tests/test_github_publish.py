@@ -1,3 +1,4 @@
+from base64 import b64encode
 from datetime import date
 from io import BytesIO
 import json
@@ -61,6 +62,8 @@ class GitHubPublishTests(unittest.TestCase):
         self.assertEqual(files["docs/saint-pierre/2026-10-18/index.html"], self.export.document.decode())
         index = files["docs/saint-pierre/index.html"]
         self.assertIn("Saint-Pierre", index)
+        self.assertIn(b64encode(self.export.qr).decode("ascii"), index)
+        self.assertEqual(index.count("<details>"), 3)
         self.assertLess(index.index('href="2026-10-25/"'), index.index('href="2026-10-18/"'))
         self.assertLess(index.index('href="2026-10-18/"'), index.index('href="2026-10-11/"'))
         self.assertNotIn("2026-09-01", index)
@@ -137,7 +140,8 @@ class GitHubPublishTests(unittest.TestCase):
                 index_button = next(button for button in app.get("link_button") if button.proto.label == "Toutes les feuilles de la paroisse")
                 self.assertEqual(index_button.proto.url, "https://eboyard.github.io/cantus/boussy-saint-antoine/")
                 app.selectbox(key="pages_parish").select("Quincy-sous-Sénart").run()
-                self.assertEqual(len(app.get("link_button")), 0)
+                self.assertFalse(any(button.proto.label in {"Voir le commit publié", "Toutes les feuilles de la paroisse"}
+                                     for button in app.get("link_button")))
 
 
 if __name__ == "__main__":

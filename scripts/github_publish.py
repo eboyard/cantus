@@ -90,7 +90,7 @@ def publish_sheet(export: PagesExport, token: str, *, repository: str = "eboyard
                     continue
         files = {
             path: export.document.decode("utf-8"),
-            f"docs/{slug}/index.html": create_parish_index(export.parish or slug, list(dates)).decode("utf-8"),
+            f"docs/{slug}/index.html": create_parish_index(export.parish or slug, list(dates), parish_url=export.parish_url).decode("utf-8"),
             "docs/.nojekyll": "",
         }
         new_tree = _request("POST", f"{endpoint}/trees", token, {
