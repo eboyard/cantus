@@ -42,8 +42,12 @@ def create_parish_index(parish: str, dates: list[str], *, parish_url: str | None
         items.append(
             f'<li><a href="{iso}/">Feuille du '
             f'<time datetime="{iso}">{label}</time></a>'
-            f'<details><summary>Afficher le QR code'
-            f'<span class="sr-only"> de la feuille du {label}</span></summary>'
+            f'<details><summary title="Afficher le QR code de la feuille du {label}">'
+            '<svg class="qr-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
+            '<path fill="currentColor" d="M2 2h8v8H2zm2 2v4h4V4zM14 2h8v8h-8zm2 2v4h4V4z'
+            'M2 14h8v8H2zm2 2v4h4v-4zM12 12h4v4h-4zm6 0h4v2h-4zM18 16h2v4h-4v-2h2z'
+            'M12 18h2v4h-2zM20 20h2v2h-2z"/></svg>'
+            f'<span class="sr-only">Afficher le QR code de la feuille du {label}</span></summary>'
             f'<div class="qr-code"><img src="{image_url}" width="280" height="280" '
             f'alt="QR code vers la feuille de chants du {label}" loading="lazy">'
             f'<a href="{image_url}" download="qr-{iso}.svg">Télécharger le QR code (SVG)</a>'
@@ -61,11 +65,14 @@ def create_parish_index(parish: str, dates: list[str], *, parish_url: str | None
 body {{ margin: 0; background: #faf9f6; color: #20283b; font: 1.125rem/1.65 system-ui, sans-serif; }}
 main {{ max-width: 42rem; margin: auto; padding: 1.25rem; overflow-wrap: anywhere; }}
 h1 {{ font-size: 2rem; line-height: 1.2; }}
-ul {{ padding-left: 1.5rem; }}
+ul {{ list-style: none; padding: 0; }}
 a {{ color: #204a83; text-underline-offset: .2em; }}
-li {{ padding: .75rem 0; }}
-li > a {{ display: block; padding-bottom: .35rem; }}
-summary {{ color: #204a83; cursor: pointer; padding: .35rem 0; }}
+li {{ position: relative; padding: .2rem 3.25rem .2rem 0; }}
+li > a {{ display: inline-block; padding: .45rem 0; }}
+summary {{ position: absolute; top: .2rem; right: 0; display: flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; box-sizing: border-box; color: #204a83; cursor: pointer; border: 1px solid #d4d9e1; border-radius: .4rem; list-style: none; }}
+summary::-webkit-details-marker {{ display: none; }}
+summary:hover, details[open] > summary {{ background: #e9eef5; }}
+.qr-icon {{ width: 1.4rem; height: 1.4rem; }}
 .qr-code {{ margin-top: .5rem; }}
 .qr-code img {{ display: block; width: 280px; max-width: 100%; height: auto; background: white; }}
 .qr-code a {{ display: inline-block; padding: .5rem 0; }}
