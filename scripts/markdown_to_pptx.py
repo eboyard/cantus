@@ -25,7 +25,7 @@ BACKGROUND_COLOR = RGBColor(0, 0, 64)
 FONT_NAME = "Comic Sans MS"
 TITLE_TAG = re.compile(r"^[ \t]*<!--[ \t]*titre[ \t]*:([^\r\n]*?)-->[ \t]*\r?$", re.MULTILINE | re.IGNORECASE)
 METADATA_TAG = re.compile(
-    r"^[ \t]*<!--[ \t]*(auteur|accords|tonalite|informations)[ \t]*:([^\r\n]*?)-->[ \t]*\r?$",
+    r"^[ \t]*<!--[ \t]*(auteur|accords|tonalite|informations|type)[ \t]*:([^\r\n]*?)-->[ \t]*\r?$",
     re.MULTILINE | re.IGNORECASE,
 )
 
