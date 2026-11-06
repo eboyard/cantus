@@ -21,6 +21,7 @@ from scripts.print_song_sheet import create_print_song_sheet
 from scripts.github_pages import prepare_pages_export, save_pages_export
 from scripts.github_publish import publish_sheet
 from scripts.song_editor import load_song, save_song
+from scripts.song_types import MOMENTS, read_song_type, song_type, set_song_type
 from scripts.lyrics_format import lyrics_html
 from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents
 
@@ -179,6 +180,8 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
                 document = read_existing_sheet(choices[chosen], ROOT / "docs", github_setting("token"), repository)
                 order = songs_from_contents(document, catalog)
                 st.session_state.song_order = order
+                st.session_state.pop("song_moments", None)
+                clear_moment_widgets()
                 for key in ("generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
                     st.session_state.pop(key, None)
                 st.session_state.sheet_import_status = (True, f"{len(order)} chant(s) chargés. Vous pouvez modifier cette liste pour préparer la nouvelle feuille.")
@@ -229,6 +232,12 @@ def show_song_editor(selected: str, path: Path, title: str) -> bool:
 
     with st.form("song_editor_form"):
         document = st.text_area("Contenu Markdown", value=editor[1], height=500, key="song_edit_markdown")
+        initial_type = song_type(editor[1])
+        selected_type = st.selectbox(
+            "Type du chant dans le carnet", options=["", *MOMENTS],
+            index=["", *MOMENTS].index(initial_type), key="song_edit_type",
+            format_func=lambda value: value or "Non renseigné",
+        )
         submitted = st.form_submit_button("Enregistrer", type="primary", disabled=not token)
         cancelled = st.form_submit_button("Annuler")
     if cancelled:
@@ -236,6 +245,8 @@ def show_song_editor(selected: str, path: Path, title: str) -> bool:
         st.rerun()
     if submitted:
         try:
+            if selected_type != initial_type:
+                document = set_song_type(document, selected_type)
             if document == editor[1]:
                 st.info("Aucune modification à enregistrer.")
                 return True
@@ -289,6 +300,7 @@ def show_lyrics() -> None:
     if show_song_editor(selected, path, title):
         return
     try:
+        st.caption(f"Type du chant : {read_song_type(path) or 'Non renseigné'}")
         slides = read_slides(path)
     except (OSError, ValueError) as error:
         st.error(f"Impossible de lire les paroles de {title} : {error}")
@@ -328,6 +340,12 @@ def show_user_help() -> None:
     st.markdown(document if topic == "Toutes les rubriques" else topics[topic])
 
 
+def clear_moment_widgets() -> None:
+    for key in list(st.session_state):
+        if key.startswith("sheet_moment_"):
+            del st.session_state[key]
+
+
 def show_preparation() -> None:
     st.title("Préparer les chants de la célébration")
 
@@ -338,6 +356,10 @@ def show_preparation() -> None:
 
     st.session_state.setdefault("song_order", [])
     show_existing_sheets(catalog)
+    if ("song_moments" not in st.session_state
+            or len(st.session_state.song_moments) != len(st.session_state.song_order)):
+        st.session_state.song_moments = [read_song_type(catalog[key][1]) for key in st.session_state.song_order]
+        clear_moment_widgets()
     celebration = st.text_input("Nom de la célébration", value="Messe")
     selected = st.selectbox(
         "Choisir un chant à ajouter",
@@ -346,18 +368,28 @@ def show_preparation() -> None:
     )
     if st.button("Ajouter le chant"):
         st.session_state.song_order.append(selected)
+        st.session_state.song_moments.append(read_song_type(catalog[selected][1]))
         st.rerun()
 
     st.subheader("Ordre des chants")
     song_order = st.session_state.song_order
+    moments = st.session_state.song_moments
     if not song_order:
         st.info("Ajoutez un chant pour commencer.")
     else:
+        st.caption("Pour le PDF, choisissez le moment de la messe de chaque chant. Le type du carnet est proposé automatiquement. Les boutons Monter et Descendre règlent l’ordre d’impression.")
         for position, key in enumerate(song_order):
             title_col, up_col, down_col, remove_col = st.columns([6, 1, 1, 1])
             title_col.write(f"{position + 1}. {catalog[key][0]}")
+            moments[position] = title_col.selectbox(
+                f"Moment de la messe — chant {position + 1}", options=["", *MOMENTS],
+                index=["", *MOMENTS].index(moments[position]), key=f"sheet_moment_{position}",
+                format_func=lambda value: f"{MOMENTS.index(value) + 1}. {value}" if value else "Non renseigné",
+            )
             if up_col.button("Monter", key=f"up-{position}", disabled=position == 0):
                 song_order[position - 1], song_order[position] = song_order[position], song_order[position - 1]
+                moments[position - 1], moments[position] = moments[position], moments[position - 1]
+                clear_moment_widgets()
                 st.rerun()
             if down_col.button(
                 "Descendre",
@@ -365,9 +397,13 @@ def show_preparation() -> None:
                 disabled=position == len(song_order) - 1,
             ):
                 song_order[position + 1], song_order[position] = song_order[position], song_order[position + 1]
+                moments[position + 1], moments[position] = moments[position], moments[position + 1]
+                clear_moment_widgets()
                 st.rerun()
             if remove_col.button("Retirer", key=f"remove-{position}"):
                 song_order.pop(position)
+                moments.pop(position)
+                clear_moment_widgets()
                 st.rerun()
 
         with st.expander("Aperçu des paroles"):
@@ -427,10 +463,12 @@ def show_preparation() -> None:
     st.subheader("Feuille de chants à imprimer")
     st.caption("PDF A4 en deux colonnes, en noir et blanc. Chaque refrain est écrit une fois par chant.")
     print_size = st.selectbox("Taille du texte imprimé", options=[11, 12], format_func=lambda size: f"{size} points")
-    print_signature = (signature, print_size)
+    print_signature = (signature, print_size, tuple(moments))
     if st.button("Créer la version à imprimer", disabled=not song_order):
         try:
-            pdf, pages = create_print_song_sheet(celebration, [catalog[key] for key in song_order], font_size=print_size)
+            pdf, pages = create_print_song_sheet(
+                celebration, [catalog[key] for key in song_order], font_size=print_size, moments=moments,
+            )
             st.session_state.generated_print_sheet = (print_signature, pdf, pages)
         except (OSError, ValueError) as error:
             st.error(f"La création du PDF a échoué : {error}")

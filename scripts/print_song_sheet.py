@@ -14,6 +14,7 @@ from reportlab.platypus import BaseDocTemplate, Frame, KeepTogether, PageTemplat
 
 from scripts.markdown_to_pptx import build_song_parts
 from scripts.lyrics_format import formatted_lines, fragment_html
+from scripts.song_types import MOMENTS, read_song_type
 
 
 def _register_fonts() -> None:
@@ -34,18 +35,25 @@ def _lyrics(text: str, *, bold: bool = False) -> str:
 
 def create_print_song_sheet(
     title: str, songs: list[tuple[str, Path]], *, font_size: int = 11,
+    moments: list[str] | None = None,
 ) -> tuple[bytes, int]:
     """Retourne le PDF et son nombre de pages, sans réduire la taille du texte."""
     if not songs:
         raise ValueError("Ajoutez au moins un chant pour créer la feuille.")
     if font_size not in (11, 12):
         raise ValueError("Choisissez une taille de texte de 11 ou 12 points.")
+    if moments is None:
+        moments = [read_song_type(path) for _, path in songs]
+    if len(moments) != len(songs) or any(moment not in ("", *MOMENTS) for moment in moments):
+        raise ValueError("Choisissez une rubrique valide pour chaque chant.")
     _register_fonts()
     body = ParagraphStyle("paroles", fontName="CantusPrint", fontSize=font_size,
                           leading=font_size + 1.6, spaceAfter=4, textColor="black")
     heading = ParagraphStyle("chant", parent=body, fontName="CantusPrint-Bold",
                              fontSize=font_size + .5, leading=font_size + 2,
                              spaceBefore=7, spaceAfter=3, keepWithNext=True)
+    moment_style = ParagraphStyle("rubrique", parent=heading, fontSize=font_size + 1,
+                                  leading=font_size + 3, spaceBefore=10)
     title_style = ParagraphStyle("celebration", parent=heading, fontSize=14, leading=17,
                                 spaceBefore=0, spaceAfter=0)
     page_width, page_height = A4
@@ -72,7 +80,13 @@ def create_print_song_sheet(
         parts = build_song_parts(path.read_text(encoding="utf-8-sig"))
         if not parts:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
-        song_heading = Paragraph(f"{position}. {escape(song_title)}", heading)
+        moment = moments[position - 1]
+        song_heading = Paragraph(escape(song_title) if moment else f"{position}. {escape(song_title)}", heading)
+        headings = []
+        if moment and (position == 1 or moment != moments[position - 2]):
+            number = MOMENTS.index(moment) + 1
+            headings.append(Paragraph(f"{number}. {escape(moment)}", moment_style))
+        headings.append(song_heading)
         paragraphs = []
         refrain_seen = False
         for part in parts:
@@ -88,7 +102,7 @@ def create_print_song_sheet(
             # Un couplet reste ensemble s'il tient dans une colonne ; les blocs
             # exceptionnellement longs peuvent se poursuivre dans la suivante.
             paragraphs.append(Paragraph(text, body))
-        story.append(KeepTogether([song_heading, paragraphs[0]]))
+        story.append(KeepTogether([*headings, paragraphs[0]]))
         story.extend(KeepTogether([paragraph]) for paragraph in paragraphs[1:])
     output = BytesIO()
     document = BaseDocTemplate(output, pagesize=A4, title=title.strip() or "Messe",

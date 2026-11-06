@@ -170,6 +170,22 @@ Le téléchargement du ZIP seul ne publie pas la feuille.
 
 ## Créer et imprimer un PDF
 
+Dans **Ordre des chants**, choisissez le **Moment de la messe** de chaque chant :
+entrée, préparation pénitentielle, Gloire à Dieu, psaume, acclamation de l’Évangile,
+prières universelles, offertoire, Sanctus, anamnèse, Agneau de Dieu, communion ou envoi.
+Le type du carnet est proposé automatiquement lorsqu’il est connu. Vous pouvez
+le remplacer pour cette célébration, y compris si un même chant est utilisé deux fois.
+**Non renseigné** conserve uniquement le titre du chant dans le PDF.
+Les rubriques choisies apparaissent au-dessus des titres et des paroles ; deux chants
+consécutifs du même moment partagent une rubrique. Seuls les moments utilisés sont
+imprimés. Les boutons **Monter** et **Descendre** permettent de suivre la trame souhaitée.
+
+Dans le **carnet de chants**, **Modifier** permet de renseigner le **Type du chant
+dans le carnet**, puis de l’enregistrer avec les paroles. Les types évidents tels que
+Kyrie, Gloria et Sanctus sont reconnus d’après le titre. Les chants dont l’usage varie
+restent à renseigner. Le type enregistré est conservé dans une ligne
+`<!-- type: Gloire à Dieu -->`, qui n’apparaît pas dans les paroles ni les projections.
+
 1. Dans **Feuille de chants à imprimer**, choisissez la **Taille du texte imprimé** :
    **11 points** pour une feuille compacte ou **12 points** pour des caractères plus grands.
 2. Cliquez sur **Créer la version à imprimer**. Le nombre de pages est affiché.
