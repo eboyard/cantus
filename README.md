@@ -202,12 +202,20 @@ Après avoir choisi et ordonné les chants, cliquer sur **Créer la version à i
 puis **Télécharger la version à imprimer (.pdf)**. Cette génération est indépendante
 du PowerPoint et de la feuille pour téléphone.
 
+Le premier chant reçoit automatiquement la rubrique **Chant d’entrée**, et le
+dernier la rubrique **Envoi**, selon leur position dans la sélection. Avec un seul
+chant, la rubrique est **Chant d’entrée**. Les rubriques intermédiaires restent modifiables.
+
 Le PDF utilise le format A4 portrait, deux colonnes, des marges de 12 mm et du texte
-noir sur fond blanc. Choisir **11 points** pour une feuille compacte ou **12 points**
-pour des caractères plus grands. Les couplets sont numérotés ; chaque refrain est
+noir sur fond blanc. Choisir **9 ou 10 points** pour une feuille plus compacte,
+**11 points** (taille par défaut) ou **12 points** pour des caractères plus grands.
+Les couplets sont numérotés ; chaque refrain est
 écrit en gras à sa première occurrence, puis remplacé par « Refrain » aux reprises.
-L'ordre explicite des parties et les ponts sont conservés. Les couplets sont gardés
-ensemble lorsqu'ils tiennent dans une colonne.
+L'ordre explicite des parties et les ponts sont conservés. Les blocs de chants se
+suivent verticalement : rubrique et titre sur toute la largeur, puis paroles en
+deux colonnes propres au chant. Le chant suivant commence sous les deux colonnes
+du précédent. Les couplets restent entiers lorsqu'ils tiennent dans une colonne ;
+les chants longs peuvent se poursuivre sur plusieurs pages.
 
 Imprimer à **taille réelle (100 %)**, avec **une page par face**, en **recto verso,
 retournement sur le bord long**. Le nombre de pages est affiché avant téléchargement :

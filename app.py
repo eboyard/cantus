@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import hmac
+import logging
 from datetime import datetime
 from pathlib import Path
 import re
@@ -21,7 +22,7 @@ from scripts.print_song_sheet import create_print_song_sheet
 from scripts.github_pages import prepare_pages_export, save_pages_export
 from scripts.github_publish import publish_sheet
 from scripts.song_editor import load_song, save_song
-from scripts.song_types import MOMENTS, read_song_type, song_type, set_song_type
+from scripts.song_types import MOMENTS, celebration_moments, read_song_type, song_type, set_song_type
 from scripts.lyrics_format import lyrics_html
 from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents
 
@@ -369,26 +370,35 @@ def show_preparation() -> None:
     if st.button("Ajouter le chant"):
         st.session_state.song_order.append(selected)
         st.session_state.song_moments.append(read_song_type(catalog[selected][1]))
+        clear_moment_widgets()
         st.rerun()
 
     st.subheader("Ordre des chants")
     song_order = st.session_state.song_order
-    moments = st.session_state.song_moments
+    assigned_moments = st.session_state.song_moments
+    moments = celebration_moments(assigned_moments)
     if not song_order:
         st.info("Ajoutez un chant pour commencer.")
     else:
-        st.caption("Pour le PDF, choisissez le moment de la messe de chaque chant. Le type du carnet est proposé automatiquement. Les boutons Monter et Descendre règlent l’ordre d’impression.")
+        st.caption("Le premier chant est le chant d’entrée et le dernier est le chant d’envoi. Pour les chants intermédiaires, le type du carnet est proposé et peut être modifié. Les boutons Monter et Descendre règlent l’ordre d’impression.")
         for position, key in enumerate(song_order):
             title_col, up_col, down_col, remove_col = st.columns([6, 1, 1, 1])
             title_col.write(f"{position + 1}. {catalog[key][0]}")
+            fixed_moment = position in (0, len(song_order) - 1)
+            if fixed_moment:
+                st.session_state[f"sheet_moment_{position}"] = moments[position]
             moments[position] = title_col.selectbox(
                 f"Moment de la messe — chant {position + 1}", options=["", *MOMENTS],
-                index=["", *MOMENTS].index(moments[position]), key=f"sheet_moment_{position}",
+                index=None if fixed_moment else ["", *MOMENTS].index(moments[position]),
+                key=f"sheet_moment_{position}",
                 format_func=lambda value: f"{MOMENTS.index(value) + 1}. {value}" if value else "Non renseigné",
+                disabled=fixed_moment,
             )
+            if not fixed_moment:
+                assigned_moments[position] = moments[position]
             if up_col.button("Monter", key=f"up-{position}", disabled=position == 0):
                 song_order[position - 1], song_order[position] = song_order[position], song_order[position - 1]
-                moments[position - 1], moments[position] = moments[position], moments[position - 1]
+                assigned_moments[position - 1], assigned_moments[position] = assigned_moments[position], assigned_moments[position - 1]
                 clear_moment_widgets()
                 st.rerun()
             if down_col.button(
@@ -397,12 +407,12 @@ def show_preparation() -> None:
                 disabled=position == len(song_order) - 1,
             ):
                 song_order[position + 1], song_order[position] = song_order[position], song_order[position + 1]
-                moments[position + 1], moments[position] = moments[position], moments[position + 1]
+                assigned_moments[position + 1], assigned_moments[position] = assigned_moments[position], assigned_moments[position + 1]
                 clear_moment_widgets()
                 st.rerun()
             if remove_col.button("Retirer", key=f"remove-{position}"):
                 song_order.pop(position)
-                moments.pop(position)
+                assigned_moments.pop(position)
                 clear_moment_widgets()
                 st.rerun()
 
@@ -462,7 +472,8 @@ def show_preparation() -> None:
 
     st.subheader("Feuille de chants à imprimer")
     st.caption("PDF A4 en deux colonnes, en noir et blanc. Chaque refrain est écrit une fois par chant.")
-    print_size = st.selectbox("Taille du texte imprimé", options=[11, 12], format_func=lambda size: f"{size} points")
+    print_size = st.selectbox("Taille du texte imprimé", options=[9, 10, 11, 12], index=2,
+                              format_func=lambda size: f"{size} points")
     print_signature = (signature, print_size, tuple(moments))
     if st.button("Créer la version à imprimer", disabled=not song_order):
         try:
@@ -472,6 +483,20 @@ def show_preparation() -> None:
             st.session_state.generated_print_sheet = (print_signature, pdf, pages)
         except (OSError, ValueError) as error:
             st.error(f"La création du PDF a échoué : {error}")
+        except TypeError as error:
+            logging.getLogger(__name__).exception("Échec de la création du PDF imprimable")
+            if "unexpected keyword argument 'moments'" in str(error):
+                st.error(
+                    "Le générateur PDF chargé ne prend pas en charge les rubriques de messe. "
+                    "Vérifiez que app.py et scripts/print_song_sheet.py sont déployés dans leur "
+                    "dernière version, puis redémarrez l'application via Manage app → Reboot app."
+                )
+            else:
+                st.error(
+                    "La création du PDF a échoué à cause d'une erreur interne (TypeError). "
+                    "Le détail est disponible dans les logs de Manage app, "
+                    "sous « Échec de la création du PDF imprimable »."
+                )
     printed = st.session_state.get("generated_print_sheet")
     if printed and printed[0] == print_signature:
         st.download_button(

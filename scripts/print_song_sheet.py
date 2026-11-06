@@ -10,11 +10,11 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import BaseDocTemplate, Frame, KeepTogether, PageTemplate, Paragraph
+from reportlab.platypus import BalancedColumns, BaseDocTemplate, Frame, PageTemplate, Paragraph
 
 from scripts.markdown_to_pptx import build_song_parts
 from scripts.lyrics_format import formatted_lines, fragment_html
-from scripts.song_types import MOMENTS, read_song_type
+from scripts.song_types import MOMENTS, celebration_moments, read_song_type
 
 
 def _register_fonts() -> None:
@@ -33,6 +33,16 @@ def _lyrics(text: str, *, bold: bool = False) -> str:
     )
 
 
+class _Verse(Paragraph):
+    """Ne coupe un couplet que s'il dépasse la hauteur d'une page."""
+
+    def split(self, availWidth, availHeight):
+        column_height = self.style.print_column_height
+        if self.wrap(availWidth, column_height)[1] <= column_height:
+            return []
+        return super().split(availWidth, availHeight)
+
+
 def create_print_song_sheet(
     title: str, songs: list[tuple[str, Path]], *, font_size: int = 11,
     moments: list[str] | None = None,
@@ -40,12 +50,13 @@ def create_print_song_sheet(
     """Retourne le PDF et son nombre de pages, sans réduire la taille du texte."""
     if not songs:
         raise ValueError("Ajoutez au moins un chant pour créer la feuille.")
-    if font_size not in (11, 12):
-        raise ValueError("Choisissez une taille de texte de 11 ou 12 points.")
+    if font_size not in (9, 10, 11, 12):
+        raise ValueError("Choisissez une taille de texte de 9, 10, 11 ou 12 points.")
     if moments is None:
         moments = [read_song_type(path) for _, path in songs]
     if len(moments) != len(songs) or any(moment not in ("", *MOMENTS) for moment in moments):
         raise ValueError("Choisissez une rubrique valide pour chaque chant.")
+    moments = celebration_moments(moments)
     _register_fonts()
     body = ParagraphStyle("paroles", fontName="CantusPrint", fontSize=font_size,
                           leading=font_size + 1.6, spaceAfter=4, textColor="black")
@@ -63,10 +74,9 @@ def create_print_song_sheet(
     height = page_height - 2 * margin - title_height - 5 * mm
     if height < 40 * mm:
         raise ValueError("Le titre de la célébration est trop long pour la feuille imprimable.")
-    column_width = (page_width - 2 * margin - gap) / 2
-    frames = [Frame(margin + i * (column_width + gap), margin, column_width, height,
+    frames = [Frame(margin, margin, page_width - 2 * margin, height,
                     leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0,
-                    id=f"colonne-{i}") for i in range(2)]
+                    id="chants")]
 
     def decorate(canvas, document):
         canvas.saveState()
@@ -84,9 +94,15 @@ def create_print_song_sheet(
         song_heading = Paragraph(escape(song_title) if moment else f"{position}. {escape(song_title)}", heading)
         headings = []
         if moment and (position == 1 or moment != moments[position - 2]):
-            number = MOMENTS.index(moment) + 1
-            headings.append(Paragraph(f"{number}. {escape(moment)}", moment_style))
+            headings.append(Paragraph(escape(moment), moment_style))
         headings.append(song_heading)
+        heading_height = sum(
+            paragraph.wrap(page_width - 2 * margin, height)[1]
+            + paragraph.getSpaceBefore() + paragraph.getSpaceAfter()
+            for paragraph in headings
+        )
+        song_body = ParagraphStyle("paroles-chant", parent=body,
+                                   print_column_height=max(1, height - heading_height))
         paragraphs = []
         refrain_seen = False
         for part in parts:
@@ -99,11 +115,17 @@ def create_print_song_sheet(
             else:
                 label = part.identifier[1:] + "." if part.kind == "couplet" else "Pont."
                 text = f"<b>{label}</b> " + _lyrics(part.text)
-            # Un couplet reste ensemble s'il tient dans une colonne ; les blocs
-            # exceptionnellement longs peuvent se poursuivre dans la suivante.
-            paragraphs.append(Paragraph(text, body))
-        story.append(KeepTogether([*headings, paragraphs[0]]))
-        story.extend(KeepTogether([paragraph]) for paragraph in paragraphs[1:])
+            paragraphs.append(_Verse(text, song_body))
+        column_width = (page_width - 2 * margin - gap) / 2
+        needed = min(song_body.print_column_height, max(
+            paragraph.wrap(column_width, height)[1] for paragraph in paragraphs
+        ))
+        story.extend(headings)
+        story.append(BalancedColumns(
+            paragraphs, nCols=2, needed=needed,
+            leftPadding=0, rightPadding=0, innerPadding=gap,
+            topPadding=0, bottomPadding=0, endSlack=0,
+        ))
     output = BytesIO()
     document = BaseDocTemplate(output, pagesize=A4, title=title.strip() or "Messe",
                                author="CANTUS", pageCompression=1)

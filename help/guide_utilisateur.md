@@ -170,7 +170,10 @@ Le téléchargement du ZIP seul ne publie pas la feuille.
 
 ## Créer et imprimer un PDF
 
-Dans **Ordre des chants**, choisissez le **Moment de la messe** de chaque chant :
+Dans **Ordre des chants**, le premier chant est automatiquement le **Chant d’entrée**
+et le dernier est l’**Envoi**. Ces rubriques suivent la position après un ajout,
+un retrait ou un déplacement. Avec un seul chant, la rubrique est **Chant d’entrée**.
+Pour les chants intermédiaires, choisissez le **Moment de la messe** :
 entrée, préparation pénitentielle, Gloire à Dieu, psaume, acclamation de l’Évangile,
 prières universelles, offertoire, Sanctus, anamnèse, Agneau de Dieu, communion ou envoi.
 Le type du carnet est proposé automatiquement lorsqu’il est connu. Vous pouvez
@@ -187,7 +190,8 @@ restent à renseigner. Le type enregistré est conservé dans une ligne
 `<!-- type: Gloire à Dieu -->`, qui n’apparaît pas dans les paroles ni les projections.
 
 1. Dans **Feuille de chants à imprimer**, choisissez la **Taille du texte imprimé** :
-   **11 points** pour une feuille compacte ou **12 points** pour des caractères plus grands.
+   **9 ou 10 points** pour une feuille plus compacte, **11 points** par défaut
+   ou **12 points** pour des caractères plus grands.
 2. Cliquez sur **Créer la version à imprimer**. Le nombre de pages est affiché.
 3. Cliquez sur **Télécharger la version à imprimer (.pdf)**.
 4. Imprimez à **taille réelle (100 %)**, avec **une page par face**, en
@@ -198,7 +202,11 @@ et du texte noir sur fond blanc. Les couplets sont numérotés. Chaque refrain
 est écrit en gras à sa première occurrence, puis indiqué par « Refrain » lors
 des reprises. L’ordre prévu des parties et les ponts sont conservés.
 
-Les couplets restent ensemble lorsqu’ils tiennent dans une colonne.
+Chaque chant forme un bloc : sa rubrique et son titre occupent toute la largeur,
+puis ses paroles sont réparties en deux colonnes. Le bloc du chant suivant commence
+en dessous des deux colonnes du précédent, jamais à côté. Les couplets restent
+ensemble lorsqu’ils tiennent dans une colonne ; les chants longs peuvent se
+poursuivre sur plusieurs pages.
 Si nécessaire, le document ajoute des pages sans réduire la taille du texte choisie.
 Après un changement de taille, créez à nouveau le PDF.
 
