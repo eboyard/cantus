@@ -1,3 +1,4 @@
+from datetime import date
 from html.parser import HTMLParser
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -24,7 +25,50 @@ class Document(HTMLParser):
 
 
 class SongSheetTests(unittest.TestCase):
-    def test_song_order_refrains_bold_and_navigation(self):
+    def test_moments_follow_songs_with_automatic_entry_and_exit(self):
+        with TemporaryDirectory() as directory:
+            song = Path(directory) / "chant.md"
+            song.write_text("<!-- type: Psaume -->\nParoles", encoding="utf-8")
+            songs = [("Chant", song)] * 4
+            html = create_song_sheet("Messe", songs, moments=["", "Offertoire", "", ""]).decode()
+            sections = html.split('<section ')[1:]
+            for section, moment in zip(sections, ["Chant d’entrée", "Offertoire", "", "Envoi"]):
+                if moment:
+                    self.assertIn(f'<p class="moment">{moment}</p>', section)
+                    self.assertLess(section.index('class="moment"'), section.index('<h2'))
+                else:
+                    self.assertNotIn('class="moment"', section)
+            inferred = create_song_sheet("Messe", songs).decode()
+            self.assertNotIn('<p class="moment">Psaume</p>', inferred)
+            for invalid in ([""], ["", "<script>", "", ""]):
+                with self.assertRaisesRegex(ValueError, "rubrique valide"):
+                    create_song_sheet("Messe", songs, moments=invalid)
+
+    def test_selected_moments_are_in_download_and_export_and_changes_invalidate_them(self):
+        app = AppTest.from_string("from app import main\nmain()")
+        app.session_state["song_order"] = ["chants/agnus_dei.md"] * 3
+        app.run()
+        app.selectbox(key="sheet_moment_1").select("Offertoire").run()
+        next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
+        downloaded = app.session_state["generated_song_sheet"][1].decode()
+        next(button for button in app.button if button.label == "Préparer pour GitHub Pages").click().run()
+        exported = app.session_state["pages_export"][1].document.decode()
+        for html in (downloaded, exported):
+            for moment in ("Chant d’entrée", "Offertoire", "Envoi"):
+                self.assertIn(f'<p class="moment">{moment}</p>', html)
+        app.selectbox(key="sheet_moment_1").select("Communion").run()
+        self.assertFalse(app.exception)
+        self.assertEqual(len(app.get("download_button")), 0)
+        self.assertFalse(any(button.label == "Publier sur GitHub Pages" for button in app.button))
+        next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
+        next(button for button in app.button if button.label == "Préparer pour GitHub Pages").click().run()
+        self.assertFalse(app.exception)
+        for html in (app.session_state["generated_song_sheet"][1].decode(),
+                     app.session_state["pages_export"][1].document.decode()):
+            self.assertIn('<p class="moment">Communion</p>', html)
+            self.assertNotIn('<p class="moment">Offertoire</p>', html)
+
+    def test_song_order_refrains_bold_without_contents(self):
         with TemporaryDirectory() as directory:
             song = Path(directory) / "chant.md"
             song.write_text(
@@ -38,7 +82,9 @@ class SongSheetTests(unittest.TestCase):
         ids = [attrs["id"] for _, attrs in document.tags if "id" in attrs]
         links = [attrs["href"] for tag, attrs in document.tags if tag == "a"]
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertTrue(all(link[1:] in ids for link in links))
+        self.assertEqual(links, [])
+        self.assertFalse(any(tag == "nav" for tag, _ in document.tags))
+        self.assertNotIn("sommaire", html.lower())
         self.assertLess(html.index('id="chant-1"'), html.index('id="chant-2"'))
         self.assertEqual(html.count("<strong>Gloire à Toi !</strong>"), 4)
         first_song = html.split('<section id="chant-1"')[1].split("</section>")[0]
@@ -80,6 +126,20 @@ class SongSheetTests(unittest.TestCase):
         self.assertNotIn("generated_presentation", app.session_state)
         app.text_input[0].set_value("Autre célébration").run()
         self.assertEqual(len(app.get("download_button")), 0)
+
+    def test_download_contains_selected_date_and_is_hidden_when_date_changes(self):
+        app = AppTest.from_string("from app import main\nmain()")
+        app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
+        app.run()
+        app.date_input(key="celebration_date").set_value(date(2026, 11, 15)).run()
+        next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
+        self.assertFalse(app.exception)
+        html = app.session_state["generated_song_sheet"][1].decode("utf-8")
+        self.assertIn("15/11/2026</h1>", html)
+        app.date_input(key="celebration_date").set_value(date(2026, 11, 22)).run()
+        self.assertEqual(len(app.get("download_button")), 0)
+        next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
+        self.assertIn("22/11/2026</h1>", app.session_state["generated_song_sheet"][1].decode("utf-8"))
 
     def test_empty_selection_and_generation_error(self):
         app = AppTest.from_string("from app import main\nmain()")

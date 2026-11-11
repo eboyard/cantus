@@ -8,10 +8,17 @@ from streamlit.testing.v1 import AppTest
 
 from scripts.markdown_to_pptx import build_slides
 from scripts.print_song_sheet import create_print_song_sheet
-from scripts.song_types import MOMENTS, set_song_type, song_type
+from scripts.song_types import MOMENTS, celebration_moments, set_song_type, song_type
 
 
 class SongTypesTests(unittest.TestCase):
+    def test_boundary_moments_follow_position_without_changing_song_preferences(self):
+        self.assertEqual(celebration_moments([]), [])
+        self.assertEqual(celebration_moments([MOMENTS[2]]), [MOMENTS[0]])
+        choices = [MOMENTS[2], MOMENTS[10], MOMENTS[7]]
+        self.assertEqual(celebration_moments(choices), [MOMENTS[0], MOMENTS[10], MOMENTS[-1]])
+        self.assertEqual(choices, [MOMENTS[2], MOMENTS[10], MOMENTS[7]])
+
     def test_known_types_and_ambiguous_titles(self):
         for title, moment in (("Gloria (Messe)", MOMENTS[2]),
                               ("Jésus, Verbe de Dieu (Kyrie)", MOMENTS[1]),
@@ -36,15 +43,23 @@ class SongTypesTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             path = Path(directory) / "chant.md"
             path.write_text("<!-- titre: Gloria -->\nParoles", encoding="utf-8")
-            default_pdf, _ = create_print_song_sheet("Messe", [("Gloria", path)])
+            default_pdf, _ = create_print_song_sheet("Messe", [("Gloria", path)] * 3)
             pdf, _ = create_print_song_sheet("Messe", [("Titre", path)] * 3,
                                            moments=[MOMENTS[0], MOMENTS[0], MOMENTS[11]])
+            forced_pdf, _ = create_print_song_sheet("Messe", [("Titre", path)] * 3,
+                                                  moments=[MOMENTS[7]] * 3)
             with pymupdf.open(stream=default_pdf, filetype="pdf") as doc:
-                self.assertIn("3. Gloire à Dieu", doc[0].get_text())
+                lines = doc[0].get_text().splitlines()
+                for moment in (MOMENTS[0], MOMENTS[2], MOMENTS[-1]):
+                    self.assertIn(moment, lines)
+            with pymupdf.open(stream=forced_pdf, filetype="pdf") as doc:
+                lines = doc[0].get_text().splitlines()
+                for moment in (MOMENTS[0], MOMENTS[7], MOMENTS[-1]):
+                    self.assertEqual(lines.count(moment), 1)
             with pymupdf.open(stream=pdf, filetype="pdf") as doc:
                 text = "".join(page.get_text() for page in doc)
-                self.assertEqual(text.count("1. Chant d’entrée"), 1)
-                self.assertEqual(text.count("12. Envoi"), 1)
+                self.assertEqual(text.splitlines().count("Chant d’entrée"), 1)
+                self.assertEqual(text.splitlines().count("Envoi"), 1)
                 self.assertNotIn("Gloire à Dieu", text)
                 self.assertEqual(text.count("Paroles"), 3)
             with self.assertRaises(ValueError):
@@ -52,22 +67,37 @@ class SongTypesTests(unittest.TestCase):
 
     def test_occurrences_keep_their_moments_when_moved_and_removed(self):
         app = AppTest.from_string("from app import show_preparation\nshow_preparation()")
-        app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"] * 2
+        app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"] * 4
         app.run()
         self.assertFalse(app.exception)
-        self.assertEqual(app.session_state["song_moments"], [MOMENTS[1]] * 2)
-        app.selectbox(key="sheet_moment_0").select(MOMENTS[0]).run()
-        app.selectbox(key="sheet_moment_1").select(MOMENTS[11]).run()
+        self.assertEqual(app.session_state["song_moments"], [MOMENTS[1]] * 4)
+        self.assertTrue(app.selectbox(key="sheet_moment_0").disabled)
+        self.assertTrue(app.selectbox(key="sheet_moment_3").disabled)
+        self.assertEqual(app.selectbox(key="sheet_moment_0").value, MOMENTS[0])
+        self.assertEqual(app.selectbox(key="sheet_moment_3").value, MOMENTS[-1])
+        app.selectbox(key="sheet_moment_1").select(MOMENTS[10]).run()
+        app.selectbox(key="sheet_moment_2").select(MOMENTS[6]).run()
         next(b for b in app.button if b.key == "up-1").click().run()
         self.assertFalse(app.exception)
-        self.assertEqual(app.session_state["song_moments"], [MOMENTS[11], MOMENTS[0]])
+        self.assertEqual(app.selectbox(key="sheet_moment_0").value, MOMENTS[0])
+        self.assertEqual(app.selectbox(key="sheet_moment_1").value, MOMENTS[1])
+        self.assertEqual(app.selectbox(key="sheet_moment_2").value, MOMENTS[6])
+        next(b for b in app.button if b.key == "down-2").click().run()
+        self.assertEqual(app.selectbox(key="sheet_moment_2").value, MOMENTS[1])
+        self.assertEqual(app.selectbox(key="sheet_moment_3").value, MOMENTS[-1])
         next(b for b in app.button if b.label == "Créer la version à imprimer").click().run()
         self.assertTrue(app.get("download_button"))
-        app.selectbox(key="sheet_moment_0").select("").run()
+        app.selectbox(key="sheet_moment_1").select("").run()
         self.assertFalse(app.get("download_button"))
         next(b for b in app.button if b.key == "remove-0").click().run()
         self.assertFalse(app.exception)
-        self.assertEqual(app.session_state["song_moments"], [MOMENTS[0]])
+        self.assertEqual(app.selectbox(key="sheet_moment_0").value, MOMENTS[0])
+        self.assertEqual(app.selectbox(key="sheet_moment_2").value, MOMENTS[-1])
+        next(b for b in app.button if b.label == "Ajouter le chant").click().run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.selectbox(key="sheet_moment_2").value, MOMENTS[6])
+        self.assertFalse(app.selectbox(key="sheet_moment_2").disabled)
+        self.assertEqual(app.selectbox(key="sheet_moment_3").value, MOMENTS[-1])
 
     def test_editor_saves_type_with_unchanged_lyrics(self):
         with TemporaryDirectory() as directory:

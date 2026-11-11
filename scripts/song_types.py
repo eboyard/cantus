@@ -10,6 +10,18 @@ MOMENTS = (
     "Acclamation de l’Évangile", "Prières universelles", "Offertoire",
     "Sanctus", "Anamnèse", "Agneau de Dieu", "Communion", "Envoi",
 )
+
+
+def celebration_moments(moments: list[str]) -> list[str]:
+    """Déduit les rubriques des extrémités sans modifier les choix des chants."""
+    result = list(moments)
+    if result:
+        result[0] = MOMENTS[0]
+        if len(result) > 1:
+            result[-1] = MOMENTS[-1]
+    return result
+
+
 TYPE_TAG = re.compile(
     r"^[ \t]*<!--[ \t]*type[ \t]*:([^\r\n]*?)-->[ \t]*\r?$",
     re.MULTILINE | re.IGNORECASE,

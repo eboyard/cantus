@@ -180,7 +180,7 @@ Lors d’un changement du parcours utilisateur, mettre aussi à jour ce guide.
 
 Ouvrir **Repartir d’une feuille existante**, puis choisir une paroisse et une date
 dans **Choisir une feuille de chants existante**. La sélection remplace immédiatement
-la liste des chants par ceux du sommaire, dans le même ordre, y compris les chants
+la liste des chants par ceux de la feuille, dans le même ordre, y compris les chants
 présents plusieurs fois. Vous pouvez ensuite ajouter, retirer ou déplacer des chants
 et créer une nouvelle feuille HTML, un PDF ou un PowerPoint. Le nom de la nouvelle
 célébration et sa date restent à choisir pour cette nouvelle feuille.
@@ -192,7 +192,7 @@ utilise le jeton configuré côté serveur ; un dépôt public peut aussi être 
 
 Les anciennes feuilles sont reconnues à partir des titres de leur sommaire
 (en tolérant les différences de casse, d’accents et de ponctuation). Les nouvelles
-feuilles conservent aussi la référence du chant dans ce sommaire pour permettre sa
+feuilles conservent la référence du chant dans sa section de paroles pour permettre sa
 reprise même si son titre change. Si un chant manque ou si plusieurs chants ont le même
 titre, un message les signale et la liste actuelle reste intacte.
 
@@ -202,12 +202,20 @@ Après avoir choisi et ordonné les chants, cliquer sur **Créer la version à i
 puis **Télécharger la version à imprimer (.pdf)**. Cette génération est indépendante
 du PowerPoint et de la feuille pour téléphone.
 
+Le premier chant reçoit automatiquement la rubrique **Chant d’entrée**, et le
+dernier la rubrique **Envoi**, selon leur position dans la sélection. Avec un seul
+chant, la rubrique est **Chant d’entrée**. Les rubriques intermédiaires restent modifiables.
+
 Le PDF utilise le format A4 portrait, deux colonnes, des marges de 12 mm et du texte
-noir sur fond blanc. Choisir **11 points** pour une feuille compacte ou **12 points**
-pour des caractères plus grands. Les couplets sont numérotés ; chaque refrain est
+noir sur fond blanc. Choisir **9 ou 10 points** pour une feuille plus compacte,
+**11 points** (taille par défaut) ou **12 points** pour des caractères plus grands.
+Les couplets sont numérotés ; chaque refrain est
 écrit en gras à sa première occurrence, puis remplacé par « Refrain » aux reprises.
-L'ordre explicite des parties et les ponts sont conservés. Les couplets sont gardés
-ensemble lorsqu'ils tiennent dans une colonne.
+L'ordre explicite des parties et les ponts sont conservés. Les blocs de chants se
+suivent verticalement : rubrique et titre sur toute la largeur, puis paroles en
+deux colonnes propres au chant. Le chant suivant commence sous les deux colonnes
+du précédent. Les couplets restent entiers lorsqu'ils tiennent dans une colonne ;
+les chants longs peuvent se poursuivre sur plusieurs pages.
 
 Imprimer à **taille réelle (100 %)**, avec **une page par face**, en **recto verso,
 retournement sur le bord long**. Le nombre de pages est affiché avant téléchargement :
@@ -224,8 +232,17 @@ Unicode embarquées. Pour lancer les tests, y compris la vérification des PDF :
 ### Feuille de chants pour téléphone
 
 La section **Feuille de chants pour téléphone** permet de créer et télécharger
-un fichier `.html` à partir des chants sélectionnés. La feuille possède un
-sommaire cliquable, une seule colonne adaptée aux petits écrans et des paroles
+un fichier `.html` à partir des chants sélectionnés. Choisir la **Date de la célébration**
+avant de créer la feuille : elle apparaît dans son titre et sert aussi à la publication
+sur GitHub Pages. Le **Moment de la messe** choisi dans l’éditeur apparaît au-dessus
+du titre de chaque chant, dans le fichier téléchargé et dans la version à publier.
+Les moments implicites Gloire à Dieu, Psaume, Acclamation de l’Évangile, Sanctus
+et Agneau de Dieu ne sont pas affichés.
+Les rubriques non renseignées des chants intermédiaires sont omises.
+Un changement de date ou de rubrique nécessite de recréer la feuille et de préparer
+à nouveau la publication.
+Les chants se suivent
+directement, sans sommaire, sur une seule colonne adaptée aux petits écrans, avec des paroles
 en gras lorsque le Markdown le demande. L'ordre des chants et l'alternance
 couplets/refrain sont les mêmes que pour le PowerPoint.
 
@@ -249,9 +266,9 @@ Configuration initiale du dépôt `eboyard/cantus` :
 
 Pour chaque célébration :
 
-1. Préparer les chants dans Streamlit puis cliquer sur **Créer la feuille de chants**.
+1. Préparer les chants dans Streamlit, choisir la **Date de la célébration**, puis cliquer sur **Créer la feuille de chants**.
 2. Dans **Partager avec GitHub Pages**, choisir **Boussy-saint-Antoine** ou
-   **Quincy-sous-Sénart**, saisir la date et l'adresse du site, puis **Préparer pour GitHub Pages**.
+   **Quincy-sous-Sénart**, saisir l'adresse du site, puis **Préparer pour GitHub Pages**.
 3. Saisir le **Code de publication**, puis cliquer sur **Publier sur GitHub Pages**.
    L'application crée directement un commit contenant la feuille HTML et l'index
    de la paroisse sur `main`.

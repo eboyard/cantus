@@ -1,4 +1,4 @@
-"""Retrouve les feuilles existantes et rapproche leur sommaire du carnet de chants."""
+"""Retrouve les feuilles existantes et rapproche leurs chants du carnet."""
 
 import base64
 from dataclasses import dataclass
@@ -95,9 +95,16 @@ class _ContentsParser(HTMLParser):
         self.in_contents = False
         self.anchor: tuple[str, list[str]] | None = None
         self.songs: list[tuple[str, str]] = []
+        self.section_key: str | None = None
+        self.heading: list[str] | None = None
+        self.section_songs: list[tuple[str, str]] = []
 
     def handle_starttag(self, tag, attributes):
         attrs = dict(attributes)
+        if tag == "section" and re.fullmatch(r"chant-\d+", attrs.get("id") or ""):
+            self.section_key = attrs.get("data-song-key") or ""
+        if tag == "h2" and self.section_key is not None:
+            self.heading = []
         if tag == "nav" and attrs.get("id") == "sommaire":
             self.in_contents = True
         if self.in_contents and tag == "a" and (attrs.get("href") or "").startswith("#chant-"):
@@ -106,8 +113,16 @@ class _ContentsParser(HTMLParser):
     def handle_data(self, text):
         if self.anchor is not None:
             self.anchor[1].append(text)
+        if self.heading is not None:
+            self.heading.append(text)
 
     def handle_endtag(self, tag):
+        if tag == "h2" and self.heading is not None:
+            title = " ".join("".join(self.heading).split())
+            self.section_songs.append((self.section_key or "", re.sub(r"^\d+\.\s+", "", title)))
+            self.heading = None
+        if tag == "section":
+            self.section_key = None
         if tag == "a" and self.anchor is not None:
             key, text = self.anchor
             self.songs.append((key, " ".join("".join(text).split())))
@@ -124,11 +139,12 @@ def _normalized_title(title: str) -> str:
 def songs_from_contents(document: str, catalog: dict[str, tuple[str, Path]]) -> list[str]:
     parser = _ContentsParser()
     parser.feed(document)
-    if not parser.songs:
-        raise ValueError("Cette feuille ne contient pas de sommaire de chants reconnu.")
+    songs = parser.songs or parser.section_songs
+    if not songs:
+        raise ValueError("Cette feuille ne contient pas de liste de chants reconnue.")
     result = []
     issues = []
-    for source_key, title in parser.songs:
+    for source_key, title in songs:
         if source_key in catalog:
             result.append(source_key)
             continue

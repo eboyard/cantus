@@ -87,8 +87,8 @@ site dans une page séparée. Une connexion Internet est nécessaire.
 1. Ouvrez **Repartir d’une feuille existante**.
 2. Dans **Choisir une feuille de chants existante**, choisissez la paroisse et
    la date souhaitées.
-3. La sélection remplace immédiatement la liste actuelle par les chants du
-   sommaire, dans le même ordre, y compris les chants présents plusieurs fois.
+3. La sélection remplace immédiatement la liste actuelle par les chants de la
+   feuille, dans le même ordre, y compris les chants présents plusieurs fois.
 4. Ajustez les chants et renseignez le nom de la nouvelle célébration.
    Pour la publication, choisissez également sa nouvelle date.
 
@@ -115,12 +115,22 @@ en particulier les chants comportant de longues lignes.
 
 ## Créer une feuille pour téléphone
 
-Dans **Feuille de chants pour téléphone**, cliquez sur **Créer la feuille de chants**,
+Dans **Feuille de chants pour téléphone**, choisissez la **Date de la célébration**,
+puis cliquez sur **Créer la feuille de chants**,
 puis sur **Télécharger la feuille de chants (.html)**.
+La date apparaît dans le titre de la feuille et sert aussi à sa publication sur GitHub Pages.
+Le **Moment de la messe** choisi dans l’ordre des chants apparaît au-dessus du titre
+de chaque chant, sur la feuille pour téléphone comme sur la feuille à publier.
+Les moments implicites **Gloire à Dieu**, **Psaume**, **Acclamation de l’Évangile**,
+**Sanctus** et **Agneau de Dieu** ne sont pas affichés.
+Le premier chant indique **Chant d’entrée** et le dernier **Envoi**. Une rubrique
+**Non renseigné** n’affiche aucun libellé pour un chant intermédiaire.
+Si vous changez la date ou un moment, recréez la feuille avant de la télécharger
+et préparez à nouveau la publication.
 
 Transférez le fichier sur le téléphone et ouvrez-le avec un navigateur.
-Le sommaire cliquable permet d’accéder directement à chaque chant. Les paroles
-s’affichent sur une seule colonne adaptée à la largeur de l’écran.
+Les chants se suivent directement, sans sommaire. Les paroles s’affichent sur
+une seule colonne adaptée à la largeur de l’écran.
 
 Une fois téléchargé, le fichier contient les paroles et leur mise en forme :
 il peut être consulté sans connexion Internet. L’ordre des chants et des
@@ -131,9 +141,9 @@ utilisez la publication décrite dans la rubrique suivante.
 
 ## Publier une feuille et partager son QR code
 
-1. Cliquez sur **Créer la feuille de chants** pour faire apparaître
+1. Choisissez la **Date de la célébration**, puis cliquez sur **Créer la feuille de chants** pour faire apparaître
    **Partager avec GitHub Pages**.
-2. Choisissez la **Paroisse** et la **Date de la célébration**. Vérifiez
+2. Choisissez la **Paroisse**. Vérifiez
    l’**Adresse du site GitHub Pages** avec le responsable de l’application.
 3. Cliquez sur **Préparer pour GitHub Pages**. Le lien prévu et le QR code apparaissent.
 4. Saisissez le **Code de publication** fourni par l’organisateur, puis cliquez
@@ -170,7 +180,10 @@ Le téléchargement du ZIP seul ne publie pas la feuille.
 
 ## Créer et imprimer un PDF
 
-Dans **Ordre des chants**, choisissez le **Moment de la messe** de chaque chant :
+Dans **Ordre des chants**, le premier chant est automatiquement le **Chant d’entrée**
+et le dernier est l’**Envoi**. Ces rubriques suivent la position après un ajout,
+un retrait ou un déplacement. Avec un seul chant, la rubrique est **Chant d’entrée**.
+Pour les chants intermédiaires, choisissez le **Moment de la messe** :
 entrée, préparation pénitentielle, Gloire à Dieu, psaume, acclamation de l’Évangile,
 prières universelles, offertoire, Sanctus, anamnèse, Agneau de Dieu, communion ou envoi.
 Le type du carnet est proposé automatiquement lorsqu’il est connu. Vous pouvez
@@ -187,7 +200,8 @@ restent à renseigner. Le type enregistré est conservé dans une ligne
 `<!-- type: Gloire à Dieu -->`, qui n’apparaît pas dans les paroles ni les projections.
 
 1. Dans **Feuille de chants à imprimer**, choisissez la **Taille du texte imprimé** :
-   **11 points** pour une feuille compacte ou **12 points** pour des caractères plus grands.
+   **9 ou 10 points** pour une feuille plus compacte, **11 points** par défaut
+   ou **12 points** pour des caractères plus grands.
 2. Cliquez sur **Créer la version à imprimer**. Le nombre de pages est affiché.
 3. Cliquez sur **Télécharger la version à imprimer (.pdf)**.
 4. Imprimez à **taille réelle (100 %)**, avec **une page par face**, en
@@ -198,7 +212,11 @@ et du texte noir sur fond blanc. Les couplets sont numérotés. Chaque refrain
 est écrit en gras à sa première occurrence, puis indiqué par « Refrain » lors
 des reprises. L’ordre prévu des parties et les ponts sont conservés.
 
-Les couplets restent ensemble lorsqu’ils tiennent dans une colonne.
+Chaque chant forme un bloc : sa rubrique et son titre occupent toute la largeur,
+puis ses paroles sont réparties en deux colonnes. Le bloc du chant suivant commence
+en dessous des deux colonnes du précédent, jamais à côté. Les couplets restent
+ensemble lorsqu’ils tiennent dans une colonne ; les chants longs peuvent se
+poursuivre sur plusieurs pages.
 Si nécessaire, le document ajoute des pages sans réduire la taille du texte choisie.
 Après un changement de taille, créez à nouveau le PDF.
 
