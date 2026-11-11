@@ -24,7 +24,7 @@ class Document(HTMLParser):
 
 
 class SongSheetTests(unittest.TestCase):
-    def test_song_order_refrains_bold_and_navigation(self):
+    def test_song_order_refrains_bold_without_contents(self):
         with TemporaryDirectory() as directory:
             song = Path(directory) / "chant.md"
             song.write_text(
@@ -38,7 +38,9 @@ class SongSheetTests(unittest.TestCase):
         ids = [attrs["id"] for _, attrs in document.tags if "id" in attrs]
         links = [attrs["href"] for tag, attrs in document.tags if tag == "a"]
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertTrue(all(link[1:] in ids for link in links))
+        self.assertEqual(links, [])
+        self.assertFalse(any(tag == "nav" for tag, _ in document.tags))
+        self.assertNotIn("sommaire", html.lower())
         self.assertLess(html.index('id="chant-1"'), html.index('id="chant-2"'))
         self.assertEqual(html.count("<strong>Gloire à Toi !</strong>"), 4)
         first_song = html.split('<section id="chant-1"')[1].split("</section>")[0]

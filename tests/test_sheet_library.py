@@ -36,7 +36,7 @@ class SheetLibraryTests(unittest.TestCase):
             songs_from_contents(contents("Même titre"), catalog)
         with self.assertRaisesRegex(ValueError, "absent du carnet"):
             songs_from_contents(contents("Inconnu"), catalog)
-        with self.assertRaisesRegex(ValueError, "sommaire"):
+        with self.assertRaisesRegex(ValueError, "liste de chants"):
             songs_from_contents("<h1>Agnus Dei</h1>", catalog)
 
     def test_new_sheet_uses_source_keys_even_after_title_change(self):
@@ -45,6 +45,14 @@ class SheetLibraryTests(unittest.TestCase):
         html = create_song_sheet("Messe", [("Ancien titre", song)]).decode()
         self.assertIn('data-song-key="chants/agnus_dei.md"', html)
         self.assertEqual(songs_from_contents(html, {"chants/agnus_dei.md": ("Nouveau titre", song)}), ["chants/agnus_dei.md"])
+
+    def test_sheet_without_contents_preserves_order_duplicates_and_title_fallback(self):
+        with TemporaryDirectory() as directory:
+            song = Path(directory) / "chant.md"
+            song.write_text("Paroles", encoding="utf-8")
+            html = create_song_sheet("Messe", [("Agnus Dei", song), ("Ô Marie", song), ("Agnus Dei", song)]).decode()
+        catalog = {"a": ("Agnus Dei", song), "b": ("O Marie", song)}
+        self.assertEqual(songs_from_contents(html, catalog), ["a", "b", "a"])
 
     def test_local_listing_excludes_parish_indexes_and_invalid_dates(self):
         with TemporaryDirectory() as directory:

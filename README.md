@@ -180,7 +180,7 @@ Lors d’un changement du parcours utilisateur, mettre aussi à jour ce guide.
 
 Ouvrir **Repartir d’une feuille existante**, puis choisir une paroisse et une date
 dans **Choisir une feuille de chants existante**. La sélection remplace immédiatement
-la liste des chants par ceux du sommaire, dans le même ordre, y compris les chants
+la liste des chants par ceux de la feuille, dans le même ordre, y compris les chants
 présents plusieurs fois. Vous pouvez ensuite ajouter, retirer ou déplacer des chants
 et créer une nouvelle feuille HTML, un PDF ou un PowerPoint. Le nom de la nouvelle
 célébration et sa date restent à choisir pour cette nouvelle feuille.
@@ -192,7 +192,7 @@ utilise le jeton configuré côté serveur ; un dépôt public peut aussi être 
 
 Les anciennes feuilles sont reconnues à partir des titres de leur sommaire
 (en tolérant les différences de casse, d’accents et de ponctuation). Les nouvelles
-feuilles conservent aussi la référence du chant dans ce sommaire pour permettre sa
+feuilles conservent la référence du chant dans sa section de paroles pour permettre sa
 reprise même si son titre change. Si un chant manque ou si plusieurs chants ont le même
 titre, un message les signale et la liste actuelle reste intacte.
 
@@ -232,8 +232,8 @@ Unicode embarquées. Pour lancer les tests, y compris la vérification des PDF :
 ### Feuille de chants pour téléphone
 
 La section **Feuille de chants pour téléphone** permet de créer et télécharger
-un fichier `.html` à partir des chants sélectionnés. La feuille possède un
-sommaire cliquable, une seule colonne adaptée aux petits écrans et des paroles
+un fichier `.html` à partir des chants sélectionnés. Les chants se suivent
+directement, sans sommaire, sur une seule colonne adaptée aux petits écrans, avec des paroles
 en gras lorsque le Markdown le demande. L'ordre des chants et l'alternance
 couplets/refrain sont les mêmes que pour le PowerPoint.
 

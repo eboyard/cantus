@@ -155,7 +155,7 @@ def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str,
 
 def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
     with st.expander("Repartir d’une feuille existante"):
-        st.caption("Choisissez une feuille : son sommaire remplacera la liste actuelle des chants, dans le même ordre.")
+        st.caption("Choisissez une feuille : ses chants remplaceront la liste actuelle, dans le même ordre.")
         repository = github_setting("repository", "eboyard/cantus")
         branch = github_setting("branch", "main")
         source_signature = (repository, branch)
@@ -448,7 +448,7 @@ def show_preparation() -> None:
         st.caption(f"{generated[2]} diapositives")
 
     st.subheader("Feuille de chants pour téléphone")
-    st.caption("Un fichier HTML avec un sommaire et des paroles adaptées à la largeur de l'écran.")
+    st.caption("Un fichier HTML avec les paroles adaptées à la largeur de l'écran.")
     if st.button("Créer la feuille de chants", disabled=not song_order):
         try:
             data = create_song_sheet(celebration, [catalog[key] for key in song_order])

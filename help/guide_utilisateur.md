@@ -87,8 +87,8 @@ site dans une page séparée. Une connexion Internet est nécessaire.
 1. Ouvrez **Repartir d’une feuille existante**.
 2. Dans **Choisir une feuille de chants existante**, choisissez la paroisse et
    la date souhaitées.
-3. La sélection remplace immédiatement la liste actuelle par les chants du
-   sommaire, dans le même ordre, y compris les chants présents plusieurs fois.
+3. La sélection remplace immédiatement la liste actuelle par les chants de la
+   feuille, dans le même ordre, y compris les chants présents plusieurs fois.
 4. Ajustez les chants et renseignez le nom de la nouvelle célébration.
    Pour la publication, choisissez également sa nouvelle date.
 
@@ -119,8 +119,8 @@ Dans **Feuille de chants pour téléphone**, cliquez sur **Créer la feuille de 
 puis sur **Télécharger la feuille de chants (.html)**.
 
 Transférez le fichier sur le téléphone et ouvrez-le avec un navigateur.
-Le sommaire cliquable permet d’accéder directement à chaque chant. Les paroles
-s’affichent sur une seule colonne adaptée à la largeur de l’écran.
+Les chants se suivent directement, sans sommaire. Les paroles s’affichent sur
+une seule colonne adaptée à la largeur de l’écran.
 
 Une fois téléchargé, le fichier contient les paroles et leur mise en forme :
 il peut être consulté sans connexion Internet. L’ordre des chants et des
