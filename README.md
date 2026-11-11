@@ -236,6 +236,8 @@ un fichier `.html` à partir des chants sélectionnés. Choisir la **Date de la 
 avant de créer la feuille : elle apparaît dans son titre et sert aussi à la publication
 sur GitHub Pages. Le **Moment de la messe** choisi dans l’éditeur apparaît au-dessus
 du titre de chaque chant, dans le fichier téléchargé et dans la version à publier.
+Les moments implicites Gloire à Dieu, Psaume, Acclamation de l’Évangile, Sanctus
+et Agneau de Dieu ne sont pas affichés.
 Les rubriques non renseignées des chants intermédiaires sont omises.
 Un changement de date ou de rubrique nécessite de recréer la feuille et de préparer
 à nouveau la publication.

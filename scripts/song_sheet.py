@@ -9,6 +9,11 @@ from scripts.lyrics_format import formatted_lines, fragment_html
 from scripts.song_types import MOMENTS, celebration_moments, read_song_type
 
 
+IMPLICIT_MOMENTS = frozenset({
+    "Gloire à Dieu", "Psaume", "Acclamation de l’Évangile", "Sanctus", "Agneau de Dieu",
+})
+
+
 def create_song_sheet(
     title: str, songs: list[tuple[str, Path]], *, day: date | None = None,
     moments: list[str] | None = None,
@@ -42,7 +47,7 @@ def create_song_sheet(
                 ))
             lyrics.append('<p class="paroles">' + "<br>\n".join(lines) + "</p>")
         moment = moments[position - 1]
-        rubrique = f'<p class="moment">{escape(moment)}</p>' if moment else ""
+        rubrique = f'<p class="moment">{escape(moment)}</p>' if moment and moment not in IMPLICIT_MOMENTS else ""
         sections.append(
             f'<section id="{song_id}" aria-labelledby="titre-{position}"{source}>'
             + rubrique

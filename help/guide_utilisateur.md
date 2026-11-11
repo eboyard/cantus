@@ -121,6 +121,8 @@ puis sur **Télécharger la feuille de chants (.html)**.
 La date apparaît dans le titre de la feuille et sert aussi à sa publication sur GitHub Pages.
 Le **Moment de la messe** choisi dans l’ordre des chants apparaît au-dessus du titre
 de chaque chant, sur la feuille pour téléphone comme sur la feuille à publier.
+Les moments implicites **Gloire à Dieu**, **Psaume**, **Acclamation de l’Évangile**,
+**Sanctus** et **Agneau de Dieu** ne sont pas affichés.
 Le premier chant indique **Chant d’entrée** et le dernier **Envoi**. Une rubrique
 **Non renseigné** n’affiche aucun libellé pour un chant intermédiaire.
 Si vous changez la date ou un moment, recréez la feuille avant de la télécharger

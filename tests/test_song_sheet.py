@@ -39,7 +39,7 @@ class SongSheetTests(unittest.TestCase):
                 else:
                     self.assertNotIn('class="moment"', section)
             inferred = create_song_sheet("Messe", songs).decode()
-            self.assertEqual(inferred.count('<p class="moment">Psaume</p>'), 2)
+            self.assertNotIn('<p class="moment">Psaume</p>', inferred)
             for invalid in ([""], ["", "<script>", "", ""]):
                 with self.assertRaisesRegex(ValueError, "rubrique valide"):
                     create_song_sheet("Messe", songs, moments=invalid)
