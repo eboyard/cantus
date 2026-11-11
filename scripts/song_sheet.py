@@ -4,7 +4,7 @@ from datetime import date
 from html import escape
 from pathlib import Path
 
-from scripts.markdown_to_pptx import read_slides
+from scripts.song_selection import selected_song_parts
 from scripts.lyrics_format import formatted_lines, fragment_html
 from scripts.song_types import MOMENTS, celebration_moments, read_song_type
 
@@ -17,6 +17,7 @@ IMPLICIT_MOMENTS = frozenset({
 def create_song_sheet(
     title: str, songs: list[tuple[str, Path]], *, day: date | None = None,
     moments: list[str] | None = None,
+    verses: list[list[str] | None] | None = None,
 ) -> bytes:
     """Conserve l'ordre des chants, l'alternance des parties et le gras."""
     if not songs:
@@ -26,9 +27,11 @@ def create_song_sheet(
     if len(moments) != len(songs) or any(moment not in ("", *MOMENTS) for moment in moments):
         raise ValueError("Choisissez une rubrique valide pour chaque chant.")
     moments = celebration_moments(moments)
+    if verses is not None and len(verses) != len(songs):
+        raise ValueError("Choisissez les couplets pour chaque chant.")
     sections = []
     for position, (song_title, path) in enumerate(songs, start=1):
-        blocks = read_slides(path)
+        blocks = [part.text for part in selected_song_parts(path, None if verses is None else verses[position - 1])]
         if not blocks:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
         song_id = f"chant-{position}"

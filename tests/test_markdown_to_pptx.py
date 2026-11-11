@@ -1,7 +1,7 @@
 import unittest
 from io import BytesIO
 
-from scripts.markdown_to_pptx import BACKGROUND_COLOR, build_slides, convert, read_slides, read_index_slides
+from scripts.markdown_to_pptx import BACKGROUND_COLOR, build_slides, build_song_parts, convert, read_slides, read_index_slides
 from pptx import Presentation
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -224,7 +224,9 @@ class WebAppTests(unittest.TestCase):
     def test_preview_error_does_not_interrupt_app(self):
         app = AppTest.from_string("from app import main\nmain()")
         app.session_state["song_order"] = ["chants/c_est_par_ta_grâce.md"]
-        with patch("app.read_slides", side_effect=ValueError("Partie C1 absente")):
+        with patch("app.selected_song_parts", side_effect=[
+            build_song_parts("Couplet"), ValueError("Partie C1 absente"),
+        ]):
             app.run()
         self.assertEqual(len(app.exception), 0)
         self.assertEqual(len(app.error), 1)

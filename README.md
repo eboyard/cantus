@@ -176,6 +176,19 @@ Son contenu est maintenu dans [help/guide_utilisateur.md](help/guide_utilisateur
 et intégré directement au déploiement Streamlit, sans service supplémentaire.
 Lors d’un changement du parcours utilisateur, mettre aussi à jour ce guide.
 
+### Choisir les couplets d’une feuille
+
+Dans **Ordre des chants**, la liste **Couplets à garder** de chaque chant propose
+une case à cocher par couplet, avec le début de ses paroles. Toutes les cases sont
+masquées lorsqu’il n’y a qu’un seul couplet, conservé automatiquement. Elles sont
+cochées par défaut ; décocher les couplets à retirer. Les choix
+s’appliquent à l’aperçu et aux feuilles HTML téléchargées, publiées et PDF imprimables.
+Ils sont propres à chaque occurrence et suivent les déplacements du chant.
+Le carnet reste intact ; les refrains suivent les couplets retenus et les ponts
+sont conservés. Les numéros des couplets du PDF restent ceux du carnet.
+Après un changement, recréer la feuille et préparer à nouveau sa publication.
+Le PowerPoint conserve les parties prévues dans le carnet.
+
 ### Repartir d’une feuille existante
 
 Ouvrir **Repartir d’une feuille existante**, puis choisir une paroisse et une date
