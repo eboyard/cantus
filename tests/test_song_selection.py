@@ -1,9 +1,11 @@
 from pathlib import Path
+from io import BytesIO
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
 import pymupdf
+from pptx import Presentation
 from streamlit.testing.v1 import AppTest
 
 from scripts.song_selection import selected_song_parts
@@ -81,6 +83,14 @@ class SongSelectionTests(unittest.TestCase):
                 self.assertTrue(app.checkbox(key="sheet_verses_0_C3").value)
                 self.assertFalse(app.checkbox(key="sheet_verses_0_C1").value)
                 self.assertTrue(app.checkbox(key="sheet_verses_1_C1").value)
+                next(b for b in app.button if b.label == "Créer le PowerPoint").click().run()
+                data, count = app.session_state["generated_presentation"][1:]
+                presentation = Presentation(BytesIO(data))
+                projected = ["\n".join(shape.text for shape in slide.shapes if shape.has_text_frame)
+                             for slide in presentation.slides]
+                self.assertEqual(projected, ["Pont chanté", "Troisième couplet", "Refrain chanté", "",
+                                             "Premier couplet", "Refrain chanté", "Pont chanté"])
+                self.assertEqual(count, len(projected))
                 next(b for b in app.button if b.label == "Créer la feuille de chants").click().run()
                 next(b for b in app.button if b.label == "Préparer pour GitHub Pages").click().run()
                 for document in (app.session_state["generated_song_sheet"][1],
@@ -98,6 +108,12 @@ class SongSelectionTests(unittest.TestCase):
                 app.checkbox(key="sheet_verses_0_C1").check()
                 app.checkbox(key="sheet_verses_0_C2").check().run()
                 self.assertEqual(len(app.get("download_button")), 0)
+                next(b for b in app.button if b.label == "Créer le PowerPoint").click().run()
+                updated = Presentation(BytesIO(app.session_state["generated_presentation"][1]))
+                updated_text = "\n".join(shape.text for slide in updated.slides
+                                         for shape in slide.shapes if shape.has_text_frame)
+                self.assertIn("Deuxième couplet", updated_text)
+                self.assertNotIn("Troisième couplet", updated_text)
                 self.assertFalse(any(b.label == "Publier sur GitHub Pages" for b in app.button))
                 app.button(key="remove-0").click().run()
                 self.assertEqual(app.session_state["song_verses"], [["C1"]])

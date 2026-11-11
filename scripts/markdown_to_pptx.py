@@ -174,6 +174,11 @@ def fit_font(text: str, maximum: int) -> int:
 
 def convert(source: Path, destination: Path, font_size: int = 40, *, from_index: bool = False) -> int:
     sections = read_index_slides(source) if from_index else read_slides(source)
+    return write_slides(sections, destination, font_size)
+
+
+def write_slides(sections: list[str], destination: Path, font_size: int = 40) -> int:
+    """Écrit les parties déjà ordonnées, y compris les séparations entre chants."""
     if not sections:
         raise ValueError("Le fichier Markdown ne contient aucune parole.")
 

@@ -10,13 +10,12 @@ from pathlib import Path
 import re
 import tempfile
 import unicodedata
-from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 import streamlit as st
 import streamlit.components.v1 as components
 
-from scripts.markdown_to_pptx import build_slides, convert, read_slides, read_title
+from scripts.markdown_to_pptx import build_slides, read_slides, read_title, write_slides
 from scripts.song_sheet import create_song_sheet
 from scripts.song_selection import selected_song_parts
 from scripts.print_song_sheet import create_print_song_sheet
@@ -42,22 +41,22 @@ def song_catalog() -> dict[str, tuple[str, Path]]:
     return catalog
 
 
-def create_presentation(songs: list[tuple[str, Path]]) -> tuple[bytes, int]:
+def create_presentation(
+    songs: list[tuple[str, Path]], *, verses: list[list[str] | None] | None = None,
+) -> tuple[bytes, int]:
+    if verses is not None and len(verses) != len(songs):
+        raise ValueError("Choisissez les couplets pour chaque chant.")
+    sections = []
+    for position, (_, path) in enumerate(songs):
+        parts = selected_song_parts(path, None if verses is None else verses[position])
+        if not parts:
+            raise ValueError(f"Le chant {path.name} ne contient aucune parole après sélection.")
+        if sections:
+            sections.append("")
+        sections.extend(part.text for part in parts)
     with tempfile.TemporaryDirectory(prefix="cantus-") as directory:
-        temp_dir = Path(directory)
-        index_path = temp_dir / "index.md"
-        rows = [
-            "| Ordre | Moment | Titre | Fichier |",
-            "| --- | --- | --- | --- |",
-        ]
-        for position, (title, path) in enumerate(songs, start=1):
-            relative_path = os.path.relpath(path, temp_dir).replace(os.sep, "/")
-            link = quote(relative_path, safe="/.")
-            rows.append(f"| {position} | Chant | {title.replace('|', ' ')} | [Paroles]({link}) |")
-        index_path.write_text("\n".join(rows), encoding="utf-8")
-
-        output_path = temp_dir / "diaporama.pptx"
-        slide_count = convert(index_path, output_path, from_index=True)
+        output_path = Path(directory) / "diaporama.pptx"
+        slide_count = write_slides(sections, output_path)
         return output_path.read_bytes(), slide_count
 
 
@@ -422,7 +421,7 @@ def show_preparation() -> None:
                             f"Couplet {identifier[1:]} — {text.splitlines()[0]}",
                             value=identifier in selected_verses,
                             key=f"sheet_verses_{position}_{identifier}",
-                            help="Choix pour les feuilles téléphone, à publier et à imprimer. Les refrains et les ponts sont conservés.",
+                            help="Choix pour le PowerPoint et les feuilles téléphone, à publier et à imprimer. Les refrains et les ponts sont conservés.",
                         )
                     ]
             except (OSError, ValueError) as error:
@@ -461,17 +460,19 @@ def show_preparation() -> None:
                     st.error(f"Impossible de lire {path.name} : {error}")
 
     signature = (celebration.strip(), tuple(song_order))
+    verse_signature = tuple(None if selection is None else tuple(selection) for selection in verses)
+    presentation_signature = (signature, verse_signature)
     generated = st.session_state.get("generated_presentation")
     if st.button("Créer le PowerPoint", type="primary", disabled=not song_order):
         try:
-            data, slide_count = create_presentation([catalog[key] for key in song_order])
-            generated = (signature, data, slide_count)
+            data, slide_count = create_presentation([catalog[key] for key in song_order], verses=verses)
+            generated = (presentation_signature, data, slide_count)
             st.session_state.generated_presentation = generated
         except (OSError, ValueError) as error:
             st.error(f"La création a échoué : {error}")
 
     generated = st.session_state.get("generated_presentation")
-    if generated and generated[0] == signature:
+    if generated and generated[0] == presentation_signature:
         st.download_button(
             "Télécharger le PowerPoint",
             data=generated[1],
@@ -487,7 +488,6 @@ def show_preparation() -> None:
         "Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date(),
         key="celebration_date",
     )
-    verse_signature = tuple(None if selection is None else tuple(selection) for selection in verses)
     sheet_signature = (signature, day, tuple(moments), verse_signature)
     if st.button("Créer la feuille de chants", disabled=not song_order):
         try:
