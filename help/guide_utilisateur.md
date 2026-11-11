@@ -115,8 +115,11 @@ en particulier les chants comportant de longues lignes.
 
 ## Créer une feuille pour téléphone
 
-Dans **Feuille de chants pour téléphone**, cliquez sur **Créer la feuille de chants**,
+Dans **Feuille de chants pour téléphone**, choisissez la **Date de la célébration**,
+puis cliquez sur **Créer la feuille de chants**,
 puis sur **Télécharger la feuille de chants (.html)**.
+La date apparaît dans le titre de la feuille et sert aussi à sa publication sur GitHub Pages.
+Si vous changez la date, recréez la feuille avant de la télécharger.
 
 Transférez le fichier sur le téléphone et ouvrez-le avec un navigateur.
 Les chants se suivent directement, sans sommaire. Les paroles s’affichent sur
@@ -131,9 +134,9 @@ utilisez la publication décrite dans la rubrique suivante.
 
 ## Publier une feuille et partager son QR code
 
-1. Cliquez sur **Créer la feuille de chants** pour faire apparaître
+1. Choisissez la **Date de la célébration**, puis cliquez sur **Créer la feuille de chants** pour faire apparaître
    **Partager avec GitHub Pages**.
-2. Choisissez la **Paroisse** et la **Date de la célébration**. Vérifiez
+2. Choisissez la **Paroisse**. Vérifiez
    l’**Adresse du site GitHub Pages** avec le responsable de l’application.
 3. Cliquez sur **Préparer pour GitHub Pages**. Le lien prévu et le QR code apparaissent.
 4. Saisissez le **Code de publication** fourni par l’organisateur, puis cliquez

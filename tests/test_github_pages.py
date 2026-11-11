@@ -119,10 +119,11 @@ class GitHubPagesTests(unittest.TestCase):
                 app = AppTest.from_string("from app import main\nmain()")
                 app.session_state["song_order"] = ["chant"]
                 app.run()
+                app.date_input[0].set_value(date(2026, 10, 18)).run()
                 next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
                 self.assertEqual(app.selectbox(key="pages_parish").options, ["Boussy-saint-Antoine", "Quincy-sous-Sénart"])
                 app.selectbox(key="pages_parish").select("Quincy-sous-Sénart")
-                app.date_input[0].set_value(date(2026, 10, 18)).run()
+                app.run()
                 next(button for button in app.button if button.label == "Préparer pour GitHub Pages").click().run()
                 self.assertEqual(len(app.exception), 0)
                 self.assertEqual(len(app.error), 0)

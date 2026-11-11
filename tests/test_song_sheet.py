@@ -1,3 +1,4 @@
+from datetime import date
 from html.parser import HTMLParser
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -82,6 +83,20 @@ class SongSheetTests(unittest.TestCase):
         self.assertNotIn("generated_presentation", app.session_state)
         app.text_input[0].set_value("Autre célébration").run()
         self.assertEqual(len(app.get("download_button")), 0)
+
+    def test_download_contains_selected_date_and_is_hidden_when_date_changes(self):
+        app = AppTest.from_string("from app import main\nmain()")
+        app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
+        app.run()
+        app.date_input(key="celebration_date").set_value(date(2026, 11, 15)).run()
+        next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
+        self.assertFalse(app.exception)
+        html = app.session_state["generated_song_sheet"][1].decode("utf-8")
+        self.assertIn("15/11/2026</h1>", html)
+        app.date_input(key="celebration_date").set_value(date(2026, 11, 22)).run()
+        self.assertEqual(len(app.get("download_button")), 0)
+        next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
+        self.assertIn("22/11/2026</h1>", app.session_state["generated_song_sheet"][1].decode("utf-8"))
 
     def test_empty_selection_and_generation_error(self):
         app = AppTest.from_string("from app import main\nmain()")

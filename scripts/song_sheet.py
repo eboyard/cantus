@@ -1,5 +1,6 @@
 """Crée une feuille de chants HTML autonome, adaptée aux téléphones."""
 
+from datetime import date
 from html import escape
 from pathlib import Path
 
@@ -7,7 +8,7 @@ from scripts.markdown_to_pptx import read_slides
 from scripts.lyrics_format import formatted_lines, fragment_html
 
 
-def create_song_sheet(title: str, songs: list[tuple[str, Path]]) -> bytes:
+def create_song_sheet(title: str, songs: list[tuple[str, Path]], *, day: date | None = None) -> bytes:
     """Conserve l'ordre des chants, l'alternance des parties et le gras."""
     if not songs:
         raise ValueError("Ajoutez au moins un chant pour créer la feuille.")
@@ -37,7 +38,10 @@ def create_song_sheet(title: str, songs: list[tuple[str, Path]]) -> bytes:
             + "\n".join(lyrics)
             + '</section>'
         )
-    page_title = escape(title.strip() or "Messe")
+    heading = title.strip() or "Messe"
+    if day is not None:
+        heading += f" — {day.strftime('%d/%m/%Y')}"
+    page_title = escape(heading)
     document = f"""<!doctype html>
 <html lang="fr">
 <head>

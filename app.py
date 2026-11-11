@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import hmac
 import logging
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 import re
 import tempfile
@@ -76,14 +76,13 @@ def github_setting(name: str, default: str = "") -> str:
         return default
 
 
-def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str, Path]]) -> None:
+def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str, Path]], day: date) -> None:
     st.markdown("**Partager avec GitHub Pages**")
     parish = st.selectbox(
         "Paroisse",
         options=["Boussy-saint-Antoine", "Quincy-sous-Sénart"],
         key="pages_parish",
     )
-    day = st.date_input("Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date())
     base_url = st.text_input(
         "Adresse du site GitHub Pages",
         value=os.environ.get("GITHUB_PAGES_URL", "https://eboyard.github.io/cantus/"),
@@ -91,8 +90,8 @@ def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str,
     export_signature = (signature, parish.strip(), day, base_url.strip())
     if st.button("Préparer pour GitHub Pages"):
         try:
-            heading = f"{parish.strip()} — {celebration.strip() or 'Messe'} — {day.strftime('%d/%m/%Y')}"
-            document = create_song_sheet(heading, songs)
+            heading = f"{parish.strip()} — {celebration.strip() or 'Messe'}"
+            document = create_song_sheet(heading, songs, day=day)
             export = prepare_pages_export(document, parish, day, base_url)
             st.session_state.pages_export = (export_signature, export)
         except (OSError, ValueError) as error:
@@ -449,15 +448,20 @@ def show_preparation() -> None:
 
     st.subheader("Feuille de chants pour téléphone")
     st.caption("Un fichier HTML avec les paroles adaptées à la largeur de l'écran.")
+    day = st.date_input(
+        "Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date(),
+        key="celebration_date",
+    )
+    sheet_signature = (signature, day)
     if st.button("Créer la feuille de chants", disabled=not song_order):
         try:
-            data = create_song_sheet(celebration, [catalog[key] for key in song_order])
-            st.session_state.generated_song_sheet = (signature, data)
+            data = create_song_sheet(celebration, [catalog[key] for key in song_order], day=day)
+            st.session_state.generated_song_sheet = (sheet_signature, data)
         except (OSError, ValueError) as error:
             st.error(f"La création de la feuille a échoué : {error}")
 
     sheet = st.session_state.get("generated_song_sheet")
-    if sheet and sheet[0] == signature:
+    if sheet and sheet[0] == sheet_signature:
         st.download_button(
             "Télécharger la feuille de chants (.html)",
             data=sheet[1],
@@ -468,7 +472,7 @@ def show_preparation() -> None:
             "Transférez le fichier sur le téléphone et ouvrez-le avec un navigateur. "
             "Une fois enregistré, il se lit sans connexion Internet."
         )
-        show_github_pages(signature, celebration, [catalog[key] for key in song_order])
+        show_github_pages(sheet_signature, celebration, [catalog[key] for key in song_order], day)
 
     st.subheader("Feuille de chants à imprimer")
     st.caption("PDF A4 en deux colonnes, en noir et blanc. Chaque refrain est écrit une fois par chant.")

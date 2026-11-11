@@ -232,7 +232,10 @@ Unicode embarquées. Pour lancer les tests, y compris la vérification des PDF :
 ### Feuille de chants pour téléphone
 
 La section **Feuille de chants pour téléphone** permet de créer et télécharger
-un fichier `.html` à partir des chants sélectionnés. Les chants se suivent
+un fichier `.html` à partir des chants sélectionnés. Choisir la **Date de la célébration**
+avant de créer la feuille : elle apparaît dans son titre et sert aussi à la publication
+sur GitHub Pages. Un changement de date nécessite de recréer la feuille.
+Les chants se suivent
 directement, sans sommaire, sur une seule colonne adaptée aux petits écrans, avec des paroles
 en gras lorsque le Markdown le demande. L'ordre des chants et l'alternance
 couplets/refrain sont les mêmes que pour le PowerPoint.
@@ -257,9 +260,9 @@ Configuration initiale du dépôt `eboyard/cantus` :
 
 Pour chaque célébration :
 
-1. Préparer les chants dans Streamlit puis cliquer sur **Créer la feuille de chants**.
+1. Préparer les chants dans Streamlit, choisir la **Date de la célébration**, puis cliquer sur **Créer la feuille de chants**.
 2. Dans **Partager avec GitHub Pages**, choisir **Boussy-saint-Antoine** ou
-   **Quincy-sous-Sénart**, saisir la date et l'adresse du site, puis **Préparer pour GitHub Pages**.
+   **Quincy-sous-Sénart**, saisir l'adresse du site, puis **Préparer pour GitHub Pages**.
 3. Saisir le **Code de publication**, puis cliquer sur **Publier sur GitHub Pages**.
    L'application crée directement un commit contenant la feuille HTML et l'index
    de la paroisse sur `main`.
