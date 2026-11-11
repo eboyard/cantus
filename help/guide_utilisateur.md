@@ -29,11 +29,22 @@ Un même chant peut être ajouté plusieurs fois, par exemple s’il est repris 
 plusieurs moments de la célébration. Les boutons **Monter** et **Descendre**
 déplacent uniquement l’occurrence choisie ; **Retirer** la supprime de la liste.
 
-**Aperçu des paroles** montre les parties dans l’ordre utilisé pour le
-PowerPoint et la feuille pour téléphone. Les séparateurs `---` indiquent les
-changements de diapositive.
+Sous chaque chant, la liste **Couplets à garder** propose une case à cocher pour
+chaque couplet. Décochez les couplets que vous ne souhaitez pas chanter.
+Lorsqu’un chant n’a qu’un seul couplet, la liste est masquée et ce couplet est
+conservé automatiquement.
+Toutes les cases sont cochées au départ ; le début des paroles
+permet de les reconnaître. Le choix s’applique aux feuilles pour téléphone,
+à publier et à imprimer, sans modifier le chant du carnet. Les refrains suivent
+les couplets conservés et les ponts restent présents. La numérotation des couplets
+dans le PDF conserve les numéros d’origine.
 
-Après une modification de la sélection, de son ordre ou du nom de la célébration,
+Les choix restent attachés à chaque occurrence lorsque vous déplacez les chants.
+Vous pouvez donc garder des couplets différents pour deux occurrences du même chant.
+**Aperçu des paroles** montre le contenu retenu pour les feuilles.
+Le PowerPoint conserve les parties prévues dans le carnet.
+
+Après une modification des couplets, de la sélection, de son ordre ou du nom de la célébration,
 créez à nouveau les fichiers souhaités pour télécharger une version à jour.
 
 ## Consulter les paroles d’un chant

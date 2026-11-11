@@ -18,6 +18,7 @@ import streamlit.components.v1 as components
 
 from scripts.markdown_to_pptx import build_slides, convert, read_slides, read_title
 from scripts.song_sheet import create_song_sheet
+from scripts.song_selection import selected_song_parts
 from scripts.print_song_sheet import create_print_song_sheet
 from scripts.github_pages import prepare_pages_export, save_pages_export
 from scripts.github_publish import publish_sheet
@@ -78,6 +79,7 @@ def github_setting(name: str, default: str = "") -> str:
 
 def show_github_pages(
     signature: tuple, celebration: str, songs: list[tuple[str, Path]], day: date, moments: list[str],
+    verses: list[list[str] | None],
 ) -> None:
     st.markdown("**Partager avec GitHub Pages**")
     parish = st.selectbox(
@@ -93,7 +95,7 @@ def show_github_pages(
     if st.button("Préparer pour GitHub Pages"):
         try:
             heading = f"{parish.strip()} — {celebration.strip() or 'Messe'}"
-            document = create_song_sheet(heading, songs, day=day, moments=moments)
+            document = create_song_sheet(heading, songs, day=day, moments=moments, verses=verses)
             export = prepare_pages_export(document, parish, day, base_url)
             st.session_state.pages_export = (export_signature, export)
         except (OSError, ValueError) as error:
@@ -183,6 +185,7 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
                 order = songs_from_contents(document, catalog)
                 st.session_state.song_order = order
                 st.session_state.pop("song_moments", None)
+                st.session_state.pop("song_verses", None)
                 clear_moment_widgets()
                 for key in ("generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
                     st.session_state.pop(key, None)
@@ -344,7 +347,7 @@ def show_user_help() -> None:
 
 def clear_moment_widgets() -> None:
     for key in list(st.session_state):
-        if key.startswith("sheet_moment_"):
+        if key.startswith(("sheet_moment_", "sheet_verses_")):
             del st.session_state[key]
 
 
@@ -363,6 +366,10 @@ def show_preparation() -> None:
         st.session_state.song_moments = [read_song_type(catalog[key][1]) for key in st.session_state.song_order]
         clear_moment_widgets()
     celebration = st.text_input("Nom de la célébration", value="Messe")
+    if ("song_verses" not in st.session_state
+            or len(st.session_state.song_verses) != len(st.session_state.song_order)):
+        st.session_state.song_verses = [None for _ in st.session_state.song_order]
+        clear_moment_widgets()
     selected = st.selectbox(
         "Choisir un chant à ajouter",
         options=list(catalog),
@@ -371,12 +378,14 @@ def show_preparation() -> None:
     if st.button("Ajouter le chant"):
         st.session_state.song_order.append(selected)
         st.session_state.song_moments.append(read_song_type(catalog[selected][1]))
+        st.session_state.song_verses.append(None)
         clear_moment_widgets()
         st.rerun()
 
     st.subheader("Ordre des chants")
     song_order = st.session_state.song_order
     assigned_moments = st.session_state.song_moments
+    verses = st.session_state.song_verses
     moments = celebration_moments(assigned_moments)
     if not song_order:
         st.info("Ajoutez un chant pour commencer.")
@@ -397,9 +406,31 @@ def show_preparation() -> None:
             )
             if not fixed_moment:
                 assigned_moments[position] = moments[position]
+            try:
+                parts = selected_song_parts(catalog[key][1])
+                couplets = {part.identifier: part.text for part in parts if part.kind == "couplet"}
+                if len(couplets) <= 1:
+                    verses[position] = list(couplets)
+                else:
+                    selected_verses = list(couplets) if verses[position] is None else [
+                        identifier for identifier in verses[position] if identifier in couplets
+                    ]
+                    title_col.caption("Couplets à garder")
+                    verses[position] = [
+                        identifier for identifier, text in couplets.items()
+                        if title_col.checkbox(
+                            f"Couplet {identifier[1:]} — {text.splitlines()[0]}",
+                            value=identifier in selected_verses,
+                            key=f"sheet_verses_{position}_{identifier}",
+                            help="Choix pour les feuilles téléphone, à publier et à imprimer. Les refrains et les ponts sont conservés.",
+                        )
+                    ]
+            except (OSError, ValueError) as error:
+                title_col.error(f"Impossible de lire les couplets : {error}")
             if up_col.button("Monter", key=f"up-{position}", disabled=position == 0):
                 song_order[position - 1], song_order[position] = song_order[position], song_order[position - 1]
                 assigned_moments[position - 1], assigned_moments[position] = assigned_moments[position], assigned_moments[position - 1]
+                verses[position - 1], verses[position] = verses[position], verses[position - 1]
                 clear_moment_widgets()
                 st.rerun()
             if down_col.button(
@@ -409,11 +440,13 @@ def show_preparation() -> None:
             ):
                 song_order[position + 1], song_order[position] = song_order[position], song_order[position + 1]
                 assigned_moments[position + 1], assigned_moments[position] = assigned_moments[position], assigned_moments[position + 1]
+                verses[position + 1], verses[position] = verses[position], verses[position + 1]
                 clear_moment_widgets()
                 st.rerun()
             if remove_col.button("Retirer", key=f"remove-{position}"):
                 song_order.pop(position)
                 assigned_moments.pop(position)
+                verses.pop(position)
                 clear_moment_widgets()
                 st.rerun()
 
@@ -422,8 +455,8 @@ def show_preparation() -> None:
                 title, path = catalog[key]
                 st.markdown(f"**{position}. {title}**")
                 try:
-                    for text in read_slides(path):
-                        st.markdown(lyrics_html(text), unsafe_allow_html=True)
+                    for part in selected_song_parts(path, verses[position - 1]):
+                        st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
                 except (OSError, ValueError) as error:
                     st.error(f"Impossible de lire {path.name} : {error}")
 
@@ -454,10 +487,11 @@ def show_preparation() -> None:
         "Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date(),
         key="celebration_date",
     )
-    sheet_signature = (signature, day, tuple(moments))
+    verse_signature = tuple(None if selection is None else tuple(selection) for selection in verses)
+    sheet_signature = (signature, day, tuple(moments), verse_signature)
     if st.button("Créer la feuille de chants", disabled=not song_order):
         try:
-            data = create_song_sheet(celebration, [catalog[key] for key in song_order], day=day, moments=moments)
+            data = create_song_sheet(celebration, [catalog[key] for key in song_order], day=day, moments=moments, verses=verses)
             st.session_state.generated_song_sheet = (sheet_signature, data)
         except (OSError, ValueError) as error:
             st.error(f"La création de la feuille a échoué : {error}")
@@ -474,17 +508,17 @@ def show_preparation() -> None:
             "Transférez le fichier sur le téléphone et ouvrez-le avec un navigateur. "
             "Une fois enregistré, il se lit sans connexion Internet."
         )
-        show_github_pages(sheet_signature, celebration, [catalog[key] for key in song_order], day, moments)
+        show_github_pages(sheet_signature, celebration, [catalog[key] for key in song_order], day, moments, verses)
 
     st.subheader("Feuille de chants à imprimer")
     st.caption("PDF A4 en deux colonnes, en noir et blanc. Chaque refrain est écrit une fois par chant.")
     print_size = st.selectbox("Taille du texte imprimé", options=[9, 10, 11, 12], index=2,
                               format_func=lambda size: f"{size} points")
-    print_signature = (signature, print_size, tuple(moments))
+    print_signature = (signature, print_size, tuple(moments), verse_signature)
     if st.button("Créer la version à imprimer", disabled=not song_order):
         try:
             pdf, pages = create_print_song_sheet(
-                celebration, [catalog[key] for key in song_order], font_size=print_size, moments=moments,
+                celebration, [catalog[key] for key in song_order], font_size=print_size, moments=moments, verses=verses,
             )
             st.session_state.generated_print_sheet = (print_signature, pdf, pages)
         except (OSError, ValueError) as error:

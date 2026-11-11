@@ -12,7 +12,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import BalancedColumns, BaseDocTemplate, Frame, PageTemplate, Paragraph
 
-from scripts.markdown_to_pptx import build_song_parts
+from scripts.song_selection import selected_song_parts
 from scripts.lyrics_format import formatted_lines, fragment_html
 from scripts.song_types import MOMENTS, celebration_moments, read_song_type
 
@@ -46,6 +46,7 @@ class _Verse(Paragraph):
 def create_print_song_sheet(
     title: str, songs: list[tuple[str, Path]], *, font_size: int = 11,
     moments: list[str] | None = None,
+    verses: list[list[str] | None] | None = None,
 ) -> tuple[bytes, int]:
     """Retourne le PDF et son nombre de pages, sans réduire la taille du texte."""
     if not songs:
@@ -57,6 +58,8 @@ def create_print_song_sheet(
     if len(moments) != len(songs) or any(moment not in ("", *MOMENTS) for moment in moments):
         raise ValueError("Choisissez une rubrique valide pour chaque chant.")
     moments = celebration_moments(moments)
+    if verses is not None and len(verses) != len(songs):
+        raise ValueError("Choisissez les couplets pour chaque chant.")
     _register_fonts()
     body = ParagraphStyle("paroles", fontName="CantusPrint", fontSize=font_size,
                           leading=font_size + 1.6, spaceAfter=4, textColor="black")
@@ -87,7 +90,7 @@ def create_print_song_sheet(
 
     story = []
     for position, (song_title, path) in enumerate(songs, start=1):
-        parts = build_song_parts(path.read_text(encoding="utf-8-sig"))
+        parts = selected_song_parts(path, None if verses is None else verses[position - 1])
         if not parts:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
         moment = moments[position - 1]
