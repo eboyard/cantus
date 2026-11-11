@@ -67,7 +67,7 @@ body {{ margin: 0; background: #faf9f6; color: #20283b;
        font: 1.125rem/1.65 system-ui, sans-serif; overflow-wrap: anywhere; }}
 main {{ max-width: 42rem; margin: auto; padding: 1.25rem; }}
 h1 {{ font-size: 2rem; line-height: 1.2; margin-bottom: .5rem; }}
-h2 {{ font-size: 1.5rem; line-height: 1.3; }}
+h2, .moment {{ font-size: 1.5rem; line-height: 1.3; }}
 section {{ margin-top: 2.5rem; padding-top: 1rem; border-top: 2px solid #d9deea; }}
 .moment {{ margin: 0 0 .5rem; color: #596176; font-weight: 700; }}
 .moment + h2 {{ margin-top: 0; }}
