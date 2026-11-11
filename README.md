@@ -182,12 +182,13 @@ Dans **Ordre des chants**, la liste **Couplets à garder** de chaque chant propo
 une case à cocher par couplet, avec le début de ses paroles. Toutes les cases sont
 masquées lorsqu’il n’y a qu’un seul couplet, conservé automatiquement. Elles sont
 cochées par défaut ; décocher les couplets à retirer. Les choix
-s’appliquent à l’aperçu et aux feuilles HTML téléchargées, publiées et PDF imprimables.
+s’appliquent à l’aperçu, au PowerPoint et aux feuilles HTML téléchargées, publiées et PDF imprimables.
 Ils sont propres à chaque occurrence et suivent les déplacements du chant.
 Le carnet reste intact ; les refrains suivent les couplets retenus et les ponts
 sont conservés. Les numéros des couplets du PDF restent ceux du carnet.
 Après un changement, recréer la feuille et préparer à nouveau sa publication.
-Le PowerPoint conserve les parties prévues dans le carnet.
+Le PowerPoint contient uniquement les couplets cochés, avec les refrains et les ponts.
+Après un changement de couplets, recréer le PowerPoint pour télécharger la version à jour.
 
 ### Repartir d’une feuille existante
 

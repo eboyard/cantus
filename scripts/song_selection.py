@@ -1,4 +1,4 @@
-"""Sélection des couplets pour les feuilles, sans modifier le carnet de chants."""
+"""Sélection des couplets pour les exports, sans modifier le carnet de chants."""
 
 from pathlib import Path
 
