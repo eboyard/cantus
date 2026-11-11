@@ -76,7 +76,9 @@ def github_setting(name: str, default: str = "") -> str:
         return default
 
 
-def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str, Path]], day: date) -> None:
+def show_github_pages(
+    signature: tuple, celebration: str, songs: list[tuple[str, Path]], day: date, moments: list[str],
+) -> None:
     st.markdown("**Partager avec GitHub Pages**")
     parish = st.selectbox(
         "Paroisse",
@@ -91,7 +93,7 @@ def show_github_pages(signature: tuple, celebration: str, songs: list[tuple[str,
     if st.button("Préparer pour GitHub Pages"):
         try:
             heading = f"{parish.strip()} — {celebration.strip() or 'Messe'}"
-            document = create_song_sheet(heading, songs, day=day)
+            document = create_song_sheet(heading, songs, day=day, moments=moments)
             export = prepare_pages_export(document, parish, day, base_url)
             st.session_state.pages_export = (export_signature, export)
         except (OSError, ValueError) as error:
@@ -379,7 +381,7 @@ def show_preparation() -> None:
     if not song_order:
         st.info("Ajoutez un chant pour commencer.")
     else:
-        st.caption("Le premier chant est le chant d’entrée et le dernier est le chant d’envoi. Pour les chants intermédiaires, le type du carnet est proposé et peut être modifié. Les boutons Monter et Descendre règlent l’ordre d’impression.")
+        st.caption("Le premier chant est le chant d’entrée et le dernier est le chant d’envoi. Pour les chants intermédiaires, le type du carnet est proposé et peut être modifié. Les moments figurent sur les feuilles pour téléphone, à publier et à imprimer. Les boutons Monter et Descendre règlent l’ordre des chants.")
         for position, key in enumerate(song_order):
             title_col, up_col, down_col, remove_col = st.columns([6, 1, 1, 1])
             title_col.write(f"{position + 1}. {catalog[key][0]}")
@@ -452,10 +454,10 @@ def show_preparation() -> None:
         "Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date(),
         key="celebration_date",
     )
-    sheet_signature = (signature, day)
+    sheet_signature = (signature, day, tuple(moments))
     if st.button("Créer la feuille de chants", disabled=not song_order):
         try:
-            data = create_song_sheet(celebration, [catalog[key] for key in song_order], day=day)
+            data = create_song_sheet(celebration, [catalog[key] for key in song_order], day=day, moments=moments)
             st.session_state.generated_song_sheet = (sheet_signature, data)
         except (OSError, ValueError) as error:
             st.error(f"La création de la feuille a échoué : {error}")
@@ -472,7 +474,7 @@ def show_preparation() -> None:
             "Transférez le fichier sur le téléphone et ouvrez-le avec un navigateur. "
             "Une fois enregistré, il se lit sans connexion Internet."
         )
-        show_github_pages(sheet_signature, celebration, [catalog[key] for key in song_order], day)
+        show_github_pages(sheet_signature, celebration, [catalog[key] for key in song_order], day, moments)
 
     st.subheader("Feuille de chants à imprimer")
     st.caption("PDF A4 en deux colonnes, en noir et blanc. Chaque refrain est écrit une fois par chant.")

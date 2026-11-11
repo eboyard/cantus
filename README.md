@@ -234,7 +234,11 @@ Unicode embarquées. Pour lancer les tests, y compris la vérification des PDF :
 La section **Feuille de chants pour téléphone** permet de créer et télécharger
 un fichier `.html` à partir des chants sélectionnés. Choisir la **Date de la célébration**
 avant de créer la feuille : elle apparaît dans son titre et sert aussi à la publication
-sur GitHub Pages. Un changement de date nécessite de recréer la feuille.
+sur GitHub Pages. Le **Moment de la messe** choisi dans l’éditeur apparaît au-dessus
+du titre de chaque chant, dans le fichier téléchargé et dans la version à publier.
+Les rubriques non renseignées des chants intermédiaires sont omises.
+Un changement de date ou de rubrique nécessite de recréer la feuille et de préparer
+à nouveau la publication.
 Les chants se suivent
 directement, sans sommaire, sur une seule colonne adaptée aux petits écrans, avec des paroles
 en gras lorsque le Markdown le demande. L'ordre des chants et l'alternance

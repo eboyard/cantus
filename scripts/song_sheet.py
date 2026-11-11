@@ -6,12 +6,21 @@ from pathlib import Path
 
 from scripts.markdown_to_pptx import read_slides
 from scripts.lyrics_format import formatted_lines, fragment_html
+from scripts.song_types import MOMENTS, celebration_moments, read_song_type
 
 
-def create_song_sheet(title: str, songs: list[tuple[str, Path]], *, day: date | None = None) -> bytes:
+def create_song_sheet(
+    title: str, songs: list[tuple[str, Path]], *, day: date | None = None,
+    moments: list[str] | None = None,
+) -> bytes:
     """Conserve l'ordre des chants, l'alternance des parties et le gras."""
     if not songs:
         raise ValueError("Ajoutez au moins un chant pour créer la feuille.")
+    if moments is None:
+        moments = [read_song_type(path) for _, path in songs]
+    if len(moments) != len(songs) or any(moment not in ("", *MOMENTS) for moment in moments):
+        raise ValueError("Choisissez une rubrique valide pour chaque chant.")
+    moments = celebration_moments(moments)
     sections = []
     for position, (song_title, path) in enumerate(songs, start=1):
         blocks = read_slides(path)
@@ -32,9 +41,12 @@ def create_song_sheet(title: str, songs: list[tuple[str, Path]], *, day: date | 
                     for fragment in line
                 ))
             lyrics.append('<p class="paroles">' + "<br>\n".join(lines) + "</p>")
+        moment = moments[position - 1]
+        rubrique = f'<p class="moment">{escape(moment)}</p>' if moment else ""
         sections.append(
             f'<section id="{song_id}" aria-labelledby="titre-{position}"{source}>'
-            f'<h2 id="titre-{position}">{position}. {escape(song_title)}</h2>'
+            + rubrique
+            + f'<h2 id="titre-{position}">{escape(song_title)}</h2>'
             + "\n".join(lyrics)
             + '</section>'
         )
@@ -57,6 +69,8 @@ main {{ max-width: 42rem; margin: auto; padding: 1.25rem; }}
 h1 {{ font-size: 2rem; line-height: 1.2; margin-bottom: .5rem; }}
 h2 {{ font-size: 1.5rem; line-height: 1.3; }}
 section {{ margin-top: 2.5rem; padding-top: 1rem; border-top: 2px solid #d9deea; }}
+.moment {{ margin: 0 0 .5rem; color: #596176; font-weight: 700; }}
+.moment + h2 {{ margin-top: 0; }}
 .paroles {{ margin: 1.5rem 0; }}
 .sous-titre {{ margin-top: 0; color: #596176; }}
 @media print {{ body {{ background: white; font-size: 12pt; }}

@@ -25,6 +25,49 @@ class Document(HTMLParser):
 
 
 class SongSheetTests(unittest.TestCase):
+    def test_moments_follow_songs_with_automatic_entry_and_exit(self):
+        with TemporaryDirectory() as directory:
+            song = Path(directory) / "chant.md"
+            song.write_text("<!-- type: Psaume -->\nParoles", encoding="utf-8")
+            songs = [("Chant", song)] * 4
+            html = create_song_sheet("Messe", songs, moments=["", "Offertoire", "", ""]).decode()
+            sections = html.split('<section ')[1:]
+            for section, moment in zip(sections, ["Chant d’entrée", "Offertoire", "", "Envoi"]):
+                if moment:
+                    self.assertIn(f'<p class="moment">{moment}</p>', section)
+                    self.assertLess(section.index('class="moment"'), section.index('<h2'))
+                else:
+                    self.assertNotIn('class="moment"', section)
+            inferred = create_song_sheet("Messe", songs).decode()
+            self.assertEqual(inferred.count('<p class="moment">Psaume</p>'), 2)
+            for invalid in ([""], ["", "<script>", "", ""]):
+                with self.assertRaisesRegex(ValueError, "rubrique valide"):
+                    create_song_sheet("Messe", songs, moments=invalid)
+
+    def test_selected_moments_are_in_download_and_export_and_changes_invalidate_them(self):
+        app = AppTest.from_string("from app import main\nmain()")
+        app.session_state["song_order"] = ["chants/agnus_dei.md"] * 3
+        app.run()
+        app.selectbox(key="sheet_moment_1").select("Offertoire").run()
+        next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
+        downloaded = app.session_state["generated_song_sheet"][1].decode()
+        next(button for button in app.button if button.label == "Préparer pour GitHub Pages").click().run()
+        exported = app.session_state["pages_export"][1].document.decode()
+        for html in (downloaded, exported):
+            for moment in ("Chant d’entrée", "Offertoire", "Envoi"):
+                self.assertIn(f'<p class="moment">{moment}</p>', html)
+        app.selectbox(key="sheet_moment_1").select("Communion").run()
+        self.assertFalse(app.exception)
+        self.assertEqual(len(app.get("download_button")), 0)
+        self.assertFalse(any(button.label == "Publier sur GitHub Pages" for button in app.button))
+        next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
+        next(button for button in app.button if button.label == "Préparer pour GitHub Pages").click().run()
+        self.assertFalse(app.exception)
+        for html in (app.session_state["generated_song_sheet"][1].decode(),
+                     app.session_state["pages_export"][1].document.decode()):
+            self.assertIn('<p class="moment">Communion</p>', html)
+            self.assertNotIn('<p class="moment">Offertoire</p>', html)
+
     def test_song_order_refrains_bold_without_contents(self):
         with TemporaryDirectory() as directory:
             song = Path(directory) / "chant.md"

@@ -119,7 +119,12 @@ Dans **Feuille de chants pour téléphone**, choisissez la **Date de la célébr
 puis cliquez sur **Créer la feuille de chants**,
 puis sur **Télécharger la feuille de chants (.html)**.
 La date apparaît dans le titre de la feuille et sert aussi à sa publication sur GitHub Pages.
-Si vous changez la date, recréez la feuille avant de la télécharger.
+Le **Moment de la messe** choisi dans l’ordre des chants apparaît au-dessus du titre
+de chaque chant, sur la feuille pour téléphone comme sur la feuille à publier.
+Le premier chant indique **Chant d’entrée** et le dernier **Envoi**. Une rubrique
+**Non renseigné** n’affiche aucun libellé pour un chant intermédiaire.
+Si vous changez la date ou un moment, recréez la feuille avant de la télécharger
+et préparez à nouveau la publication.
 
 Transférez le fichier sur le téléphone et ouvrez-le avec un navigateur.
 Les chants se suivent directement, sans sommaire. Les paroles s’affichent sur
