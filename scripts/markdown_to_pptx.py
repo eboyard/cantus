@@ -72,6 +72,11 @@ class SongPart:
     identifier: str
     kind: str
     text: str
+    explicit: bool = False
+
+    @property
+    def selectable(self) -> bool:
+        return self.kind == "couplet" and self.explicit
 
 
 def build_slides(markdown: str) -> list[str]:
@@ -120,7 +125,7 @@ def build_song_parts(markdown: str) -> list[SongPart]:
                 raise ValueError(f"L'identifiant {identifier} ne correspond pas au type {kind}.")
         if order is not None and identifier in parts:
             raise ValueError(f"L'identifiant {identifier} est défini plusieurs fois.")
-        part = SongPart(identifier, kind, text)
+        part = SongPart(identifier, kind, text, explicit=marker is not None)
         parts[identifier] = part
         blocks.append(part)
 

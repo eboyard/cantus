@@ -2,22 +2,19 @@
 
 from datetime import date
 from html import escape
+import json
 from pathlib import Path
 
 from scripts.song_selection import selected_song_parts
 from scripts.lyrics_format import formatted_lines, fragment_html
-from scripts.song_types import MOMENTS, celebration_moments, read_song_type
-
-
-IMPLICIT_MOMENTS = frozenset({
-    "Gloire à Dieu", "Psaume", "Acclamation de l’Évangile", "Sanctus", "Agneau de Dieu",
-})
+from scripts.song_types import IMPLICIT_MOMENTS, MOMENTS, celebration_moments, read_song_type
 
 
 def create_song_sheet(
     title: str, songs: list[tuple[str, Path]], *, day: date | None = None,
     moments: list[str] | None = None,
     verses: list[list[str] | None] | None = None,
+    celebration_title: str | None = None,
 ) -> bytes:
     """Conserve l'ordre des chants, l'alternance des parties et le gras."""
     if not songs:
@@ -31,7 +28,8 @@ def create_song_sheet(
         raise ValueError("Choisissez les couplets pour chaque chant.")
     sections = []
     for position, (song_title, path) in enumerate(songs, start=1):
-        blocks = [part.text for part in selected_song_parts(path, None if verses is None else verses[position - 1])]
+        parts = selected_song_parts(path, None if verses is None else verses[position - 1])
+        blocks = [part.text for part in parts]
         if not blocks:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
         song_id = f"chant-{position}"
@@ -40,6 +38,8 @@ def create_song_sheet(
         except ValueError:
             song_key = ""
         source = f' data-song-key="{escape(song_key, quote=True)}"' if song_key else ""
+        selected_verses = list(dict.fromkeys(part.identifier for part in parts if part.selectable))
+        source += f' data-song-verses="{escape(json.dumps(selected_verses), quote=True)}"'
         lyrics = []
         for block in blocks:
             lines = []
@@ -67,6 +67,7 @@ def create_song_sheet(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="cantus-celebration-title" content="{escape((title if celebration_title is None else celebration_title).strip() or 'Messe', quote=True)}">
 <title>{page_title} — Feuille de chants</title>
 <style>
 * {{ box-sizing: border-box; }}

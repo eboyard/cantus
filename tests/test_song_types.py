@@ -50,12 +50,14 @@ class SongTypesTests(unittest.TestCase):
                                                   moments=[MOMENTS[7]] * 3)
             with pymupdf.open(stream=default_pdf, filetype="pdf") as doc:
                 lines = doc[0].get_text().splitlines()
-                for moment in (MOMENTS[0], MOMENTS[2], MOMENTS[-1]):
+                for moment in (MOMENTS[0], MOMENTS[-1]):
                     self.assertIn(moment, lines)
+                self.assertNotIn(MOMENTS[2], lines)
             with pymupdf.open(stream=forced_pdf, filetype="pdf") as doc:
                 lines = doc[0].get_text().splitlines()
-                for moment in (MOMENTS[0], MOMENTS[7], MOMENTS[-1]):
+                for moment in (MOMENTS[0], MOMENTS[-1]):
                     self.assertEqual(lines.count(moment), 1)
+                self.assertNotIn(MOMENTS[7], lines)
             with pymupdf.open(stream=pdf, filetype="pdf") as doc:
                 text = "".join(page.get_text() for page in doc)
                 self.assertEqual(text.splitlines().count("Chant d’entrée"), 1)

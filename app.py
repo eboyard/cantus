@@ -24,7 +24,7 @@ from scripts.github_publish import publish_sheet
 from scripts.song_editor import load_song, save_song
 from scripts.song_types import MOMENTS, celebration_moments, read_song_type, song_type, set_song_type
 from scripts.lyrics_format import lyrics_html
-from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents
+from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents, verses_from_contents, title_from_contents
 
 
 ROOT = Path(__file__).resolve().parent
@@ -94,7 +94,8 @@ def show_github_pages(
     if st.button("Préparer pour GitHub Pages"):
         try:
             heading = f"{parish.strip()} — {celebration.strip() or 'Messe'}"
-            document = create_song_sheet(heading, songs, day=day, moments=moments, verses=verses)
+            document = create_song_sheet(heading, songs, day=day, moments=moments, verses=verses,
+                                         celebration_title=celebration)
             export = prepare_pages_export(document, parish, day, base_url)
             st.session_state.pages_export = (export_signature, export)
         except (OSError, ValueError) as error:
@@ -157,7 +158,7 @@ def show_github_pages(
 
 def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
     with st.expander("Repartir d’une feuille existante"):
-        st.caption("Choisissez une feuille : ses chants remplaceront la liste actuelle, dans le même ordre.")
+        st.caption("Choisissez une feuille : ses chants remplaceront la liste actuelle, dans le même ordre, avec les couplets mémorisés lors de la publication.")
         repository = github_setting("repository", "eboyard/cantus")
         branch = github_setting("branch", "main")
         source_signature = (repository, branch)
@@ -182,9 +183,13 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
             try:
                 document = read_existing_sheet(choices[chosen], ROOT / "docs", github_setting("token"), repository)
                 order = songs_from_contents(document, catalog)
+                verses = verses_from_contents(document, order, catalog)
+                title = title_from_contents(document)
                 st.session_state.song_order = order
                 st.session_state.pop("song_moments", None)
-                st.session_state.pop("song_verses", None)
+                st.session_state.song_verses = verses
+                if title is not None:
+                    st.session_state.celebration_title = title
                 clear_moment_widgets()
                 for key in ("generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
                     st.session_state.pop(key, None)
@@ -364,7 +369,8 @@ def show_preparation() -> None:
             or len(st.session_state.song_moments) != len(st.session_state.song_order)):
         st.session_state.song_moments = [read_song_type(catalog[key][1]) for key in st.session_state.song_order]
         clear_moment_widgets()
-    celebration = st.text_input("Nom de la célébration", value="Messe")
+    st.session_state.setdefault("celebration_title", "Messe")
+    celebration = st.text_input("Nom de la célébration", key="celebration_title")
     if ("song_verses" not in st.session_state
             or len(st.session_state.song_verses) != len(st.session_state.song_order)):
         st.session_state.song_verses = [None for _ in st.session_state.song_order]
@@ -407,7 +413,7 @@ def show_preparation() -> None:
                 assigned_moments[position] = moments[position]
             try:
                 parts = selected_song_parts(catalog[key][1])
-                couplets = {part.identifier: part.text for part in parts if part.kind == "couplet"}
+                couplets = {part.identifier: part.text for part in parts if part.selectable}
                 if len(couplets) <= 1:
                     verses[position] = list(couplets)
                 else:

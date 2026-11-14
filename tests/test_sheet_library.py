@@ -9,7 +9,7 @@ from urllib.error import HTTPError
 
 from streamlit.testing.v1 import AppTest
 
-from scripts.sheet_library import ExistingSheet, local_sheets, published_sheets, read_existing_sheet, songs_from_contents
+from scripts.sheet_library import ExistingSheet, local_sheets, published_sheets, read_existing_sheet, songs_from_contents, verses_from_contents, title_from_contents
 from scripts.song_sheet import create_song_sheet
 
 
@@ -24,6 +24,68 @@ def response(data):
 
 
 class SheetLibraryTests(unittest.TestCase):
+    def test_celebration_title_round_trip_without_parish_or_date(self):
+        from datetime import date
+
+        root = Path(__file__).resolve().parents[1]
+        song = root / "chants/agnus_dei.md"
+        title = 'Messe du 33e dimanche — "Veillez" & priez'
+        html = create_song_sheet(
+            f"Boussy-saint-Antoine — {title}", [("Agnus Dei", song)],
+            day=date(2026, 11, 14), celebration_title=title,
+        ).decode()
+        self.assertEqual(title_from_contents(html), title)
+        self.assertEqual(title_from_contents(create_song_sheet(title, [("Agnus Dei", song)]).decode()), title)
+        self.assertIsNone(title_from_contents(contents("Agnus Dei")))
+
+    def test_published_verse_choices_round_trip_per_occurrence(self):
+        root = Path(__file__).resolve().parents[1]
+        key = "chants/venez,_approchons_nous_de_la_table.md"
+        song = root / key
+        catalog = {key: ("Venez, approchons-nous de la table du Christ", song)}
+        choices = [["C1", "C2", "C8"], [], None]
+        html = create_song_sheet("Messe", [catalog[key]] * 3, verses=choices).decode()
+        order = songs_from_contents(html, catalog)
+        restored = verses_from_contents(html, order, catalog)
+        self.assertEqual(restored[:2], choices[:2])
+        self.assertEqual(restored[2], [f"C{i}" for i in range(1, 10)])
+        self.assertEqual(create_song_sheet("Messe", [catalog[k] for k in order], verses=restored).decode(), html)
+        old = '<section id="chant-1"><h2>Chant</h2></section>'
+        self.assertEqual(verses_from_contents(old, [key], catalog), [None])
+        for value in ('invalid', '{}', '["C99"]', '["C1", "C1"]', '[null]'):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                verses_from_contents(
+                    f"<section id='chant-1' data-song-verses='{value}'><h2>Chant</h2></section>",
+                    [key], catalog,
+                )
+
+    def test_ui_restores_published_couplets_in_checkboxes(self):
+        root = Path(__file__).resolve().parents[1]
+        key = "chants/venez,_approchons_nous_de_la_table.md"
+        song = root / key
+        catalog = {key: ("Venez, approchons-nous de la table du Christ", song)}
+        with TemporaryDirectory() as directory:
+            local = Path(directory)
+            source = local / "docs/paroisse/2026-11-14/index.html"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(create_song_sheet("Messe du 33e dimanche", [catalog[key]], verses=[["C1", "C2", "C8"]]))
+            with patch("app.ROOT", local), patch("app.song_catalog", return_value=catalog):
+                app = AppTest.from_string("from app import main\nmain()", default_timeout=15).run()
+                app.selectbox(key="existing_sheet_choice").select("paroisse/2026-11-14/index.html").run()
+                self.assertFalse(app.exception)
+                self.assertEqual(app.session_state["song_verses"], [["C1", "C2", "C8"]])
+                self.assertEqual(app.text_input(key="celebration_title").value, "Messe du 33e dimanche")
+                for i in range(1, 10):
+                    self.assertEqual(app.checkbox(key=f"sheet_verses_0_C{i}").value, i in (1, 2, 8))
+                # Une réexécution conserve également les choix restaurés.
+                app.run()
+                self.assertEqual(app.session_state["song_verses"], [["C1", "C2", "C8"]])
+                next(b for b in app.button if b.label == "Créer la feuille de chants").click().run()
+                next(b for b in app.button if b.label == "Préparer pour GitHub Pages").click().run()
+                self.assertFalse(app.exception)
+                self.assertEqual(title_from_contents(app.session_state["pages_export"][1].document.decode()),
+                                 "Messe du 33e dimanche")
+
     def test_old_contents_match_titles_with_accents_spacing_and_duplicates(self):
         catalog = {"a": ("Ô Marie, prends nos prières", Path("a.md")), "b": ("Agnus Dei", Path("b.md"))}
         html = contents("Agnus Dei", "O Marie,\nprends nos prières", "Agnus Dei")

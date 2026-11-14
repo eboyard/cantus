@@ -11,6 +11,10 @@ MOMENTS = (
     "Sanctus", "Anamnèse", "Agneau de Dieu", "Communion", "Envoi",
 )
 
+IMPLICIT_MOMENTS = frozenset({
+    "Gloire à Dieu", "Psaume", "Acclamation de l’Évangile", "Sanctus", "Anamnèse", "Agneau de Dieu",
+})
+
 
 def celebration_moments(moments: list[str]) -> list[str]:
     """Déduit les rubriques des extrémités sans modifier les choix des chants."""

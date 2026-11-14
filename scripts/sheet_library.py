@@ -1,6 +1,7 @@
 """Retrouve les feuilles existantes et rapproche leurs chants du carnet."""
 
 import base64
+import json
 from dataclasses import dataclass
 from datetime import date
 from html.parser import HTMLParser
@@ -11,6 +12,7 @@ from urllib.parse import quote
 from urllib.error import HTTPError
 
 from scripts.github_publish import GitHubPublishError, _nested_sha, _request
+from scripts.song_selection import selected_song_parts
 
 
 @dataclass(frozen=True)
@@ -98,11 +100,17 @@ class _ContentsParser(HTMLParser):
         self.section_key: str | None = None
         self.heading: list[str] | None = None
         self.section_songs: list[tuple[str, str]] = []
+        self.section_verses: list[str | None] = []
+        self.current_verses: str | None = None
+        self.celebration_title: str | None = None
 
     def handle_starttag(self, tag, attributes):
         attrs = dict(attributes)
+        if tag == "meta" and attrs.get("name") == "cantus-celebration-title":
+            self.celebration_title = (attrs.get("content") or "").strip() or "Messe"
         if tag == "section" and re.fullmatch(r"chant-\d+", attrs.get("id") or ""):
             self.section_key = attrs.get("data-song-key") or ""
+            self.current_verses = attrs.get("data-song-verses")
         if tag == "h2" and self.section_key is not None:
             self.heading = []
         if tag == "nav" and attrs.get("id") == "sommaire":
@@ -120,6 +128,7 @@ class _ContentsParser(HTMLParser):
         if tag == "h2" and self.heading is not None:
             title = " ".join("".join(self.heading).split())
             self.section_songs.append((self.section_key or "", re.sub(r"^\d+\.\s+", "", title)))
+            self.section_verses.append(self.current_verses)
             self.heading = None
         if tag == "section":
             self.section_key = None
@@ -134,6 +143,13 @@ class _ContentsParser(HTMLParser):
 def _normalized_title(title: str) -> str:
     title = unicodedata.normalize("NFKD", title.casefold())
     return "".join(char for char in title if char.isalnum() and not unicodedata.combining(char))
+
+
+def title_from_contents(document: str) -> str | None:
+    """Lit le titre mémorisé, sans inclure la paroisse ni la date d'affichage."""
+    parser = _ContentsParser()
+    parser.feed(document)
+    return parser.celebration_title
 
 
 def songs_from_contents(document: str, catalog: dict[str, tuple[str, Path]]) -> list[str]:
@@ -157,4 +173,32 @@ def songs_from_contents(document: str, catalog: dict[str, tuple[str, Path]]) -> 
             result.append(matches[0])
     if issues:
         raise ValueError("La liste n'a pas été modifiée. Chants à vérifier : " + "; ".join(issues))
+    return result
+
+
+def verses_from_contents(
+    document: str, order: list[str], catalog: dict[str, tuple[str, Path]],
+) -> list[list[str] | None]:
+    """Restaure les couplets par occurrence ; les anciennes feuilles gardent le choix par défaut."""
+    parser = _ContentsParser()
+    parser.feed(document)
+    if not any(value is not None for value in parser.section_verses):
+        return [None for _ in order]
+    if len(parser.section_verses) != len(order):
+        raise ValueError("La sélection des couplets de cette feuille est incomplète.")
+    result = []
+    for key, value in zip(order, parser.section_verses):
+        if value is None:
+            result.append(None)
+            continue
+        try:
+            verses = json.loads(value)
+        except (ValueError, TypeError):
+            raise ValueError("La sélection des couplets de cette feuille est invalide.") from None
+        if (not isinstance(verses, list)
+                or any(not isinstance(verse, str) or not re.fullmatch(r"C[1-9]\d*", verse) for verse in verses)
+                or len(set(verses)) != len(verses)):
+            raise ValueError("La sélection des couplets de cette feuille est invalide.")
+        selected_song_parts(catalog[key][1], verses)
+        result.append(verses)
     return result

@@ -12,11 +12,13 @@ def selected_song_parts(path: Path, verses: list[str] | None = None) -> list[Son
     available = {part.identifier for part in parts if part.kind == "couplet"}
     if not set(verses).issubset(available):
         raise ValueError(f"Les couplets sélectionnés pour {path.name} n'existent plus. Vérifiez la sélection.")
+    if not any(part.selectable for part in parts):
+        return parts
     if not verses:
         result = []
         refrain_seen = False
         for part in parts:
-            if part.kind == "couplet" or (part.kind == "refrain" and refrain_seen):
+            if part.selectable or (part.kind == "refrain" and refrain_seen):
                 continue
             result.append(part)
             refrain_seen = refrain_seen or part.kind == "refrain"
@@ -25,7 +27,7 @@ def selected_song_parts(path: Path, verses: list[str] | None = None) -> list[Son
     omitted_verse = False
     for part in parts:
         if part.kind == "couplet":
-            omitted_verse = part.identifier not in verses
+            omitted_verse = part.selectable and part.identifier not in verses
             if omitted_verse:
                 continue
         elif part.kind == "refrain":

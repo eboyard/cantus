@@ -7,7 +7,7 @@ import pymupdf
 from streamlit.testing.v1 import AppTest
 
 from scripts.print_song_sheet import create_print_song_sheet
-from scripts.song_types import MOMENTS
+from scripts.song_types import IMPLICIT_MOMENTS, MOMENTS
 
 
 class PrintSongSheetTests(unittest.TestCase):
@@ -58,9 +58,12 @@ class PrintSongSheetTests(unittest.TestCase):
                             (MOMENTS[0], MOMENTS[2], MOMENTS[11]),
                         ):
                             heading = page.search_for(title)[0]
-                            moment_box = page.search_for(moment)[0]
-                            self.assertGreater(moment_box.y0, previous_bottom)
-                            self.assertLess(moment_box.y0, heading.y0)
+                            if moment not in IMPLICIT_MOMENTS:
+                                moment_box = page.search_for(moment)[0]
+                                self.assertGreater(moment_box.y0, previous_bottom)
+                                self.assertLess(moment_box.y0, heading.y0)
+                            else:
+                                self.assertFalse(page.search_for(moment))
                             self.assertLess(heading.x0, 100)
                             words = [word for word in page.get_text("words")
                                      if word[4] == prefix and word[1] > heading.y1]
