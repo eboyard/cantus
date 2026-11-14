@@ -25,6 +25,8 @@ from scripts.song_editor import load_song, save_song
 from scripts.song_types import MOMENTS, celebration_moments, read_song_type, song_type, set_song_type
 from scripts.lyrics_format import lyrics_html
 from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents, verses_from_contents, title_from_contents
+from scripts.sheet_library import aelf_psalms_from_contents
+from scripts.aelf import load_aelf_masses, mass_url, psalm_catalog
 
 
 ROOT = Path(__file__).resolve().parent
@@ -182,9 +184,13 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
                 return
             try:
                 document = read_existing_sheet(choices[chosen], ROOT / "docs", github_setting("token"), repository)
-                order = songs_from_contents(document, catalog)
-                verses = verses_from_contents(document, order, catalog)
+                aelf_documents = {**st.session_state.get("aelf_psalms", {}), **aelf_psalms_from_contents(document)}
+                imported_catalog = {**catalog, **psalm_catalog(aelf_documents, ROOT)}
+                order = songs_from_contents(document, imported_catalog)
+                verses = verses_from_contents(document, order, imported_catalog)
                 title = title_from_contents(document)
+                catalog.update(imported_catalog)
+                st.session_state.aelf_psalms = aelf_documents
                 st.session_state.song_order = order
                 st.session_state.pop("song_moments", None)
                 st.session_state.song_verses = verses
@@ -355,10 +361,97 @@ def clear_moment_widgets() -> None:
             del st.session_state[key]
 
 
+def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
+    """Charge à la demande ou lors du changement de date ; ne requiert pas de réseau au démarrage."""
+    def apply_choice():
+        _, masses = st.session_state.aelf_loaded
+        chosen = next(mass for mass in masses if mass.key == st.session_state.aelf_mass_choice)
+        st.session_state.celebration_title = chosen.title
+        # Un psaume déjà importé suit la nouvelle date ou la nouvelle messe choisie.
+        for position, key in enumerate(st.session_state.song_order):
+            if key.startswith("aelf/") and key != chosen.key:
+                st.session_state.song_order[position] = chosen.key
+                st.session_state.song_verses[position] = None
+                st.session_state.song_moments[position] = "Psaume"
+        for key in ("generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
+            st.session_state.pop(key, None)
+        clear_moment_widgets()
+
+    def retrieve():
+        day = st.session_state.celebration_date
+        try:
+            with st.spinner("Récupération du nom de la messe et du psaume sur AELF…"):
+                masses = load_aelf_masses(day)
+                documents = {**st.session_state.get("aelf_psalms", {}),
+                             **{mass.key: mass.markdown for mass in masses}}
+                additions = psalm_catalog(documents, ROOT)
+            catalog.update(additions)
+            st.session_state.aelf_psalms = documents
+            st.session_state.aelf_loaded = (day, masses)
+            st.session_state.aelf_mass_choice = masses[0].key
+            st.session_state.pop("aelf_import_error", None)
+            apply_choice()
+        except (OSError, ValueError) as error:
+            st.session_state.aelf_import_error = (day, str(error))
+
+    day = st.date_input(
+        "Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date(),
+        key="celebration_date", on_change=retrieve,
+    )
+    st.button("Récupérer le nom et le psaume sur AELF", key="retrieve_aelf", on_click=retrieve)
+    st.caption("Changer la date récupère automatiquement les textes AELF du jour exact choisi. Le titre reste modifiable.")
+    status = st.session_state.get("aelf_import_error")
+    if status and status[0] == day:
+        st.error(status[1] + " Le nom et les chants en cours ont été conservés.")
+    loaded = st.session_state.get("aelf_loaded")
+    if loaded and loaded[0] == day:
+        masses = loaded[1]
+        if len(masses) > 1:
+            options = {mass.key: mass for mass in masses}
+            st.selectbox("Messe et psaume proposés par l’AELF", list(options), key="aelf_mass_choice",
+                         format_func=lambda key: f"{options[key].name} — {options[key].reference}",
+                         on_change=apply_choice)
+            chosen = options[st.session_state.aelf_mass_choice]
+        else:
+            chosen = masses[0]
+        with st.expander(chosen.psalm_title):
+            st.caption(f"{chosen.name} — {chosen.reference}")
+            # Une seule occurrence de chaque partie dans cet aperçu.
+            seen = set()
+            for part in selected_song_parts(catalog[chosen.key][1]):
+                if part.identifier not in seen:
+                    st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
+                    seen.add(part.identifier)
+            st.link_button("Lire les textes sur AELF", chosen.url)
+        if st.button("Utiliser le psaume du jour", key="use_aelf_psalm"):
+            order = st.session_state.song_order
+            assigned = st.session_state.song_moments
+            verses = st.session_state.song_verses
+            position = next((i for i, moment in enumerate(assigned) if moment == "Psaume"), None)
+            if position is None:
+                # Place le psaume avant l'acclamation ou les chants suivants.
+                position = next((i for i, moment in enumerate(assigned)
+                                 if i > 0 and moment in MOMENTS[4:]), len(order))
+                if position == len(order) and len(order) > 1:
+                    position -= 1
+                order.insert(position, chosen.key)
+                assigned.insert(position, "Psaume")
+                verses.insert(position, None)
+            else:
+                order[position] = chosen.key
+                verses[position] = None
+            clear_moment_widgets()
+            st.rerun()
+    else:
+        st.link_button("Consulter la messe du jour sur AELF", mass_url(day))
+    return day
+
+
 def show_preparation() -> None:
     st.title("Préparer les chants de la célébration")
 
     catalog = song_catalog()
+    catalog.update(psalm_catalog(st.session_state.get("aelf_psalms", {}), ROOT))
     if not catalog:
         st.error("Aucun chant n’a été trouvé dans le catalogue.")
         return
@@ -369,12 +462,13 @@ def show_preparation() -> None:
             or len(st.session_state.song_moments) != len(st.session_state.song_order)):
         st.session_state.song_moments = [read_song_type(catalog[key][1]) for key in st.session_state.song_order]
         clear_moment_widgets()
-    st.session_state.setdefault("celebration_title", "Messe")
-    celebration = st.text_input("Nom de la célébration", key="celebration_title")
     if ("song_verses" not in st.session_state
             or len(st.session_state.song_verses) != len(st.session_state.song_order)):
         st.session_state.song_verses = [None for _ in st.session_state.song_order]
         clear_moment_widgets()
+    day = show_aelf_import(catalog)
+    st.session_state.setdefault("celebration_title", "Messe")
+    celebration = st.text_input("Nom de la célébration", key="celebration_title")
     selected = st.selectbox(
         "Choisir un chant à ajouter",
         options=list(catalog),
@@ -490,10 +584,6 @@ def show_preparation() -> None:
 
     st.subheader("Feuille de chants pour téléphone")
     st.caption("Un fichier HTML avec les paroles adaptées à la largeur de l'écran.")
-    day = st.date_input(
-        "Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date(),
-        key="celebration_date",
-    )
     sheet_signature = (signature, day, tuple(moments), verse_signature)
     if st.button("Créer la feuille de chants", disabled=not song_order):
         try:

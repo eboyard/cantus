@@ -118,8 +118,8 @@ class GitHubPagesTests(unittest.TestCase):
             with patch("app.ROOT", root), patch("app.song_catalog", return_value={"chant": ("Un chant", source)}):
                 app = AppTest.from_string("from app import main\nmain()")
                 app.session_state["song_order"] = ["chant"]
+                app.session_state["celebration_date"] = date(2026, 10, 18)
                 app.run()
-                app.date_input[0].set_value(date(2026, 10, 18)).run()
                 next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
                 self.assertEqual(app.selectbox(key="pages_parish").options, ["Boussy-saint-Antoine", "Quincy-sous-Sénart"])
                 app.selectbox(key="pages_parish").select("Quincy-sous-Sénart")

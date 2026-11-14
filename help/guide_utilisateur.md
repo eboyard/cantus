@@ -7,7 +7,9 @@ revenir à l’onglet **Préparer la célébration** pour poursuivre votre prép
 
 ## Démarrer en quelques étapes
 
-1. Dans **Préparer la célébration**, renseignez le **Nom de la célébration**.
+1. Dans **Préparer la célébration**, choisissez la **Date de la célébration**.
+   Le nom de la messe et le psaume sont récupérés sur l’AELF. Vous pouvez aussi
+   renseigner librement le **Nom de la célébration**.
 2. Choisissez un chant dans **Choisir un chant à ajouter**, puis cliquez sur
    **Ajouter le chant**. Répétez pour chaque chant.
 3. Dans **Ordre des chants**, utilisez **Monter**, **Descendre** et **Retirer**
@@ -18,6 +20,30 @@ revenir à l’onglet **Préparer la célébration** pour poursuivre votre prép
 
 Pour partager une feuille par lien ou QR code, créez d’abord la feuille pour
 téléphone, puis suivez la rubrique **Publier une feuille et partager son QR code**.
+
+## Récupérer le nom de la messe et le psaume sur AELF
+
+Choisissez la **Date de la célébration**, en haut de la préparation : l’application
+interroge l’API AELF pour cette date et remplit le **Nom de la célébration**, année
+liturgique comprise. Le titre reste modifiable. Pour charger les textes de la date
+déjà affichée au démarrage, cliquez sur **Récupérer le nom et le psaume sur AELF**.
+
+Si plusieurs messes ou psaumes sont proposés pour cette date, choisissez celui
+qui correspond à la célébration. Dépliez le titre du psaume pour lire son refrain
+et ses strophes, puis cliquez sur **Utiliser le psaume du jour**. Le psaume remplace
+celui déjà présent dans la liste ou s’ajoute avant l’acclamation et les chants
+suivants. Il est disponible pour le PowerPoint et les feuilles téléphone,
+imprimable et publiée. Les fichiers du carnet, y compris les psaumes avec des
+syllabes soulignées, ne sont pas modifiés.
+
+Si un psaume importé est déjà utilisé, changer la date ou la messe AELF le met
+également à jour. Les textes correspondent au jour exact sélectionné : pour une
+messe anticipée du dimanche, choisissez la date du dimanche.
+
+La feuille publiée conserve le titre, le texte du psaume importé et le choix de
+ses strophes. À sa réouverture, aucun nouvel appel AELF n’est nécessaire pour
+retrouver ces textes. Si l’AELF est indisponible lors d’une récupération, un message
+le signale et le nom ainsi que la liste des chants en cours sont conservés.
 
 ## Choisir et ordonner les chants
 

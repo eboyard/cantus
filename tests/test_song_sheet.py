@@ -144,7 +144,8 @@ class SongSheetTests(unittest.TestCase):
         app.text_input[0].set_value("Autre célébration").run()
         self.assertEqual(len(app.get("download_button")), 0)
 
-    def test_download_contains_selected_date_and_is_hidden_when_date_changes(self):
+    @patch("app.load_aelf_masses", side_effect=ValueError("Hors connexion pour ce test"))
+    def test_download_contains_selected_date_and_is_hidden_when_date_changes(self, _fetch):
         app = AppTest.from_string("from app import main\nmain()")
         app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
         app.run()

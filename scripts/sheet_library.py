@@ -13,6 +13,7 @@ from urllib.error import HTTPError
 
 from scripts.github_publish import GitHubPublishError, _nested_sha, _request
 from scripts.song_selection import selected_song_parts
+from scripts.aelf import psalm_source_key
 
 
 @dataclass(frozen=True)
@@ -103,6 +104,7 @@ class _ContentsParser(HTMLParser):
         self.section_verses: list[str | None] = []
         self.current_verses: str | None = None
         self.celebration_title: str | None = None
+        self.aelf_psalms: dict[str, str] = {}
 
     def handle_starttag(self, tag, attributes):
         attrs = dict(attributes)
@@ -111,6 +113,14 @@ class _ContentsParser(HTMLParser):
         if tag == "section" and re.fullmatch(r"chant-\d+", attrs.get("id") or ""):
             self.section_key = attrs.get("data-song-key") or ""
             self.current_verses = attrs.get("data-song-verses")
+            markdown = attrs.get("data-aelf-psalm")
+            if markdown is not None:
+                if (len(markdown) > 100_000 or not self.section_key
+                        or psalm_source_key(markdown) != self.section_key):
+                    raise ValueError("Le psaume AELF mémorisé dans cette feuille est invalide.")
+                if self.section_key in self.aelf_psalms and self.aelf_psalms[self.section_key] != markdown:
+                    raise ValueError("Cette feuille contient deux versions différentes du même psaume AELF.")
+                self.aelf_psalms[self.section_key] = markdown
         if tag == "h2" and self.section_key is not None:
             self.heading = []
         if tag == "nav" and attrs.get("id") == "sommaire":
@@ -150,6 +160,13 @@ def title_from_contents(document: str) -> str | None:
     parser = _ContentsParser()
     parser.feed(document)
     return parser.celebration_title
+
+
+def aelf_psalms_from_contents(document: str) -> dict[str, str]:
+    """Les psaumes importés restent rechargeables sans accès réseau ni fichier du carnet."""
+    parser = _ContentsParser()
+    parser.feed(document)
+    return parser.aelf_psalms
 
 
 def songs_from_contents(document: str, catalog: dict[str, tuple[str, Path]]) -> list[str]:
