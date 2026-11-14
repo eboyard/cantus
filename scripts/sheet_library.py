@@ -102,9 +102,12 @@ class _ContentsParser(HTMLParser):
         self.section_songs: list[tuple[str, str]] = []
         self.section_verses: list[str | None] = []
         self.current_verses: str | None = None
+        self.celebration_title: str | None = None
 
     def handle_starttag(self, tag, attributes):
         attrs = dict(attributes)
+        if tag == "meta" and attrs.get("name") == "cantus-celebration-title":
+            self.celebration_title = (attrs.get("content") or "").strip() or "Messe"
         if tag == "section" and re.fullmatch(r"chant-\d+", attrs.get("id") or ""):
             self.section_key = attrs.get("data-song-key") or ""
             self.current_verses = attrs.get("data-song-verses")
@@ -140,6 +143,13 @@ class _ContentsParser(HTMLParser):
 def _normalized_title(title: str) -> str:
     title = unicodedata.normalize("NFKD", title.casefold())
     return "".join(char for char in title if char.isalnum() and not unicodedata.combining(char))
+
+
+def title_from_contents(document: str) -> str | None:
+    """Lit le titre mémorisé, sans inclure la paroisse ni la date d'affichage."""
+    parser = _ContentsParser()
+    parser.feed(document)
+    return parser.celebration_title
 
 
 def songs_from_contents(document: str, catalog: dict[str, tuple[str, Path]]) -> list[str]:

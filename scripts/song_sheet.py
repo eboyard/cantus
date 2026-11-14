@@ -14,6 +14,7 @@ def create_song_sheet(
     title: str, songs: list[tuple[str, Path]], *, day: date | None = None,
     moments: list[str] | None = None,
     verses: list[list[str] | None] | None = None,
+    celebration_title: str | None = None,
 ) -> bytes:
     """Conserve l'ordre des chants, l'alternance des parties et le gras."""
     if not songs:
@@ -66,6 +67,7 @@ def create_song_sheet(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="cantus-celebration-title" content="{escape((title if celebration_title is None else celebration_title).strip() or 'Messe', quote=True)}">
 <title>{page_title} — Feuille de chants</title>
 <style>
 * {{ box-sizing: border-box; }}
