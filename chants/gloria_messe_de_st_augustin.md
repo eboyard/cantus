@@ -1,6 +1,6 @@
 <!-- titre:  Gloria (Messe de St Augustin) -->
 
-Gloria gloria in excelsis Deo... (bis)
+**Gloria gloria in excelsis Deo... (bis)**
 Et paix sur la terre aux hommes qu’Il aime  
 Nous Te louons, nous Te bénissons, nous T’adorons, 
 nous Te glorifions, 
