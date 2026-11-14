@@ -5,7 +5,7 @@ from html import escape
 import json
 from pathlib import Path
 
-from scripts.song_selection import selected_song_parts, gospel_introduction, with_gospel_introduction, reading_context, with_reading_introductions
+from scripts.song_selection import selected_song_parts, gospel_introduction, with_liturgical_introductions, reading_context, with_reading_introductions
 from scripts.lyrics_format import formatted_lines, fragment_html
 from scripts.song_types import IMPLICIT_MOMENTS, MOMENTS, celebration_moments, read_song_type
 from scripts.aelf import psalm_source_key
@@ -33,7 +33,7 @@ def create_song_sheet(
     for position, (song_title, path) in enumerate(songs, start=1):
         parts = selected_song_parts(path, None if verses is None else verses[position - 1])
         parts = with_reading_introductions(parts, moments[position - 1], context)
-        parts = with_gospel_introduction(parts, moments[position - 1], gospel_intro)
+        parts = with_liturgical_introductions(parts, moments[position - 1], gospel_intro)
         blocks = [part.text for part in parts]
         if not blocks:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
@@ -62,7 +62,8 @@ def create_song_sheet(
                     fragment_html(fragment).replace("<b>", "<strong>").replace("</b>", "</strong>")
                     for fragment in line
                 ))
-            paragraph = '<p class="paroles">' + "<br>\n".join(lines) + "</p>"
+            paragraph_class = "introduction" if part.kind == "lecture" else "paroles"
+            paragraph = f'<p class="{paragraph_class}">' + "<br>\n".join(lines) + "</p>"
             if part.kind == "lecture":
                 if part.identifier == "L1":
                     before = paragraph
@@ -101,14 +102,14 @@ body {{ margin: 0; background: #faf9f6; color: #20283b;
        font: 1.125rem/1.65 system-ui, sans-serif; overflow-wrap: anywhere; }}
 main {{ max-width: 42rem; margin: auto; padding: 1.25rem; }}
 h1 {{ font-size: 2rem; line-height: 1.2; margin-bottom: .5rem; }}
-h2, .moment {{ font-size: 1.5rem; line-height: 1.3; }}
+h2, .moment, .introduction {{ font-size: 1.5rem; line-height: 1.3; }}
 section {{ margin-top: 2.5rem; padding-top: 1rem; border-top: 2px solid #d9deea; }}
 .moment {{ margin: 0 0 .5rem; color: #596176; font-weight: 700; }}
 .moment + h2 {{ margin-top: 0; }}
-.paroles {{ margin: 1.5rem 0; }}
+.paroles, .introduction {{ margin: 1.5rem 0; }}
 .sous-titre {{ margin-top: 0; color: #596176; }}
 @media print {{ body {{ background: white; font-size: 12pt; }}
-                .paroles {{ break-inside: avoid; }} }}
+                .paroles, .introduction {{ break-inside: avoid; }} }}
 </style>
 </head>
 <body><main>

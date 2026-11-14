@@ -44,8 +44,13 @@ def gospel_introduction(songs: list[tuple[str, Path]], aelf_context: str | None 
     return ""
 
 
-def with_gospel_introduction(parts: list[SongPart], moment: str, introduction: str) -> list[SongPart]:
-    if parts and moment == "Acclamation de l’Évangile" and introduction:
+def with_liturgical_introductions(parts: list[SongPart], moment: str, gospel_intro: str) -> list[SongPart]:
+    introduction = ""
+    if moment == "Anamnèse":
+        introduction = "Notre Père"
+    elif moment == "Acclamation de l’Évangile":
+        introduction = gospel_intro
+    if parts and introduction:
         text = f"**{introduction}**"
         if not any(part.kind == "lecture" and part.text == text for part in parts):
             return parts + [SongPart("L2", "lecture", text)]

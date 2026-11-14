@@ -17,9 +17,9 @@ import streamlit.components.v1 as components
 
 from scripts.markdown_to_pptx import build_slides, read_slides, read_title, write_slides
 from scripts.song_sheet import create_song_sheet
-from scripts.song_selection import selected_song_parts, gospel_introduction, with_gospel_introduction, reading_context, with_reading_introductions
+from scripts.song_selection import selected_song_parts, gospel_introduction, with_liturgical_introductions, reading_context, with_reading_introductions
 from scripts.print_song_sheet import create_print_song_sheet
-from scripts.github_pages import prepare_pages_export, save_pages_export
+from scripts.github_pages import prepare_pages_export
 from scripts.github_publish import publish_sheet
 from scripts.song_editor import load_song, save_song
 from scripts.song_types import MOMENTS, celebration_moments, read_song_type, song_type, set_song_type
@@ -60,7 +60,7 @@ def create_presentation(
     for position, (_, path) in enumerate(songs):
         parts = selected_song_parts(path, None if verses is None else verses[position])
         parts = with_reading_introductions(parts, moments[position], context)
-        parts = with_gospel_introduction(parts, moments[position], gospel_intro)
+        parts = with_liturgical_introductions(parts, moments[position], gospel_intro)
         if not parts:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole après sélection.")
         if sections:
@@ -137,35 +137,14 @@ def show_github_pages(
     publication = st.session_state.get("pages_publication")
     if publication and publication[:3] == (export_signature, repository, branch):
         st.success("La feuille a été envoyée sur GitHub. Elle sera accessible après le déploiement GitHub Pages.")
-        st.link_button("Voir le commit publié", publication[3])
         st.link_button("Ouvrir la feuille après déploiement", export.url)
         st.link_button("Toutes les feuilles de la paroisse", export.parish_url)
     st.caption("Lien prévu : il sera accessible après l'envoi des fichiers sur GitHub et le déploiement Pages.")
     st.code(export.url, language=None)
     st.image(export.qr.decode("utf-8"), caption="QR code à distribuer après publication", width=280)
     st.download_button(
-        "Télécharger les fichiers pour GitHub Pages (.zip)", export.archive,
-        file_name=f"publication_{export.path.replace('/', '_')}.zip", mime="application/zip",
-    )
-    st.download_button(
         "Télécharger le QR code à imprimer (.svg)", export.qr,
         file_name=f"qr_{export.path.replace('/', '_')}.svg", mime="image/svg+xml",
-    )
-    with st.expander("Enregistrer les fichiers dans ce dépôt local"):
-        if st.button("Enregistrer dans docs/"):
-            try:
-                target = save_pages_export(export, ROOT / "docs", replace=replace)
-                st.success(f"Fichiers enregistrés : {target.relative_to(ROOT).as_posix()}")
-            except (OSError, ValueError) as error:
-                st.error(str(error))
-    st.markdown(
-        "Vous pouvez aussi décompresser le ZIP à la racine de votre copie du dépôt "
-        "(ou utiliser l'enregistrement local ci-dessus), puis envoyer les fichiers sur GitHub. "
-        "Conservez les anciennes feuilles pour garder leurs liens actifs."
-    )
-    st.caption(
-        "Configuration GitHub Pages : Settings → Pages → Deploy from a branch → main → /docs. "
-        "Si Streamlit est hébergé en ligne, téléchargez le ZIP pour récupérer les fichiers sur votre ordinateur."
     )
 
 
@@ -574,7 +553,7 @@ def show_preparation() -> None:
                 try:
                     parts = selected_song_parts(path, verses[position - 1])
                     parts = with_reading_introductions(parts, moments[position - 1], context)
-                    for part in with_gospel_introduction(parts, moments[position - 1], gospel_intro):
+                    for part in with_liturgical_introductions(parts, moments[position - 1], gospel_intro):
                         st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
                 except (OSError, ValueError) as error:
                     st.error(f"Impossible de lire {path.name} : {error}")

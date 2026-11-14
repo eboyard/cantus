@@ -52,6 +52,13 @@ récupéré les textes AELF, vous pouvez garder un psaume du carnet (notamment
 avec des syllabes soulignées). Les introductions figureront dans la publication
 et seront restaurées à sa réouverture, sans remplacer les paroles du carnet.
 
+Après un chant affecté au moment **Anamnèse**, le titre **Notre Père** est ajouté
+automatiquement en gras, dans le même style que les introductions des lectures.
+Ces introductions et **Notre Père** ont la même taille de police que les titres
+des chants sur les feuilles pour téléphone et à imprimer.
+Il apparaît dans l’aperçu, le PowerPoint et les feuilles téléphone, imprimable
+et publiée, sans nécessiter de récupération AELF.
+
 Si un psaume importé est déjà utilisé, changer la date ou la messe AELF le met
 également à jour. Les textes correspondent au jour exact sélectionné : pour une
 messe anticipée du dimanche, choisissez la date du dimanche.
@@ -241,10 +248,7 @@ met pas leurs paroles à jour. Conservez les anciennes publications pour que
 leurs liens et QR codes restent accessibles.
 
 Si la publication directe est désactivée, contactez le responsable de
-l’application pour sa configuration. Vous pouvez aussi lui transmettre
-**Télécharger les fichiers pour GitHub Pages (.zip)** : il devra extraire
-le ZIP à la racine du dépôt, puis envoyer les fichiers sur GitHub.
-Le téléchargement du ZIP seul ne publie pas la feuille.
+l’application pour sa configuration.
 
 ## Créer et imprimer un PDF
 

@@ -136,7 +136,7 @@ class GitHubPublishTests(unittest.TestCase):
                 self.assertEqual(len(app.exception), 0)
                 self.assertEqual(len(app.error), 0)
                 self.assertIn("envoyée sur GitHub", app.success[0].value)
-                self.assertTrue(any(button.proto.label == "Voir le commit publié" for button in app.get("link_button")))
+                self.assertFalse(any(button.proto.label == "Voir le commit publié" for button in app.get("link_button")))
                 index_button = next(button for button in app.get("link_button") if button.proto.label == "Toutes les feuilles de la paroisse")
                 self.assertEqual(index_button.proto.url, "https://eboyard.github.io/cantus/boussy-saint-antoine/")
                 app.selectbox(key="pages_parish").select("Quincy-sous-Sénart").run()

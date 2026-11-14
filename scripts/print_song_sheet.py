@@ -12,7 +12,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import BalancedColumns, BaseDocTemplate, Frame, PageTemplate, Paragraph
 
-from scripts.song_selection import selected_song_parts, gospel_introduction, with_gospel_introduction, reading_context, with_reading_introductions
+from scripts.song_selection import selected_song_parts, gospel_introduction, with_liturgical_introductions, reading_context, with_reading_introductions
 from scripts.lyrics_format import formatted_lines, fragment_html
 from scripts.song_types import IMPLICIT_MOMENTS, MOMENTS, celebration_moments, read_song_type
 
@@ -66,6 +66,7 @@ def create_print_song_sheet(
     heading = ParagraphStyle("chant", parent=body, fontName="CantusPrint-Bold",
                              fontSize=font_size + .5, leading=font_size + 2,
                              spaceBefore=7, spaceAfter=3, keepWithNext=True)
+    reading_heading = ParagraphStyle("lecture", parent=heading, keepWithNext=False)
     moment_style = ParagraphStyle("rubrique", parent=heading, fontSize=font_size + 1,
                                   leading=font_size + 3, spaceBefore=10)
     title_style = ParagraphStyle("celebration", parent=heading, fontSize=14, leading=17,
@@ -94,7 +95,7 @@ def create_print_song_sheet(
     for position, (song_title, path) in enumerate(songs, start=1):
         parts = selected_song_parts(path, None if verses is None else verses[position - 1])
         parts = with_reading_introductions(parts, moments[position - 1], context)
-        parts = with_gospel_introduction(parts, moments[position - 1], gospel_intro)
+        parts = with_liturgical_introductions(parts, moments[position - 1], gospel_intro)
         if not parts:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
         moment = moments[position - 1]
@@ -139,7 +140,7 @@ def create_print_song_sheet(
             leftPadding=0, rightPadding=0, innerPadding=gap,
             topPadding=0, bottomPadding=0, endSlack=0,
         ))
-        story.extend(Paragraph(_lyrics(part.text), body)
+        story.extend(Paragraph(_lyrics(part.text), reading_heading)
                      for part in parts if part.kind == "lecture" and part.identifier == "L2")
     output = BytesIO()
     document = BaseDocTemplate(output, pagesize=A4, title=title.strip() or "Messe",

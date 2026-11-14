@@ -110,7 +110,7 @@ class GitHubPagesTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 save_pages_export(replace(self.prepare(), path="../../ailleurs"), Path(directory) / "docs")
 
-    def test_streamlit_export_and_local_save(self):
+    def test_streamlit_export_without_zip_download_or_local_save(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "chant.md"
@@ -133,9 +133,12 @@ class GitHubPagesTests(unittest.TestCase):
                 self.assertIn("Quincy-sous-Sénart", export.document.decode("utf-8"))
                 self.assertEqual(export.url, "https://eboyard.github.io/cantus/quincy-sous-senart/2026-10-18/")
                 self.assertEqual(len(app.get("image")), 1)
-                next(button for button in app.button if button.label == "Enregistrer dans docs/").click().run()
-                self.assertEqual(len(app.error), 0)
-                self.assertEqual((root / "docs/quincy-sous-senart/2026-10-18/index.html").read_bytes(), export.document)
+                self.assertFalse(any(button.label == "Enregistrer dans docs/" for button in app.button))
+                self.assertFalse(any(expander.label == "Enregistrer les fichiers dans ce dépôt local" for expander in app.expander))
+                self.assertFalse(any(button.proto.label == "Télécharger les fichiers pour GitHub Pages (.zip)"
+                                     for button in app.get("download_button")))
+                self.assertTrue(any(button.proto.label == "Télécharger le QR code à imprimer (.svg)"
+                                    for button in app.get("download_button")))
                 app.selectbox(key="pages_parish").select("Boussy-saint-Antoine").run()
                 self.assertFalse(any(button.label == "Enregistrer dans docs/" for button in app.button))
 
