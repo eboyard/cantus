@@ -1,0 +1,37 @@
+{
+  "informations": {
+    "date": "2026-11-15",
+    "zone": "romain",
+    "couleur": "vert",
+    "annee": "A",
+    "temps_liturgique": "ordinaire",
+    "semaine": "33ème semaine du Temps Ordinaire",
+    "jour": "dimanche",
+    "jour_liturgique_nom": "33ème dimanche du Temps Ordinaire (semaine I du Psautier)",
+    "fete": "",
+    "degre": "",
+    "ligne1": "33ème dimanche du Temps Ordinaire (semaine I du Psautier)",
+    "ligne2": "",
+    "ligne3": "",
+    "couleur2": null,
+    "couleur3": null
+  },
+  "messes": [
+    {
+      "nom": "Messe du jour",
+      "lectures": [
+        {
+          "type": "psaume",
+          "refrain_psalmique": "<p><strong>Heureux qui craint le Seigneur !</strong></p>",
+          "ref_refrain": "Ps 127, 1a",
+          "titre": null,
+          "contenu": "<p>Heureux qui craint le Seigneur<br />\net marche selon ses voies !<br />\nTu te nourriras du travail de tes mains :<br />\nHeureux es-tu ! À toi, le bonheur !</p>\n\n<p>Ta femme sera dans ta maison<br />\ncomme une vigne généreuse,<br />\net tes fils, autour de la table,<br />\ncomme des plants d’olivier.</p>\n\n<p>Voilà comment sera béni<br />\nl’homme qui craint le Seigneur.<br />\nDe Sion, que le Seigneur te bénisse !<br />\nTu verras le bonheur de Jérusalem tous les jours de ta vie.</p>",
+          "ref": "Ps 127 (128), 1-2, 3, 4-5",
+          "intro_lue": null,
+          "verset_evangile": "",
+          "ref_verset": null
+        }
+      ]
+    }
+  ]
+}

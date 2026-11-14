@@ -7,7 +7,9 @@ revenir à l’onglet **Préparer la célébration** pour poursuivre votre prép
 
 ## Démarrer en quelques étapes
 
-1. Dans **Préparer la célébration**, renseignez le **Nom de la célébration**.
+1. Dans **Préparer la célébration**, choisissez la **Date de la célébration**.
+   Le nom de la messe et le psaume sont récupérés sur l’AELF. Vous pouvez aussi
+   renseigner librement le **Nom de la célébration**.
 2. Choisissez un chant dans **Choisir un chant à ajouter**, puis cliquez sur
    **Ajouter le chant**. Répétez pour chaque chant.
 3. Dans **Ordre des chants**, utilisez **Monter**, **Descendre** et **Retirer**
@@ -18,6 +20,53 @@ revenir à l’onglet **Préparer la célébration** pour poursuivre votre prép
 
 Pour partager une feuille par lien ou QR code, créez d’abord la feuille pour
 téléphone, puis suivez la rubrique **Publier une feuille et partager son QR code**.
+
+## Récupérer le nom de la messe et le psaume sur AELF
+
+Choisissez la **Date de la célébration**, en haut de la préparation : l’application
+interroge l’API AELF pour cette date et remplit le **Nom de la célébration**, année
+liturgique comprise. Le titre reste modifiable. Pour charger les textes de la date
+déjà affichée au démarrage, cliquez sur **Récupérer le nom et le psaume sur AELF**.
+
+Si plusieurs messes ou psaumes sont proposés pour cette date, choisissez celui
+qui correspond à la célébration. Dépliez le titre du psaume pour lire son refrain
+et ses strophes, puis cliquez sur **Utiliser le psaume du jour**. Le psaume remplace
+celui déjà présent dans la liste ou s’ajoute avant l’acclamation et les chants
+suivants. Il est disponible pour le PowerPoint et les feuilles téléphone,
+imprimable et publiée. Les fichiers du carnet, y compris les psaumes avec des
+syllabes soulignées, ne sont pas modifiés.
+
+Le champ `intro_lue` de la lecture qui précède le psaume apparaît en gras avant
+son titre, et celui de la lecture suivante apparaît en gras après ses paroles.
+Ces introductions sont conservées dans les exports et les feuilles publiées,
+même si certaines strophes sont décochées. Aucun texte n’est ajouté si le champ
+est absent ou vide dans la réponse AELF.
+
+L’`intro_lue` de la section `evangile` de la même messe apparaît en gras après
+le chant affecté à **Acclamation de l’Évangile** (Alléluia). Si l’API propose aussi
+un Évangile en forme brève, l’introduction n’est affichée qu’une fois. Elle est
+conservée avec le psaume importé et retrouvée à la réouverture de la feuille.
+
+Les introductions sont aussi mémorisées pour la célébration : après avoir
+récupéré les textes AELF, vous pouvez garder un psaume du carnet (notamment
+avec des syllabes soulignées). Les introductions figureront dans la publication
+et seront restaurées à sa réouverture, sans remplacer les paroles du carnet.
+
+Après un chant affecté au moment **Anamnèse**, le titre **Notre Père** est ajouté
+automatiquement en gras, dans le même style que les introductions des lectures.
+Ces introductions et **Notre Père** ont la même taille de police que les titres
+des chants sur les feuilles pour téléphone et à imprimer.
+Il apparaît dans l’aperçu, le PowerPoint et les feuilles téléphone, imprimable
+et publiée, sans nécessiter de récupération AELF.
+
+Si un psaume importé est déjà utilisé, changer la date ou la messe AELF le met
+également à jour. Les textes correspondent au jour exact sélectionné : pour une
+messe anticipée du dimanche, choisissez la date du dimanche.
+
+La feuille publiée conserve le titre, le texte du psaume importé et le choix de
+ses strophes. À sa réouverture, aucun nouvel appel AELF n’est nécessaire pour
+retrouver ces textes. Si l’AELF est indisponible lors d’une récupération, un message
+le signale et le nom ainsi que la liste des chants en cours sont conservés.
 
 ## Choisir et ordonner les chants
 
@@ -147,9 +196,10 @@ La date apparaît dans le titre de la feuille et sert aussi à sa publication su
 Le **Moment de la messe** choisi dans l’ordre des chants apparaît au-dessus du titre
 de chaque chant, sur la feuille pour téléphone comme sur la feuille à publier.
 Les moments implicites **Gloire à Dieu**, **Psaume**, **Acclamation de l’Évangile**,
-**Sanctus** et **Agneau de Dieu** ne sont pas affichés.
-Le premier chant indique **Chant d’entrée** et le dernier **Envoi**. Une rubrique
-**Non renseigné** n’affiche aucun libellé pour un chant intermédiaire.
+**Sanctus**, **Anamnèse** et **Agneau de Dieu** ne sont pas affichés.
+Tous les moments choisis sont respectés, y compris au début et à la fin de la
+liste. **Non renseigné** n’affiche aucun libellé. Les moments sont conservés
+dans la feuille publiée et restaurés à sa réouverture.
 Si vous changez la date ou un moment, recréez la feuille avant de la télécharger
 et préparez à nouveau la publication.
 
@@ -198,21 +248,19 @@ met pas leurs paroles à jour. Conservez les anciennes publications pour que
 leurs liens et QR codes restent accessibles.
 
 Si la publication directe est désactivée, contactez le responsable de
-l’application pour sa configuration. Vous pouvez aussi lui transmettre
-**Télécharger les fichiers pour GitHub Pages (.zip)** : il devra extraire
-le ZIP à la racine du dépôt, puis envoyer les fichiers sur GitHub.
-Le téléchargement du ZIP seul ne publie pas la feuille.
+l’application pour sa configuration.
 
 ## Créer et imprimer un PDF
 
-Dans **Ordre des chants**, le premier chant est automatiquement le **Chant d’entrée**
-et le dernier est l’**Envoi**. Ces rubriques suivent la position après un ajout,
-un retrait ou un déplacement. Avec un seul chant, la rubrique est **Chant d’entrée**.
-Pour les chants intermédiaires, choisissez le **Moment de la messe** :
+Dans **Ordre des chants**, choisissez le **Moment de la messe** pour chaque chant,
+y compris le premier et le dernier :
 entrée, préparation pénitentielle, Gloire à Dieu, psaume, acclamation de l’Évangile,
 prières universelles, offertoire, Sanctus, anamnèse, Agneau de Dieu, communion ou envoi.
 Le type du carnet est proposé automatiquement lorsqu’il est connu. Vous pouvez
 le remplacer pour cette célébration, y compris si un même chant est utilisé deux fois.
+Les propositions **Chant d’entrée** et **Envoi** aux extrémités d’une liste chargée
+ne remplacent jamais un type connu. Un Kyrie placé en dernier reste une préparation
+pénitentielle. Les moments choisis suivent les chants après un déplacement.
 **Non renseigné** conserve uniquement le titre du chant dans le PDF.
 Les rubriques choisies apparaissent au-dessus des titres et des paroles ; deux chants
 consécutifs du même moment partagent une rubrique. Seuls les moments utilisés sont

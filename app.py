@@ -17,14 +17,16 @@ import streamlit.components.v1 as components
 
 from scripts.markdown_to_pptx import build_slides, read_slides, read_title, write_slides
 from scripts.song_sheet import create_song_sheet
-from scripts.song_selection import selected_song_parts
+from scripts.song_selection import selected_song_parts, gospel_introduction, with_liturgical_introductions, reading_context, with_reading_introductions
 from scripts.print_song_sheet import create_print_song_sheet
-from scripts.github_pages import prepare_pages_export, save_pages_export
+from scripts.github_pages import prepare_pages_export
 from scripts.github_publish import publish_sheet
 from scripts.song_editor import load_song, save_song
 from scripts.song_types import MOMENTS, celebration_moments, read_song_type, song_type, set_song_type
 from scripts.lyrics_format import lyrics_html
 from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents, verses_from_contents, title_from_contents
+from scripts.sheet_library import aelf_psalms_from_contents, aelf_context_from_contents, moments_from_contents
+from scripts.aelf import load_aelf_masses, mass_url, psalm_catalog
 
 
 ROOT = Path(__file__).resolve().parent
@@ -43,12 +45,22 @@ def song_catalog() -> dict[str, tuple[str, Path]]:
 
 def create_presentation(
     songs: list[tuple[str, Path]], *, verses: list[list[str] | None] | None = None,
+    moments: list[str] | None = None,
+    aelf_context: str | None = None,
 ) -> tuple[bytes, int]:
     if verses is not None and len(verses) != len(songs):
         raise ValueError("Choisissez les couplets pour chaque chant.")
     sections = []
+    context = reading_context(songs, aelf_context)
+    gospel_intro = gospel_introduction([], context) if context else ""
+    if moments is None:
+        moments = [read_song_type(path) for _, path in songs]
+    if len(moments) != len(songs):
+        raise ValueError("Choisissez une rubrique pour chaque chant.")
     for position, (_, path) in enumerate(songs):
         parts = selected_song_parts(path, None if verses is None else verses[position])
+        parts = with_reading_introductions(parts, moments[position], context)
+        parts = with_liturgical_introductions(parts, moments[position], gospel_intro)
         if not parts:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole après sélection.")
         if sections:
@@ -79,6 +91,7 @@ def github_setting(name: str, default: str = "") -> str:
 def show_github_pages(
     signature: tuple, celebration: str, songs: list[tuple[str, Path]], day: date, moments: list[str],
     verses: list[list[str] | None],
+    *, aelf_context: str | None = None,
 ) -> None:
     st.markdown("**Partager avec GitHub Pages**")
     parish = st.selectbox(
@@ -95,7 +108,7 @@ def show_github_pages(
         try:
             heading = f"{parish.strip()} — {celebration.strip() or 'Messe'}"
             document = create_song_sheet(heading, songs, day=day, moments=moments, verses=verses,
-                                         celebration_title=celebration)
+                                         celebration_title=celebration, aelf_context=aelf_context)
             export = prepare_pages_export(document, parish, day, base_url)
             st.session_state.pages_export = (export_signature, export)
         except (OSError, ValueError) as error:
@@ -124,35 +137,14 @@ def show_github_pages(
     publication = st.session_state.get("pages_publication")
     if publication and publication[:3] == (export_signature, repository, branch):
         st.success("La feuille a été envoyée sur GitHub. Elle sera accessible après le déploiement GitHub Pages.")
-        st.link_button("Voir le commit publié", publication[3])
         st.link_button("Ouvrir la feuille après déploiement", export.url)
         st.link_button("Toutes les feuilles de la paroisse", export.parish_url)
     st.caption("Lien prévu : il sera accessible après l'envoi des fichiers sur GitHub et le déploiement Pages.")
     st.code(export.url, language=None)
     st.image(export.qr.decode("utf-8"), caption="QR code à distribuer après publication", width=280)
     st.download_button(
-        "Télécharger les fichiers pour GitHub Pages (.zip)", export.archive,
-        file_name=f"publication_{export.path.replace('/', '_')}.zip", mime="application/zip",
-    )
-    st.download_button(
         "Télécharger le QR code à imprimer (.svg)", export.qr,
         file_name=f"qr_{export.path.replace('/', '_')}.svg", mime="image/svg+xml",
-    )
-    with st.expander("Enregistrer les fichiers dans ce dépôt local"):
-        if st.button("Enregistrer dans docs/"):
-            try:
-                target = save_pages_export(export, ROOT / "docs", replace=replace)
-                st.success(f"Fichiers enregistrés : {target.relative_to(ROOT).as_posix()}")
-            except (OSError, ValueError) as error:
-                st.error(str(error))
-    st.markdown(
-        "Vous pouvez aussi décompresser le ZIP à la racine de votre copie du dépôt "
-        "(ou utiliser l'enregistrement local ci-dessus), puis envoyer les fichiers sur GitHub. "
-        "Conservez les anciennes feuilles pour garder leurs liens actifs."
-    )
-    st.caption(
-        "Configuration GitHub Pages : Settings → Pages → Deploy from a branch → main → /docs. "
-        "Si Streamlit est hébergé en ligne, téléchargez le ZIP pour récupérer les fichiers sur votre ordinateur."
     )
 
 
@@ -182,11 +174,18 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
                 return
             try:
                 document = read_existing_sheet(choices[chosen], ROOT / "docs", github_setting("token"), repository)
-                order = songs_from_contents(document, catalog)
-                verses = verses_from_contents(document, order, catalog)
+                aelf_documents = {**st.session_state.get("aelf_psalms", {}), **aelf_psalms_from_contents(document)}
+                imported_catalog = {**catalog, **psalm_catalog(aelf_documents, ROOT)}
+                order = songs_from_contents(document, imported_catalog)
+                verses = verses_from_contents(document, order, imported_catalog)
+                moments = moments_from_contents(document, order, imported_catalog)
                 title = title_from_contents(document)
+                context = aelf_context_from_contents(document)
+                catalog.update(imported_catalog)
+                st.session_state.aelf_psalms = aelf_documents
+                st.session_state.selected_aelf_context = context
                 st.session_state.song_order = order
-                st.session_state.pop("song_moments", None)
+                st.session_state.song_moments = moments
                 st.session_state.song_verses = verses
                 if title is not None:
                     st.session_state.celebration_title = title
@@ -355,10 +354,98 @@ def clear_moment_widgets() -> None:
             del st.session_state[key]
 
 
+def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
+    """Charge à la demande ou lors du changement de date ; ne requiert pas de réseau au démarrage."""
+    def apply_choice():
+        _, masses = st.session_state.aelf_loaded
+        chosen = next(mass for mass in masses if mass.key == st.session_state.aelf_mass_choice)
+        st.session_state.selected_aelf_context = chosen.markdown
+        st.session_state.celebration_title = chosen.title
+        # Un psaume déjà importé suit la nouvelle date ou la nouvelle messe choisie.
+        for position, key in enumerate(st.session_state.song_order):
+            if key.startswith("aelf/") and key != chosen.key:
+                st.session_state.song_order[position] = chosen.key
+                st.session_state.song_verses[position] = None
+                st.session_state.song_moments[position] = "Psaume"
+        for key in ("generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
+            st.session_state.pop(key, None)
+        clear_moment_widgets()
+
+    def retrieve():
+        day = st.session_state.celebration_date
+        try:
+            with st.spinner("Récupération du nom de la messe et du psaume sur AELF…"):
+                masses = load_aelf_masses(day)
+                documents = {**st.session_state.get("aelf_psalms", {}),
+                             **{mass.key: mass.markdown for mass in masses}}
+                additions = psalm_catalog(documents, ROOT)
+            catalog.update(additions)
+            st.session_state.aelf_psalms = documents
+            st.session_state.aelf_loaded = (day, masses)
+            st.session_state.aelf_mass_choice = masses[0].key
+            st.session_state.pop("aelf_import_error", None)
+            apply_choice()
+        except (OSError, ValueError) as error:
+            st.session_state.aelf_import_error = (day, str(error))
+
+    day = st.date_input(
+        "Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date(),
+        key="celebration_date", on_change=retrieve,
+    )
+    st.button("Récupérer le nom et le psaume sur AELF", key="retrieve_aelf", on_click=retrieve)
+    st.caption("Changer la date récupère automatiquement les textes AELF du jour exact choisi. Le titre reste modifiable.")
+    status = st.session_state.get("aelf_import_error")
+    if status and status[0] == day:
+        st.error(status[1] + " Le nom et les chants en cours ont été conservés.")
+    loaded = st.session_state.get("aelf_loaded")
+    if loaded and loaded[0] == day:
+        masses = loaded[1]
+        if len(masses) > 1:
+            options = {mass.key: mass for mass in masses}
+            st.selectbox("Messe et psaume proposés par l’AELF", list(options), key="aelf_mass_choice",
+                         format_func=lambda key: f"{options[key].name} — {options[key].reference}",
+                         on_change=apply_choice)
+            chosen = options[st.session_state.aelf_mass_choice]
+        else:
+            chosen = masses[0]
+        with st.expander(chosen.psalm_title):
+            st.caption(f"{chosen.name} — {chosen.reference}")
+            # Une seule occurrence de chaque partie dans cet aperçu.
+            seen = set()
+            for part in selected_song_parts(catalog[chosen.key][1]):
+                if part.identifier not in seen:
+                    st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
+                    seen.add(part.identifier)
+            st.link_button("Lire les textes sur AELF", chosen.url)
+        if st.button("Utiliser le psaume du jour", key="use_aelf_psalm"):
+            order = st.session_state.song_order
+            assigned = st.session_state.song_moments
+            verses = st.session_state.song_verses
+            position = next((i for i, moment in enumerate(assigned) if moment == "Psaume"), None)
+            if position is None:
+                # Place le psaume avant l'acclamation ou les chants suivants.
+                position = next((i for i, moment in enumerate(assigned)
+                                 if i > 0 and moment in MOMENTS[4:]), len(order))
+                if position == len(order) and len(order) > 1:
+                    position -= 1
+                order.insert(position, chosen.key)
+                assigned.insert(position, "Psaume")
+                verses.insert(position, None)
+            else:
+                order[position] = chosen.key
+                verses[position] = None
+            clear_moment_widgets()
+            st.rerun()
+    else:
+        st.link_button("Consulter la messe du jour sur AELF", mass_url(day))
+    return day
+
+
 def show_preparation() -> None:
     st.title("Préparer les chants de la célébration")
 
     catalog = song_catalog()
+    catalog.update(psalm_catalog(st.session_state.get("aelf_psalms", {}), ROOT))
     if not catalog:
         st.error("Aucun chant n’a été trouvé dans le catalogue.")
         return
@@ -367,14 +454,16 @@ def show_preparation() -> None:
     show_existing_sheets(catalog)
     if ("song_moments" not in st.session_state
             or len(st.session_state.song_moments) != len(st.session_state.song_order)):
-        st.session_state.song_moments = [read_song_type(catalog[key][1]) for key in st.session_state.song_order]
+        st.session_state.song_moments = celebration_moments([read_song_type(catalog[key][1]) for key in st.session_state.song_order])
         clear_moment_widgets()
-    st.session_state.setdefault("celebration_title", "Messe")
-    celebration = st.text_input("Nom de la célébration", key="celebration_title")
     if ("song_verses" not in st.session_state
             or len(st.session_state.song_verses) != len(st.session_state.song_order)):
         st.session_state.song_verses = [None for _ in st.session_state.song_order]
         clear_moment_widgets()
+    day = show_aelf_import(catalog)
+    aelf_context = st.session_state.get("selected_aelf_context")
+    st.session_state.setdefault("celebration_title", "Messe")
+    celebration = st.text_input("Nom de la célébration", key="celebration_title")
     selected = st.selectbox(
         "Choisir un chant à ajouter",
         options=list(catalog),
@@ -382,7 +471,7 @@ def show_preparation() -> None:
     )
     if st.button("Ajouter le chant"):
         st.session_state.song_order.append(selected)
-        st.session_state.song_moments.append(read_song_type(catalog[selected][1]))
+        st.session_state.song_moments.append(read_song_type(catalog[selected][1]) or (MOMENTS[0] if len(st.session_state.song_order) == 1 else ""))
         st.session_state.song_verses.append(None)
         clear_moment_widgets()
         st.rerun()
@@ -391,26 +480,21 @@ def show_preparation() -> None:
     song_order = st.session_state.song_order
     assigned_moments = st.session_state.song_moments
     verses = st.session_state.song_verses
-    moments = celebration_moments(assigned_moments)
+    moments = list(assigned_moments)
     if not song_order:
         st.info("Ajoutez un chant pour commencer.")
     else:
-        st.caption("Le premier chant est le chant d’entrée et le dernier est le chant d’envoi. Pour les chants intermédiaires, le type du carnet est proposé et peut être modifié. Les moments figurent sur les feuilles pour téléphone, à publier et à imprimer. Les boutons Monter et Descendre règlent l’ordre des chants.")
+        st.caption("Le type du carnet est proposé pour chaque chant. Vous pouvez modifier tous les moments, y compris le premier et le dernier. Les moments suivent les chants lorsque vous les déplacez et sont conservés dans les feuilles publiées.")
         for position, key in enumerate(song_order):
             title_col, up_col, down_col, remove_col = st.columns([6, 1, 1, 1])
             title_col.write(f"{position + 1}. {catalog[key][0]}")
-            fixed_moment = position in (0, len(song_order) - 1)
-            if fixed_moment:
-                st.session_state[f"sheet_moment_{position}"] = moments[position]
             moments[position] = title_col.selectbox(
                 f"Moment de la messe — chant {position + 1}", options=["", *MOMENTS],
-                index=None if fixed_moment else ["", *MOMENTS].index(moments[position]),
+                index=["", *MOMENTS].index(moments[position]),
                 key=f"sheet_moment_{position}",
                 format_func=lambda value: f"{MOMENTS.index(value) + 1}. {value}" if value else "Non renseigné",
-                disabled=fixed_moment,
             )
-            if not fixed_moment:
-                assigned_moments[position] = moments[position]
+            assigned_moments[position] = moments[position]
             try:
                 parts = selected_song_parts(catalog[key][1])
                 couplets = {part.identifier: part.text for part in parts if part.selectable}
@@ -456,22 +540,32 @@ def show_preparation() -> None:
                 st.rerun()
 
         with st.expander("Aperçu des paroles"):
+            try:
+                context = reading_context([catalog[key] for key in song_order], aelf_context)
+                gospel_intro = gospel_introduction([], context) if context else ""
+            except (OSError, ValueError) as error:
+                st.error(f"Impossible de lire l’introduction de l’Évangile : {error}")
+                gospel_intro = ""
+                context = ""
             for position, key in enumerate(song_order, start=1):
                 title, path = catalog[key]
                 st.markdown(f"**{position}. {title}**")
                 try:
-                    for part in selected_song_parts(path, verses[position - 1]):
+                    parts = selected_song_parts(path, verses[position - 1])
+                    parts = with_reading_introductions(parts, moments[position - 1], context)
+                    for part in with_liturgical_introductions(parts, moments[position - 1], gospel_intro):
                         st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
                 except (OSError, ValueError) as error:
                     st.error(f"Impossible de lire {path.name} : {error}")
 
-    signature = (celebration.strip(), tuple(song_order))
+    signature = (celebration.strip(), tuple(song_order), aelf_context)
     verse_signature = tuple(None if selection is None else tuple(selection) for selection in verses)
-    presentation_signature = (signature, verse_signature)
+    presentation_signature = (signature, verse_signature, tuple(moments))
     generated = st.session_state.get("generated_presentation")
     if st.button("Créer le PowerPoint", type="primary", disabled=not song_order):
         try:
-            data, slide_count = create_presentation([catalog[key] for key in song_order], verses=verses)
+            data, slide_count = create_presentation([catalog[key] for key in song_order], verses=verses, moments=moments,
+                                                    aelf_context=aelf_context)
             generated = (presentation_signature, data, slide_count)
             st.session_state.generated_presentation = generated
         except (OSError, ValueError) as error:
@@ -490,14 +584,11 @@ def show_preparation() -> None:
 
     st.subheader("Feuille de chants pour téléphone")
     st.caption("Un fichier HTML avec les paroles adaptées à la largeur de l'écran.")
-    day = st.date_input(
-        "Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date(),
-        key="celebration_date",
-    )
     sheet_signature = (signature, day, tuple(moments), verse_signature)
     if st.button("Créer la feuille de chants", disabled=not song_order):
         try:
-            data = create_song_sheet(celebration, [catalog[key] for key in song_order], day=day, moments=moments, verses=verses)
+            data = create_song_sheet(celebration, [catalog[key] for key in song_order], day=day, moments=moments, verses=verses,
+                                     aelf_context=aelf_context)
             st.session_state.generated_song_sheet = (sheet_signature, data)
         except (OSError, ValueError) as error:
             st.error(f"La création de la feuille a échoué : {error}")
@@ -514,7 +605,8 @@ def show_preparation() -> None:
             "Transférez le fichier sur le téléphone et ouvrez-le avec un navigateur. "
             "Une fois enregistré, il se lit sans connexion Internet."
         )
-        show_github_pages(sheet_signature, celebration, [catalog[key] for key in song_order], day, moments, verses)
+        show_github_pages(sheet_signature, celebration, [catalog[key] for key in song_order], day, moments, verses,
+                          aelf_context=aelf_context)
 
     st.subheader("Feuille de chants à imprimer")
     st.caption("PDF A4 en deux colonnes, en noir et blanc. Chaque refrain est écrit une fois par chant.")
@@ -525,6 +617,7 @@ def show_preparation() -> None:
         try:
             pdf, pages = create_print_song_sheet(
                 celebration, [catalog[key] for key in song_order], font_size=print_size, moments=moments, verses=verses,
+                aelf_context=aelf_context,
             )
             st.session_state.generated_print_sheet = (print_signature, pdf, pages)
         except (OSError, ValueError) as error:

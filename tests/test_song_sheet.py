@@ -25,6 +25,49 @@ class Document(HTMLParser):
 
 
 class SongSheetTests(unittest.TestCase):
+    def test_notre_pere_follows_anamnesis_in_bold_in_all_exports(self):
+        import pymupdf
+        from pptx import Presentation
+        from io import BytesIO
+        from app import create_presentation
+        from scripts.print_song_sheet import create_print_song_sheet
+        from scripts.sheet_library import moments_from_contents
+        from scripts.song_selection import selected_song_parts, with_liturgical_introductions
+
+        with TemporaryDirectory() as directory:
+            anamnesis = Path(directory) / "anamnese.md"
+            anamnesis.write_text("<!-- titre: Anamnèse (Messe) -->\nNous rappelons ta mort", encoding="utf-8")
+            agnus = Path(directory) / "agnus.md"
+            agnus.write_text("<!-- titre: Agnus Dei -->\nAgnus Dei", encoding="utf-8")
+            songs = [("Anamnèse (Messe)", anamnesis), ("Agnus Dei", agnus)]
+            html = create_song_sheet("Messe", songs).decode()
+            self.assertEqual(html.count("<strong>Notre Père</strong>"), 1)
+            self.assertLess(html.index("Nous rappelons ta mort"), html.index("<strong>Notre Père</strong>"))
+            self.assertLess(html.index("<strong>Notre Père</strong>"), html.index('<h2 id="titre-2">'))
+            moments = moments_from_contents(html, ["a", "b"], {"a": songs[0], "b": songs[1]})
+            self.assertEqual(moments, ["Anamnèse", "Agneau de Dieu"])
+            self.assertEqual(create_song_sheet("Messe", songs, moments=moments).decode(), html)
+            pdf, _ = create_print_song_sheet("Messe", songs)
+            with pymupdf.open(stream=pdf, filetype="pdf") as document:
+                page = document[0]
+                self.assertLess(page.search_for("Nous rappelons ta mort")[0].y0, page.search_for("Notre Père")[0].y0)
+                self.assertLess(page.search_for("Notre Père")[0].y0, page.search_for("Agnus Dei")[0].y0)
+                spans = [span for block in page.get_text("dict")["blocks"] if "lines" in block
+                         for line in block["lines"] for span in line["spans"]]
+                self.assertTrue(any(span["text"] == "Notre Père" and "Bold" in span["font"] for span in spans))
+                notre_pere = next(span for span in spans if span["text"] == "Notre Père")
+                song_title = next(span for span in spans if "Anamnèse (Messe)" in span["text"])
+                self.assertAlmostEqual(notre_pere["size"], song_title["size"])
+            data, _ = create_presentation(songs)
+            presentation = Presentation(BytesIO(data))
+            text = ["\n".join(shape.text for shape in slide.shapes if shape.has_text_frame)
+                    for slide in presentation.slides]
+            self.assertEqual(text, ["Nous rappelons ta mort", "Notre Père", "", "Agnus Dei"])
+            parts = selected_song_parts(anamnesis)
+            decorated = with_liturgical_introductions(parts, "Anamnèse", "")
+            self.assertEqual(with_liturgical_introductions(decorated, "Anamnèse", ""), decorated)
+            self.assertEqual(with_liturgical_introductions(parts, "Communion", ""), parts)
+
     def test_anamnesis_heading_is_implicit_on_phone_and_print(self):
         import pymupdf
         from scripts.print_song_sheet import create_print_song_sheet
@@ -42,14 +85,14 @@ class SongSheetTests(unittest.TestCase):
         self.assertEqual(text.count("Anamnèse"), 1)
         self.assertIn("Anamnèse (Messe de St Augustin)", text)
 
-    def test_moments_follow_songs_with_automatic_entry_and_exit(self):
+    def test_explicit_moments_are_preserved_including_empty_boundaries(self):
         with TemporaryDirectory() as directory:
             song = Path(directory) / "chant.md"
             song.write_text("<!-- type: Psaume -->\nParoles", encoding="utf-8")
             songs = [("Chant", song)] * 4
             html = create_song_sheet("Messe", songs, moments=["", "Offertoire", "", ""]).decode()
             sections = html.split('<section ')[1:]
-            for section, moment in zip(sections, ["Chant d’entrée", "Offertoire", "", "Envoi"]):
+            for section, moment in zip(sections, ["", "Offertoire", "", ""]):
                 if moment:
                     self.assertIn(f'<p class="moment">{moment}</p>', section)
                     self.assertLess(section.index('class="moment"'), section.index('<h2'))
@@ -64,6 +107,7 @@ class SongSheetTests(unittest.TestCase):
     def test_selected_moments_are_in_download_and_export_and_changes_invalidate_them(self):
         app = AppTest.from_string("from app import main\nmain()")
         app.session_state["song_order"] = ["chants/agnus_dei.md"] * 3
+        app.session_state["song_moments"] = ["Chant d’entrée", "Offertoire", "Envoi"]
         app.run()
         app.selectbox(key="sheet_moment_1").select("Offertoire").run()
         next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
@@ -144,7 +188,8 @@ class SongSheetTests(unittest.TestCase):
         app.text_input[0].set_value("Autre célébration").run()
         self.assertEqual(len(app.get("download_button")), 0)
 
-    def test_download_contains_selected_date_and_is_hidden_when_date_changes(self):
+    @patch("app.load_aelf_masses", side_effect=ValueError("Hors connexion pour ce test"))
+    def test_download_contains_selected_date_and_is_hidden_when_date_changes(self, _fetch):
         app = AppTest.from_string("from app import main\nmain()")
         app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
         app.run()

@@ -189,7 +189,8 @@ class SheetLibraryTests(unittest.TestCase):
 
     def test_ui_refresh_makes_remote_only_sheet_available(self):
         sheet = ExistingSheet("quincy-sous-senart/2026-10-25/index.html", "a" * 40)
-        with patch("app.published_sheets", return_value=[sheet]), patch("app.read_existing_sheet", return_value=contents("Agnus Dei")):
+        document = contents("Agnus Dei").replace('href="#chant-1"', 'href="#chant-1" data-song-key="chants/agnus_dei.md"')
+        with patch("app.published_sheets", return_value=[sheet]), patch("app.read_existing_sheet", return_value=document):
             app = AppTest.from_string("from app import main\nmain()").run()
             app.button(key="refresh_existing_sheets").click().run()
             app.selectbox(key="existing_sheet_choice").select(sheet.path).run()

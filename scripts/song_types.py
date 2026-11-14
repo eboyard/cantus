@@ -17,11 +17,12 @@ IMPLICIT_MOMENTS = frozenset({
 
 
 def celebration_moments(moments: list[str]) -> list[str]:
-    """Déduit les rubriques des extrémités sans modifier les choix des chants."""
+    """Propose les rubriques des extrémités uniquement si elles sont inconnues."""
     result = list(moments)
     if result:
-        result[0] = MOMENTS[0]
-        if len(result) > 1:
+        if not result[0]:
+            result[0] = MOMENTS[0]
+        if len(result) > 1 and not result[-1]:
             result[-1] = MOMENTS[-1]
     return result
 
