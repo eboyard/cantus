@@ -14,6 +14,7 @@ from urllib.error import HTTPError
 from scripts.github_publish import GitHubPublishError, _nested_sha, _request
 from scripts.song_selection import selected_song_parts
 from scripts.aelf import psalm_source_key
+from scripts.song_types import MOMENTS, celebration_moments, read_song_type
 
 
 @dataclass(frozen=True)
@@ -105,14 +106,27 @@ class _ContentsParser(HTMLParser):
         self.current_verses: str | None = None
         self.celebration_title: str | None = None
         self.aelf_psalms: dict[str, str] = {}
+        self.aelf_context: str | None = None
+        self.section_moments: list[str | None] = []
+        self.section_moment_explicit: list[bool] = []
+        self.current_moment: str | None = None
+        self.current_moment_explicit = False
+        self.moment_text: list[str] | None = None
 
     def handle_starttag(self, tag, attributes):
         attrs = dict(attributes)
         if tag == "meta" and attrs.get("name") == "cantus-celebration-title":
             self.celebration_title = (attrs.get("content") or "").strip() or "Messe"
+        if tag == "meta" and attrs.get("name") == "cantus-aelf-context":
+            context = attrs.get("content") or ""
+            if len(context) > 100_000 or not psalm_source_key(context):
+                raise ValueError("Les lectures AELF mémorisées dans cette feuille sont invalides.")
+            self.aelf_context = context
         if tag == "section" and re.fullmatch(r"chant-\d+", attrs.get("id") or ""):
             self.section_key = attrs.get("data-song-key") or ""
             self.current_verses = attrs.get("data-song-verses")
+            self.current_moment = attrs.get("data-song-moment")
+            self.current_moment_explicit = self.current_moment is not None
             markdown = attrs.get("data-aelf-psalm")
             if markdown is not None:
                 if (len(markdown) > 100_000 or not self.section_key
@@ -121,6 +135,8 @@ class _ContentsParser(HTMLParser):
                 if self.section_key in self.aelf_psalms and self.aelf_psalms[self.section_key] != markdown:
                     raise ValueError("Cette feuille contient deux versions différentes du même psaume AELF.")
                 self.aelf_psalms[self.section_key] = markdown
+        if tag == "p" and self.section_key is not None and "moment" in (attrs.get("class") or "").split():
+            self.moment_text = []
         if tag == "h2" and self.section_key is not None:
             self.heading = []
         if tag == "nav" and attrs.get("id") == "sommaire":
@@ -129,16 +145,24 @@ class _ContentsParser(HTMLParser):
             self.anchor = (attrs.get("data-song-key") or "", [])
 
     def handle_data(self, text):
+        if self.moment_text is not None:
+            self.moment_text.append(text)
         if self.anchor is not None:
             self.anchor[1].append(text)
         if self.heading is not None:
             self.heading.append(text)
 
     def handle_endtag(self, tag):
+        if tag == "p" and self.moment_text is not None:
+            if self.current_moment is None:
+                self.current_moment = " ".join("".join(self.moment_text).split())
+            self.moment_text = None
         if tag == "h2" and self.heading is not None:
             title = " ".join("".join(self.heading).split())
             self.section_songs.append((self.section_key or "", re.sub(r"^\d+\.\s+", "", title)))
             self.section_verses.append(self.current_verses)
+            self.section_moments.append(self.current_moment)
+            self.section_moment_explicit.append(self.current_moment_explicit)
             self.heading = None
         if tag == "section":
             self.section_key = None
@@ -167,6 +191,33 @@ def aelf_psalms_from_contents(document: str) -> dict[str, str]:
     parser = _ContentsParser()
     parser.feed(document)
     return parser.aelf_psalms
+
+
+def aelf_context_from_contents(document: str) -> str | None:
+    parser = _ContentsParser()
+    parser.feed(document)
+    return parser.aelf_context
+
+
+def moments_from_contents(document: str, order: list[str], catalog: dict[str, tuple[str, Path]]) -> list[str]:
+    parser = _ContentsParser()
+    parser.feed(document)
+    defaults = celebration_moments([read_song_type(catalog[key][1]) for key in order])
+    if not parser.section_moments:
+        return defaults
+    if len(parser.section_moments) != len(order):
+        raise ValueError("Les moments de cette feuille sont incomplets.")
+    result = []
+    for position, (saved, default) in enumerate(zip(parser.section_moments, defaults)):
+        if saved is not None and saved not in ("", *MOMENTS):
+            raise ValueError("Un moment de cette feuille est invalide.")
+        # Les anciens exports imposaient ces rubriques, même à un Kyrie.
+        if (not parser.section_moment_explicit[position]
+                and ((position == 0 and saved == MOMENTS[0])
+                     or (position == len(order) - 1 and saved == MOMENTS[-1]))):
+            saved = None
+        result.append(default if saved is None else saved)
+    return result
 
 
 def songs_from_contents(document: str, catalog: dict[str, tuple[str, Path]]) -> list[str]:

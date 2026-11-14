@@ -5,7 +5,7 @@ from html import escape
 import json
 from pathlib import Path
 
-from scripts.song_selection import selected_song_parts
+from scripts.song_selection import selected_song_parts, gospel_introduction, with_gospel_introduction, reading_context, with_reading_introductions
 from scripts.lyrics_format import formatted_lines, fragment_html
 from scripts.song_types import IMPLICIT_MOMENTS, MOMENTS, celebration_moments, read_song_type
 from scripts.aelf import psalm_source_key
@@ -16,20 +16,24 @@ def create_song_sheet(
     moments: list[str] | None = None,
     verses: list[list[str] | None] | None = None,
     celebration_title: str | None = None,
+    aelf_context: str | None = None,
 ) -> bytes:
     """Conserve l'ordre des chants, l'alternance des parties et le gras."""
     if not songs:
         raise ValueError("Ajoutez au moins un chant pour créer la feuille.")
     if moments is None:
-        moments = [read_song_type(path) for _, path in songs]
+        moments = celebration_moments([read_song_type(path) for _, path in songs])
     if len(moments) != len(songs) or any(moment not in ("", *MOMENTS) for moment in moments):
         raise ValueError("Choisissez une rubrique valide pour chaque chant.")
-    moments = celebration_moments(moments)
     if verses is not None and len(verses) != len(songs):
         raise ValueError("Choisissez les couplets pour chaque chant.")
     sections = []
+    context = reading_context(songs, aelf_context)
+    gospel_intro = gospel_introduction([], context) if context else ""
     for position, (song_title, path) in enumerate(songs, start=1):
         parts = selected_song_parts(path, None if verses is None else verses[position - 1])
+        parts = with_reading_introductions(parts, moments[position - 1], context)
+        parts = with_gospel_introduction(parts, moments[position - 1], gospel_intro)
         blocks = [part.text for part in parts]
         if not blocks:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
@@ -47,33 +51,47 @@ def create_song_sheet(
             source += f' data-aelf-psalm="{escape(markdown, quote=True)}"'
         selected_verses = list(dict.fromkeys(part.identifier for part in parts if part.selectable))
         source += f' data-song-verses="{escape(json.dumps(selected_verses), quote=True)}"'
+        source += f' data-song-moment="{escape(moments[position - 1], quote=True)}"'
         lyrics = []
-        for block in blocks:
+        before = ""
+        after = ""
+        for part in parts:
             lines = []
-            for line in formatted_lines(block):
+            for line in formatted_lines(part.text):
                 lines.append("".join(
                     fragment_html(fragment).replace("<b>", "<strong>").replace("</b>", "</strong>")
                     for fragment in line
                 ))
-            lyrics.append('<p class="paroles">' + "<br>\n".join(lines) + "</p>")
+            paragraph = '<p class="paroles">' + "<br>\n".join(lines) + "</p>"
+            if part.kind == "lecture":
+                if part.identifier == "L1":
+                    before = paragraph
+                else:
+                    after = paragraph
+            else:
+                lyrics.append(paragraph)
         moment = moments[position - 1]
         rubrique = f'<p class="moment">{escape(moment)}</p>' if moment and moment not in IMPLICIT_MOMENTS else ""
         sections.append(
             f'<section id="{song_id}" aria-labelledby="titre-{position}"{source}>'
             + rubrique
+            + before
             + f'<h2 id="titre-{position}">{escape(song_title)}</h2>'
             + "\n".join(lyrics)
+            + after
             + '</section>'
         )
     heading = title.strip() or "Messe"
     if day is not None:
         heading += f" — {day.strftime('%d/%m/%Y')}"
     page_title = escape(heading)
+    context_metadata = f'<meta name="cantus-aelf-context" content="{escape(context, quote=True)}">' if context else ""
     document = f"""<!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+{context_metadata}
 <meta name="cantus-celebration-title" content="{escape((title if celebration_title is None else celebration_title).strip() or 'Messe', quote=True)}">
 <title>{page_title} — Feuille de chants</title>
 <style>

@@ -12,7 +12,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import BalancedColumns, BaseDocTemplate, Frame, PageTemplate, Paragraph
 
-from scripts.song_selection import selected_song_parts
+from scripts.song_selection import selected_song_parts, gospel_introduction, with_gospel_introduction, reading_context, with_reading_introductions
 from scripts.lyrics_format import formatted_lines, fragment_html
 from scripts.song_types import IMPLICIT_MOMENTS, MOMENTS, celebration_moments, read_song_type
 
@@ -47,6 +47,7 @@ def create_print_song_sheet(
     title: str, songs: list[tuple[str, Path]], *, font_size: int = 11,
     moments: list[str] | None = None,
     verses: list[list[str] | None] | None = None,
+    aelf_context: str | None = None,
 ) -> tuple[bytes, int]:
     """Retourne le PDF et son nombre de pages, sans réduire la taille du texte."""
     if not songs:
@@ -54,10 +55,9 @@ def create_print_song_sheet(
     if font_size not in (9, 10, 11, 12):
         raise ValueError("Choisissez une taille de texte de 9, 10, 11 ou 12 points.")
     if moments is None:
-        moments = [read_song_type(path) for _, path in songs]
+        moments = celebration_moments([read_song_type(path) for _, path in songs])
     if len(moments) != len(songs) or any(moment not in ("", *MOMENTS) for moment in moments):
         raise ValueError("Choisissez une rubrique valide pour chaque chant.")
-    moments = celebration_moments(moments)
     if verses is not None and len(verses) != len(songs):
         raise ValueError("Choisissez les couplets pour chaque chant.")
     _register_fonts()
@@ -89,8 +89,12 @@ def create_print_song_sheet(
         canvas.restoreState()
 
     story = []
+    context = reading_context(songs, aelf_context)
+    gospel_intro = gospel_introduction([], context) if context else ""
     for position, (song_title, path) in enumerate(songs, start=1):
         parts = selected_song_parts(path, None if verses is None else verses[position - 1])
+        parts = with_reading_introductions(parts, moments[position - 1], context)
+        parts = with_gospel_introduction(parts, moments[position - 1], gospel_intro)
         if not parts:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
         moment = moments[position - 1]
@@ -98,6 +102,8 @@ def create_print_song_sheet(
         headings = []
         if moment and moment not in IMPLICIT_MOMENTS and (position == 1 or moment != moments[position - 2]):
             headings.append(Paragraph(escape(moment), moment_style))
+        headings.extend(Paragraph(_lyrics(part.text), heading)
+                        for part in parts if part.kind == "lecture" and part.identifier == "L1")
         headings.append(song_heading)
         heading_height = sum(
             paragraph.wrap(page_width - 2 * margin, height)[1]
@@ -109,6 +115,8 @@ def create_print_song_sheet(
         paragraphs = []
         refrain_seen = False
         for part in parts:
+            if part.kind == "lecture":
+                continue
             if part.kind == "refrain":
                 if refrain_seen:
                     text = "<b>Refrain</b>"
@@ -131,6 +139,8 @@ def create_print_song_sheet(
             leftPadding=0, rightPadding=0, innerPadding=gap,
             topPadding=0, bottomPadding=0, endSlack=0,
         ))
+        story.extend(Paragraph(_lyrics(part.text), body)
+                     for part in parts if part.kind == "lecture" and part.identifier == "L2")
     output = BytesIO()
     document = BaseDocTemplate(output, pagesize=A4, title=title.strip() or "Messe",
                                author="CANTUS", pageCompression=1)

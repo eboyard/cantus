@@ -42,14 +42,14 @@ class SongSheetTests(unittest.TestCase):
         self.assertEqual(text.count("Anamnèse"), 1)
         self.assertIn("Anamnèse (Messe de St Augustin)", text)
 
-    def test_moments_follow_songs_with_automatic_entry_and_exit(self):
+    def test_explicit_moments_are_preserved_including_empty_boundaries(self):
         with TemporaryDirectory() as directory:
             song = Path(directory) / "chant.md"
             song.write_text("<!-- type: Psaume -->\nParoles", encoding="utf-8")
             songs = [("Chant", song)] * 4
             html = create_song_sheet("Messe", songs, moments=["", "Offertoire", "", ""]).decode()
             sections = html.split('<section ')[1:]
-            for section, moment in zip(sections, ["Chant d’entrée", "Offertoire", "", "Envoi"]):
+            for section, moment in zip(sections, ["", "Offertoire", "", ""]):
                 if moment:
                     self.assertIn(f'<p class="moment">{moment}</p>', section)
                     self.assertLess(section.index('class="moment"'), section.index('<h2'))
@@ -64,6 +64,7 @@ class SongSheetTests(unittest.TestCase):
     def test_selected_moments_are_in_download_and_export_and_changes_invalidate_them(self):
         app = AppTest.from_string("from app import main\nmain()")
         app.session_state["song_order"] = ["chants/agnus_dei.md"] * 3
+        app.session_state["song_moments"] = ["Chant d’entrée", "Offertoire", "Envoi"]
         app.run()
         app.selectbox(key="sheet_moment_1").select("Offertoire").run()
         next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()

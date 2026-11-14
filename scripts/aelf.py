@@ -92,7 +92,7 @@ def parse_aelf_response(payload: dict, day: date) -> list[AelfMass]:
     for mass in masses:
         if not isinstance(mass, dict) or not isinstance(mass.get("lectures"), list):
             raise ValueError("Les lectures reçues de l’AELF sont invalides.")
-        for reading in mass["lectures"]:
+        for reading_position, reading in enumerate(mass["lectures"]):
             if not isinstance(reading, dict) or reading.get("type") != "psaume":
                 continue
             reference = reading.get("ref")
@@ -110,9 +110,29 @@ def parse_aelf_response(payload: dict, day: date) -> list[AelfMass]:
             order = "R " + " ".join(f"C{i} R" for i in range(1, len(stanzas) + 1))
             blocks = [f"<!-- refrain -->\n{refrain}"]
             blocks.extend(f"<!-- couplet: C{i} -->\n{stanza}" for i, stanza in enumerate(stanzas, 1))
+            introductions = ""
+            for tag, neighbor in (("lecture_avant", reading_position - 1), ("lecture_apres", reading_position + 1)):
+                if not 0 <= neighbor < len(mass["lectures"]):
+                    continue
+                adjacent = mass["lectures"][neighbor]
+                if isinstance(adjacent, dict) and adjacent.get("type") == "evangile":
+                    continue  # L'introduction de l'Évangile suit l'acclamation.
+                intro = adjacent.get("intro_lue") if isinstance(adjacent, dict) else None
+                if intro is None or intro == "":
+                    continue
+                intro = " ".join(" ".join(html_paragraphs(intro)).split())
+                if intro:
+                    introductions += f"<!-- {tag}: {json.dumps(intro, ensure_ascii=False)} -->\n"
+            gospel = next((item.get("intro_lue") for item in mass["lectures"]
+                           if isinstance(item, dict) and item.get("type") == "evangile" and item.get("intro_lue")), None)
+            if gospel is not None:
+                gospel = " ".join(" ".join(html_paragraphs(gospel)).split())
+                if gospel:
+                    introductions += f"<!-- evangile_intro: {json.dumps(gospel, ensure_ascii=False)} -->\n"
             markdown = (f"<!-- titre: {psalm_title} -->\n<!-- type: Psaume -->\n"
                         f"<!-- informations: {json.dumps(source, ensure_ascii=False)} -->\n"
-                        f"<!-- ordre: {order} -->\n\n" + "\n\n---\n\n".join(blocks) + "\n")
+                        + introductions
+                        + f"<!-- ordre: {order} -->\n\n" + "\n\n---\n\n".join(blocks) + "\n")
             if not build_slides(markdown):
                 raise ValueError("Le texte du psaume AELF est vide.")
             mass_name = mass.get("nom") or "Messe du jour"
