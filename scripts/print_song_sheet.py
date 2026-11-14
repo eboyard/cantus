@@ -14,7 +14,7 @@ from reportlab.platypus import BalancedColumns, BaseDocTemplate, Frame, PageTemp
 
 from scripts.song_selection import selected_song_parts
 from scripts.lyrics_format import formatted_lines, fragment_html
-from scripts.song_types import MOMENTS, celebration_moments, read_song_type
+from scripts.song_types import IMPLICIT_MOMENTS, MOMENTS, celebration_moments, read_song_type
 
 
 def _register_fonts() -> None:
@@ -96,7 +96,7 @@ def create_print_song_sheet(
         moment = moments[position - 1]
         song_heading = Paragraph(escape(song_title) if moment else f"{position}. {escape(song_title)}", heading)
         headings = []
-        if moment and (position == 1 or moment != moments[position - 2]):
+        if moment and moment not in IMPLICIT_MOMENTS and (position == 1 or moment != moments[position - 2]):
             headings.append(Paragraph(escape(moment), moment_style))
         headings.append(song_heading)
         heading_height = sum(
@@ -115,9 +115,11 @@ def create_print_song_sheet(
                 else:
                     text = "<b>R.</b> " + _lyrics(part.text, bold=True)
                     refrain_seen = True
-            else:
-                label = part.identifier[1:] + "." if part.kind == "couplet" else "Pont."
+            elif part.selectable or part.kind == "pont":
+                label = part.identifier[1:] + "." if part.selectable else "Pont."
                 text = f"<b>{label}</b> " + _lyrics(part.text)
+            else:
+                text = _lyrics(part.text)
             paragraphs.append(_Verse(text, song_body))
         column_width = (page_width - 2 * margin - gap) / 2
         needed = min(song_body.print_column_height, max(

@@ -408,7 +408,7 @@ def show_preparation() -> None:
                 assigned_moments[position] = moments[position]
             try:
                 parts = selected_song_parts(catalog[key][1])
-                couplets = {part.identifier: part.text for part in parts if part.kind == "couplet"}
+                couplets = {part.identifier: part.text for part in parts if part.selectable}
                 if len(couplets) <= 1:
                     verses[position] = list(couplets)
                 else:

@@ -25,6 +25,23 @@ class Document(HTMLParser):
 
 
 class SongSheetTests(unittest.TestCase):
+    def test_anamnesis_heading_is_implicit_on_phone_and_print(self):
+        import pymupdf
+        from scripts.print_song_sheet import create_print_song_sheet
+
+        root = Path(__file__).resolve().parents[1]
+        song = root / "chants/anamnèse_messe_de_st_augustin.md"
+        songs = [("Entrée", song), ("Anamnèse (Messe de St Augustin)", song), ("Envoi", song)]
+        moments = ["", "Anamnèse", ""]
+        html = create_song_sheet("Messe", songs, moments=moments).decode()
+        self.assertNotIn('<p class="moment">Anamnèse</p>', html)
+        self.assertIn('Anamnèse (Messe de St Augustin)</h2>', html)
+        pdf, _ = create_print_song_sheet("Messe", songs, moments=moments)
+        with pymupdf.open(stream=pdf, filetype="pdf") as document:
+            text = "".join(page.get_text() for page in document)
+        self.assertEqual(text.count("Anamnèse"), 1)
+        self.assertIn("Anamnèse (Messe de St Augustin)", text)
+
     def test_moments_follow_songs_with_automatic_entry_and_exit(self):
         with TemporaryDirectory() as directory:
             song = Path(directory) / "chant.md"

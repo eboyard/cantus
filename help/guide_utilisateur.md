@@ -31,6 +31,9 @@ déplacent uniquement l’occurrence choisie ; **Retirer** la supprime de la lis
 
 Sous chaque chant, la liste **Couplets à garder** propose une case à cocher pour
 chaque couplet. Décochez les couplets que vous ne souhaitez pas chanter.
+Seuls les paragraphes précédés d’un tag `<!-- couplet: C1 -->` (ou C2, C3…)
+sont proposés. Les paragraphes sans ce tag restent toujours inclus, même
+s’ils sont séparés par `---`, comme dans le Gloria de la messe de saint Augustin.
 Lorsqu’un chant n’a qu’un seul couplet, la liste est masquée et ce couplet est
 conservé automatiquement.
 Toutes les cases sont cochées au départ ; le début des paroles

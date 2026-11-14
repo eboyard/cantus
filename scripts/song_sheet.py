@@ -7,12 +7,7 @@ from pathlib import Path
 
 from scripts.song_selection import selected_song_parts
 from scripts.lyrics_format import formatted_lines, fragment_html
-from scripts.song_types import MOMENTS, celebration_moments, read_song_type
-
-
-IMPLICIT_MOMENTS = frozenset({
-    "Gloire à Dieu", "Psaume", "Acclamation de l’Évangile", "Sanctus", "Agneau de Dieu",
-})
+from scripts.song_types import IMPLICIT_MOMENTS, MOMENTS, celebration_moments, read_song_type
 
 
 def create_song_sheet(
@@ -42,7 +37,7 @@ def create_song_sheet(
         except ValueError:
             song_key = ""
         source = f' data-song-key="{escape(song_key, quote=True)}"' if song_key else ""
-        selected_verses = list(dict.fromkeys(part.identifier for part in parts if part.kind == "couplet"))
+        selected_verses = list(dict.fromkeys(part.identifier for part in parts if part.selectable))
         source += f' data-song-verses="{escape(json.dumps(selected_verses), quote=True)}"'
         lyrics = []
         for block in blocks:

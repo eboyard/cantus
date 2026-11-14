@@ -35,13 +35,37 @@ class SongSelectionTests(unittest.TestCase):
                 selected_song_parts(song, ["C9"])
             self.assertEqual(song.read_text(encoding="utf-8"), SONG)
 
-    def test_default_order_and_refrain_only_selection(self):
+    def test_untagged_paragraphs_are_always_kept(self):
         with TemporaryDirectory() as directory:
             song = Path(directory) / "chant.md"
             song.write_text("<!-- refrain -->\nRefrain\n---\nPremier\n---\nSecond", encoding="utf-8")
-            self.assertEqual([p.identifier for p in selected_song_parts(song, ["C2"])], ["R", "C2"])
-            self.assertEqual([p.identifier for p in selected_song_parts(song, [])], ["R"])
+            self.assertEqual([p.identifier for p in selected_song_parts(song, ["C2"])], ["R", "C1", "R", "C2"])
+            self.assertEqual([p.identifier for p in selected_song_parts(song, [])], ["R", "C1", "R", "C2"])
             self.assertEqual(selected_song_parts(song), selected_song_parts(song, ["C1", "C2"]))
+
+    def test_gloria_has_no_selectable_verses_and_exports_all_paragraphs(self):
+        song = Path(__file__).resolve().parents[1] / "chants/gloria_messe_de_st_augustin.md"
+        parts = selected_song_parts(song, [])
+        self.assertEqual(len(parts), 3)
+        self.assertFalse(any(part.selectable for part in parts))
+        html = create_song_sheet("Messe", [("Gloria", song)], verses=[[]]).decode()
+        for part in parts:
+            self.assertIn(part.text.splitlines()[-1].strip(), html)
+        with patch("app.song_catalog", return_value={"gloria": ("Gloria", song)}):
+            app = AppTest.from_string("from app import main\nmain()", default_timeout=15)
+            app.session_state["song_order"] = ["gloria"]
+            app.run()
+            self.assertFalse(app.exception)
+            self.assertFalse(any(box.key.startswith("sheet_verses_") for box in app.checkbox))
+            self.assertEqual(app.session_state["song_verses"], [[]])
+
+    def test_mixed_tagged_and_untagged_paragraphs(self):
+        with TemporaryDirectory() as directory:
+            song = Path(directory) / "chant.md"
+            song.write_text("Texte obligatoire\n---\n<!-- couplet: C2 -->\nOptionnel\n---\nFin obligatoire", encoding="utf-8")
+            parts = selected_song_parts(song, [])
+            self.assertEqual([part.text for part in parts], ["Texte obligatoire", "Fin obligatoire"])
+            self.assertEqual([part.identifier for part in selected_song_parts(song) if part.selectable], ["C2"])
 
     def test_html_and_pdf_keep_selected_verses_with_original_numbers(self):
         with TemporaryDirectory() as directory:
