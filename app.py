@@ -24,7 +24,7 @@ from scripts.github_publish import publish_sheet
 from scripts.song_editor import load_song, save_song
 from scripts.song_types import MOMENTS, celebration_moments, read_song_type, song_type, set_song_type
 from scripts.lyrics_format import lyrics_html
-from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents
+from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents, verses_from_contents
 
 
 ROOT = Path(__file__).resolve().parent
@@ -157,7 +157,7 @@ def show_github_pages(
 
 def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
     with st.expander("Repartir d’une feuille existante"):
-        st.caption("Choisissez une feuille : ses chants remplaceront la liste actuelle, dans le même ordre.")
+        st.caption("Choisissez une feuille : ses chants remplaceront la liste actuelle, dans le même ordre, avec les couplets mémorisés lors de la publication.")
         repository = github_setting("repository", "eboyard/cantus")
         branch = github_setting("branch", "main")
         source_signature = (repository, branch)
@@ -182,9 +182,10 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
             try:
                 document = read_existing_sheet(choices[chosen], ROOT / "docs", github_setting("token"), repository)
                 order = songs_from_contents(document, catalog)
+                verses = verses_from_contents(document, order, catalog)
                 st.session_state.song_order = order
                 st.session_state.pop("song_moments", None)
-                st.session_state.pop("song_verses", None)
+                st.session_state.song_verses = verses
                 clear_moment_widgets()
                 for key in ("generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
                     st.session_state.pop(key, None)

@@ -102,8 +102,14 @@ site dans une page séparée. Une connexion Internet est nécessaire.
    la date souhaitées.
 3. La sélection remplace immédiatement la liste actuelle par les chants de la
    feuille, dans le même ordre, y compris les chants présents plusieurs fois.
+   Les couplets mémorisés lors de la publication sont également cochés : par
+   exemple, les couplets 1, 2 et 8 restent les seuls sélectionnés à la réouverture.
 4. Ajustez les chants et renseignez le nom de la nouvelle célébration.
    Pour la publication, choisissez également sa nouvelle date.
+
+Les anciennes feuilles publiées sans mémorisation des couplets chargent tous
+les couplets par défaut. Sélectionnez les couplets souhaités puis republiez
+la feuille pour conserver ce choix lors des prochaines ouvertures.
 
 Au démarrage, les feuilles disponibles sont celles présentes dans la copie
 du projet utilisée par l’application. Le bouton **↻**, à droite de la liste,

@@ -2,6 +2,7 @@
 
 from datetime import date
 from html import escape
+import json
 from pathlib import Path
 
 from scripts.song_selection import selected_song_parts
@@ -31,7 +32,8 @@ def create_song_sheet(
         raise ValueError("Choisissez les couplets pour chaque chant.")
     sections = []
     for position, (song_title, path) in enumerate(songs, start=1):
-        blocks = [part.text for part in selected_song_parts(path, None if verses is None else verses[position - 1])]
+        parts = selected_song_parts(path, None if verses is None else verses[position - 1])
+        blocks = [part.text for part in parts]
         if not blocks:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
         song_id = f"chant-{position}"
@@ -40,6 +42,8 @@ def create_song_sheet(
         except ValueError:
             song_key = ""
         source = f' data-song-key="{escape(song_key, quote=True)}"' if song_key else ""
+        selected_verses = list(dict.fromkeys(part.identifier for part in parts if part.kind == "couplet"))
+        source += f' data-song-verses="{escape(json.dumps(selected_verses), quote=True)}"'
         lyrics = []
         for block in blocks:
             lines = []
