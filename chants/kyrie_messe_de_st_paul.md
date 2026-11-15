@@ -1,4 +1,4 @@
-<!-- titre: Kyrie (Messe de St Paul) -->
+<!-- titre: Messe de St Paul - Kyrie -->
 
 Seigneur Jésus envoyé…
 **Kyrie eleison, Kyrie eleison, Kyrie eleison**

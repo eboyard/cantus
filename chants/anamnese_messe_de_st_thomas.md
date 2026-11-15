@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Messe de St Thomas) -->
+<!-- titre: Messe de St Thomas - Anamnèse -->
 
 **Gloire à toi qui étais mort,**
 **gloire à toi qui es vivant,**

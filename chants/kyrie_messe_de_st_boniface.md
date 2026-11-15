@@ -1,4 +1,4 @@
-<!-- titre: Kyrie (Messe de St Boniface) -->
+<!-- titre: Messe de St Boniface - Kyrie -->
 
 **Kyrie eleison, Kyrie eleison, Kyrie eleison.**
 

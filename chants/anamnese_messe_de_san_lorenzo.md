@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Messe de San Lorenzo) -->
+<!-- titre: Messe de San Lorenzo - Anamnèse -->
 
 Il est grand le mystère de la foi.
 

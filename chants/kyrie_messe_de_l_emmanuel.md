@@ -1,4 +1,4 @@
-<!-- titre: Kyrie (Messe de l'Emmanuel) -->
+<!-- titre: Messe de l'Emmanuel - Kyrie -->
 
 Seigneur Jésus, envoyé par le Père
 pour guérir et sauver les hommes,

@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Messe de la Divine Miséricorde) -->
+<!-- titre: Messe de la Divine Miséricorde - Anamnèse -->
 
 Gloire à toi qui étais mort,
 gloire à toi qui es vivant,

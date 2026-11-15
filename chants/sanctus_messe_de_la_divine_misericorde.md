@@ -1,4 +1,4 @@
-<!-- titre: Sanctus (Messe de la Divine Miséricorde) -->
+<!-- titre: Messe de la Divine Miséricorde - Sanctus -->
 
 <!-- ordre: R C1 P1 C2 P1 -->
 

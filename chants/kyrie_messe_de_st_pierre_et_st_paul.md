@@ -1,4 +1,4 @@
-<!-- titre: Seigneur, prends pitié (Messe de St Pierre et St Paul) -->
+<!-- titre: Messe de St Pierre et St Paul - Seigneur, prends pitié -->
 
 Seigneur, prends pitié de nous,
 Seigneur, prends pitié.

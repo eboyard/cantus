@@ -1,4 +1,4 @@
-<!-- titre:  Gloria (Messe de St Augustin) -->
+<!-- titre: Messe de St Augustin - Gloria -->
 
 **Gloria gloria in excelsis Deo... (bis)**
 Et paix sur la terre aux hommes qu’Il aime  

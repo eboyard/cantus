@@ -1,4 +1,4 @@
-<!-- titre: Saint le Seigneur (Messe du FRAT) -->
+<!-- titre: Messe du FRAT - Saint le Seigneur -->
 
 **Saint ! Saint ! Saint le Seigneur !**
 **Le Dieu de l'univers.**

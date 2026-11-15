@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Messe de l'Emmanuel) -->
+<!-- titre: Messe de l'Emmanuel - Anamnèse -->
 
 Gloire à toi qui étais mort ;
 gloire à toi qui es vivant.

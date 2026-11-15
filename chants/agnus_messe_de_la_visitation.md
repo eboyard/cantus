@@ -1,4 +1,4 @@
-<!-- titre: Agnus (Messe de la Visitation) -->
+<!-- titre: Messe de la Visitation - Agnus -->
 
 <!-- ordre: C1 C1 C2 -->
 

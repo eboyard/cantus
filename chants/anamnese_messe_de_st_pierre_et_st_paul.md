@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Messe de St Pierre et St Paul) -->
+<!-- titre: Messe de St Pierre et St Paul - Anamnèse -->
 
 Gloire à toi qui étais mort,
 **gloire à toi, ressuscité.**

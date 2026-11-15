@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Messe de la Louange) -->
+<!-- titre: Messe de la Louange - Anamnèse -->
 
 Ta mort, Seigneur, nous l'annonçons,
 Soleil de Dieu qui nous libère.

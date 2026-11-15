@@ -1,4 +1,4 @@
-<!-- titre: Agnus (Messe pour les parents et les enfants) -->
+<!-- titre: Messe pour les parents et les enfants - Agnus -->
 
 <!-- ordre: C1 C1 C2 -->
 

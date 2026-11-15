@@ -1,4 +1,4 @@
-<!-- titre: Kyrie (Messe de la grâce) -->
+<!-- titre: Messe de la grâce - Kyrie -->
 
 Seigneur, je viens pour implorer
 Ton pardon sur mon péché.

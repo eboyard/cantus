@@ -1,4 +1,4 @@
-<!-- titre: Seigneur, prends pitié (Messe de Prier) -->
+<!-- titre: Messe de Prier - Seigneur, prends pitié -->
 
 **Ô Seigneur, prends pitié,**
 **ô Seigneur, prends pitié,**

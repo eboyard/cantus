@@ -1,4 +1,4 @@
-<!-- titre: Alléluia (Messe du FRAT) -->
+<!-- titre: Messe du FRAT - Alléluia -->
 
 <!-- refrain -->
 Ta Parole est éternelle, alléluia !

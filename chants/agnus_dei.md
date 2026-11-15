@@ -1,4 +1,4 @@
-<!-- titre: Agneau de Dieu (Messe de St Augustin)  -->
+<!-- titre: Messe de St Augustin - Agneau de Dieu -->
 
 Agnus Dei qui tollis peccata mundi 
 qui tollis peccata mundi miserere nobis ! (bis)  

@@ -1,4 +1,4 @@
-<!-- titre: Agneau de Dieu (Messe du Partage) -->
+<!-- titre: Messe du Partage - Agneau de Dieu -->
 
 Agneau de Dieu, qui enlèves le péché du monde,
 prends pitié de nous.

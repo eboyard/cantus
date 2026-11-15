@@ -1,4 +1,4 @@
-<!-- titre: Seigneur, prends pitié (Messe du Partage) -->
+<!-- titre: Messe du Partage - Seigneur, prends pitié -->
 
 De ton peuple rassemblé par ta parole,
 **Seigneur, prends pitié ! Seigneur, prends pitié !**

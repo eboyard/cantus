@@ -1,4 +1,4 @@
-<!-- titre: Kyrie (Messe de St Jean) -->
+<!-- titre: Messe de St Jean - Kyrie -->
 
 **Kyrie, eleison, Kyrie, eleison,**
 **Kyrie, eleison.**

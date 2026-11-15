@@ -1,4 +1,4 @@
-<!-- titre: Agneau de Dieu (Messe Gloire à ton Nom) -->
+<!-- titre: Messe Gloire à ton Nom - Agneau de Dieu -->
 
 Agneau de Dieu, qui enlèves le péché du monde,
 prends pitié de nous.

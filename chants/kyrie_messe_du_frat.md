@@ -1,4 +1,4 @@
-<!-- titre: Prends pitié (Messe du FRAT) -->
+<!-- titre: Messe du FRAT - Prends pitié -->
 
 **Prends pitié, Seigneur, ô Seigneur, prends pitié,**
 **prends pitié, Seigneur, ô Seigneur, prends pitié.**

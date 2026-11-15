@@ -1,4 +1,4 @@
-<!-- titre:  Gloria (Messe de la grâce) -->
+<!-- titre: Messe de la grâce - Gloria -->
 
 Gloire à Dieu au plus haut des cieux,
 Gloire à Dieu au plus haut des cieux.

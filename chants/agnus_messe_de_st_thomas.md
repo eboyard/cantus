@@ -1,4 +1,4 @@
-<!-- titre: Agnus (Messe de St Thomas) -->
+<!-- titre: Messe de St Thomas - Agnus -->
 
 Agneau de Dieu,
 qui enlèves les péchés du monde,

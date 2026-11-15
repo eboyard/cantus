@@ -1,4 +1,4 @@
-<!-- titre: Agnus Dei (Messe de l'Emmanuel) -->
+<!-- titre: Messe de l'Emmanuel - Agnus Dei -->
 
 <!-- ordre: C1 C1 C2 -->
 

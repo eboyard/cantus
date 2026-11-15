@@ -1,4 +1,4 @@
-<!-- titre: Doxologie (Messe du Partage) -->
+<!-- titre: Messe du Partage - Doxologie -->
 
 Par lui, avec lui et en lui,
 **Amen !**

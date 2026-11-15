@@ -1,4 +1,4 @@
-<!-- titre: Saint, le Seigneur (Messe du Serviteur) -->
+<!-- titre: Messe du Serviteur - Saint, le Seigneur -->
 
 **Saint ! Saint ! Saint, le Seigneur,**
 **Dieu de l'univers !**

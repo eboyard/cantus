@@ -1,4 +1,4 @@
-<!-- titre: Saint le Seigneur (Messe du Partage) -->
+<!-- titre: Messe du Partage - Saint le Seigneur -->
 
 **Saint, saint, saint, le Seigneur,**
 **Dieu de l'univers.**

@@ -1,4 +1,4 @@
-<!-- titre: Sanctus (Messe de la réconciliation, Messe II) -->
+<!-- titre: Messe de la réconciliation, Messe II - Sanctus -->
 
 <!-- ordre: R C1 R C2 -->
 

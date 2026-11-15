@@ -1,4 +1,4 @@
-<!-- titre:  Alléluia (Messe de St Augustin)-->
+<!-- titre: Messe de St Augustin - Alléluia -->
 
 Alléluia, Alléluia,
 Alléluia, Alléluia !

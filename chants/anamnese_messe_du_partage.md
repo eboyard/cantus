@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Messe du Partage) -->
+<!-- titre: Messe du Partage - Anamnèse -->
 
 Proclamons le mystère de la foi.
 

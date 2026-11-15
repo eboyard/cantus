@@ -1,4 +1,4 @@
-<!-- titre: Alléluia, il est vivant (Messe Gloire à ton Nom) -->
+<!-- titre: Messe Gloire à ton Nom - Alléluia, il est vivant -->
 
 <!-- ordre: R C1 R C2 R C3 R C4 R -->
 

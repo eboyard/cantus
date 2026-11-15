@@ -1,4 +1,4 @@
-<!-- titre: Saint, Saint, Saint ! (Messe Gloire à ton Nom) -->
+<!-- titre: Messe Gloire à ton Nom - Saint, Saint, Saint ! -->
 
 <!-- ordre: R C1 R C2 R -->
 

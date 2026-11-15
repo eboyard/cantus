@@ -1,4 +1,4 @@
-<!-- titre: Sanctus (Messe de St Jean) -->
+<!-- titre: Messe de St Jean - Sanctus -->
 
 **Sanctus, Sanctus, Sanctus,**
 **Dominus Deus Sabaoth.**

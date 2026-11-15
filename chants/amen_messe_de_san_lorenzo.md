@@ -1,3 +1,3 @@
-<!-- titre: Amen (Messe de San Lorenzo) -->
+<!-- titre: Messe de San Lorenzo - Amen -->
 
 **Amen ! Amen ! Amen !**

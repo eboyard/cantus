@@ -1,4 +1,4 @@
-<!-- titre: Sanctus (Messe de St François-Xavier) -->
+<!-- titre: Messe de St François-Xavier - Sanctus -->
 <!-- ordre: P1 R C1 R C2 R P1 -->
 
 <!-- pont: P1 -->

@@ -1,4 +1,4 @@
-<!-- titre: Seigneur, prends pitié (Messe Gloire à ton Nom) -->
+<!-- titre: Messe Gloire à ton Nom - Seigneur, prends pitié -->
 
 Prends pitié de nous, Seigneur,
 **Prends pitié.**

@@ -1,4 +1,4 @@
-<!-- titre: Alléluia (Messe de la Visitation) -->
+<!-- titre: Messe de la Visitation - Alléluia -->
 
 **Alléluia, alléluia !**
 **Alléluia, alléluia !**

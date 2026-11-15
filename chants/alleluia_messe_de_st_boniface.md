@@ -1,3 +1,3 @@
-<!-- titre: Alléluia (Messe de St Boniface) -->
+<!-- titre: Messe de St Boniface - Alléluia -->
 
 **Alléluia, alléluia, alléluia, alléluia !**

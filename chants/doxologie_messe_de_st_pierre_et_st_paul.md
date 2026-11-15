@@ -1,4 +1,4 @@
-<!-- titre: Doxologie (Messe de St Pierre et St Paul) -->
+<!-- titre: Messe de St Pierre et St Paul - Doxologie -->
 
 Gloire à Dieu par Jésus Christ,
 **gloire à Dieu dans l'Esprit Saint.**

@@ -1,4 +1,4 @@
-<!-- titre: Sanctus (Messe de la Visitation) -->
+<!-- titre: Messe de la Visitation - Sanctus -->
 
 <!-- ordre: R C1 C2 -->
 
