@@ -8,10 +8,34 @@ from streamlit.testing.v1 import AppTest
 
 from scripts.markdown_to_pptx import build_slides
 from scripts.print_song_sheet import create_print_song_sheet
-from scripts.song_types import MOMENTS, celebration_moments, set_song_type, song_type
+from scripts.song_types import MOMENTS, celebration_moments, moment_insertion_index, set_song_type, song_type
 
 
 class SongTypesTests(unittest.TestCase):
+    def test_notre_pere_and_agnus_have_distinct_types_in_liturgical_order(self):
+        self.assertEqual(MOMENTS[MOMENTS.index("Anamnèse"):MOMENTS.index("Communion") + 1],
+                         ("Anamnèse", "Notre Père", "Agneau de Dieu", "Communion"))
+        for title, expected in (("Notre Père (Glorious)", "Notre Père"),
+                                ("Messe de Saint Paul - Notre Père", "Notre Père"),
+                                ("Agnus Dei", "Agneau de Dieu"), ("Agneau de Dieu", "Agneau de Dieu")):
+            with self.subTest(title=title):
+                self.assertEqual(song_type(f"<!-- titre: {title} -->"), expected)
+        for alias in ("Agnus", "Agnus Dei"):
+            self.assertEqual(song_type(f"<!-- type: {alias} -->"), "Agneau de Dieu")
+
+    def test_mass_prefixed_titles_are_typed_without_overriding_explicit_type(self):
+        for title, moment in (("Messe de Saint Augustin - Gloria", MOMENTS[2]),
+                              ("Messe de St Augustin - Alléluia", MOMENTS[4]),
+                              ("Messe de la Grâce — Sanctus", MOMENTS[7])):
+            with self.subTest(title=title):
+                markdown = f"<!-- titre: {title} -->\nParoles"
+                self.assertEqual(song_type(markdown), moment)
+                self.assertEqual(song_type(set_song_type(markdown, "Communion")), "Communion")
+        self.assertEqual(moment_insertion_index([MOMENTS[2], MOMENTS[4]], "Psaume"), 1)
+        self.assertEqual(moment_insertion_index([MOMENTS[2]], "Psaume"), 1)
+        self.assertEqual(moment_insertion_index([MOMENTS[2], MOMENTS[3]], "Psaume"), 2)
+        self.assertEqual(moment_insertion_index([MOMENTS[2], MOMENTS[4]], ""), 2)
+
     def test_last_kyrie_is_not_relabelled_as_exit_in_html_pdf_or_saved_moments(self):
         from scripts.song_sheet import create_song_sheet
         from scripts.sheet_library import moments_from_contents
@@ -57,15 +81,15 @@ class SongTypesTests(unittest.TestCase):
         self.assertEqual(celebration_moments([]), [])
         self.assertEqual(celebration_moments([MOMENTS[2]]), [MOMENTS[2]])
         self.assertEqual(celebration_moments(["", ""]), [MOMENTS[0], MOMENTS[-1]])
-        choices = [MOMENTS[2], MOMENTS[10], MOMENTS[7]]
+        choices = [MOMENTS[2], 'Communion', MOMENTS[7]]
         self.assertEqual(celebration_moments(choices), choices)
-        self.assertEqual(choices, [MOMENTS[2], MOMENTS[10], MOMENTS[7]])
+        self.assertEqual(choices, [MOMENTS[2], 'Communion', MOMENTS[7]])
 
     def test_known_types_and_ambiguous_titles(self):
         for title, moment in (("Gloria (Messe)", MOMENTS[2]),
                               ("Jésus, Verbe de Dieu (Kyrie)", MOMENTS[1]),
                               ("Sanctus", MOMENTS[7]), ("Anamnèse", MOMENTS[8]),
-                              ("Agnus Dei", MOMENTS[9]), ("Psaume 62", MOMENTS[3]),
+                              ("Agnus Dei", 'Agneau de Dieu'), ("Psaume 62", MOMENTS[3]),
                               ("Alléluia (Messe de la grâce)", MOMENTS[4]),
                               ("Écoute-nous (Prière universelle)", MOMENTS[5]),
                               ("Psaume de la création", ""), ("Chante Alléluia au Seigneur", ""),
@@ -75,8 +99,8 @@ class SongTypesTests(unittest.TestCase):
 
     def test_metadata_overrides_title_and_preserves_lyrics_order(self):
         original = "<!-- titre: Gloria -->\n<!-- ordre: C1 R -->\n<!-- refrain -->\nRefrain\n---\nCouplet"
-        typed = set_song_type(original, MOMENTS[11])
-        self.assertEqual(song_type(typed), MOMENTS[11])
+        typed = set_song_type(original, 'Envoi')
+        self.assertEqual(song_type(typed), 'Envoi')
         self.assertEqual(build_slides(typed), build_slides(original))
         self.assertEqual(song_type(set_song_type(typed, "")), "")
         self.assertEqual(set_song_type(typed, MOMENTS[2]).count("<!-- type:"), 1)
@@ -87,7 +111,7 @@ class SongTypesTests(unittest.TestCase):
             path.write_text("<!-- titre: Gloria -->\nParoles", encoding="utf-8")
             default_pdf, _ = create_print_song_sheet("Messe", [("Gloria", path)] * 3)
             pdf, _ = create_print_song_sheet("Messe", [("Titre", path)] * 3,
-                                           moments=[MOMENTS[0], MOMENTS[0], MOMENTS[11]])
+                                           moments=[MOMENTS[0], MOMENTS[0], 'Envoi'])
             forced_pdf, _ = create_print_song_sheet("Messe", [("Titre", path)] * 3,
                                                   moments=[MOMENTS[7]] * 3)
             with pymupdf.open(stream=default_pdf, filetype="pdf") as doc:
@@ -117,11 +141,11 @@ class SongTypesTests(unittest.TestCase):
         self.assertFalse(app.selectbox(key="sheet_moment_3").disabled)
         self.assertEqual(app.selectbox(key="sheet_moment_0").value, MOMENTS[1])
         self.assertEqual(app.selectbox(key="sheet_moment_3").value, MOMENTS[1])
-        app.selectbox(key="sheet_moment_1").select(MOMENTS[10]).run()
+        app.selectbox(key="sheet_moment_1").select('Communion').run()
         app.selectbox(key="sheet_moment_2").select(MOMENTS[6]).run()
         next(b for b in app.button if b.key == "up-1").click().run()
         self.assertFalse(app.exception)
-        self.assertEqual(app.selectbox(key="sheet_moment_0").value, MOMENTS[10])
+        self.assertEqual(app.selectbox(key="sheet_moment_0").value, 'Communion')
         self.assertEqual(app.selectbox(key="sheet_moment_1").value, MOMENTS[1])
         self.assertEqual(app.selectbox(key="sheet_moment_2").value, MOMENTS[6])
         next(b for b in app.button if b.key == "down-2").click().run()
@@ -154,11 +178,11 @@ class SongTypesTests(unittest.TestCase):
                 app.selectbox(key="lyrics_song").select("chants/chant.md").run()
                 next(b for b in app.button if b.label == "Modifier").click().run()
                 app.text_input(key="song_edit_password").set_value("configured")
-                app.selectbox(key="song_edit_type").select(MOMENTS[10])
+                app.selectbox(key="song_edit_type").select('Communion')
                 next(b for b in app.button if b.label == "Enregistrer").click().run()
                 self.assertFalse(app.exception)
                 saved = save.call_args.args[4]
-                self.assertEqual(song_type(saved), MOMENTS[10])
+                self.assertEqual(song_type(saved), 'Communion')
                 self.assertEqual(build_slides(saved), ["Paroles"])
                 self.assertEqual(path.read_text(encoding="utf-8"), saved)
 

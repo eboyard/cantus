@@ -47,7 +47,7 @@ class PrintSongSheetTests(unittest.TestCase):
                 with self.subTest(font_size=size):
                     pdf, pages = create_print_song_sheet(
                         "Messe", songs, font_size=size,
-                        moments=[MOMENTS[0], MOMENTS[2], MOMENTS[11]],
+                        moments=[MOMENTS[0], MOMENTS[2], 'Envoi'],
                     )
                     with pymupdf.open(stream=pdf, filetype="pdf") as document:
                         self.assertEqual(pages, 1)
@@ -55,7 +55,7 @@ class PrintSongSheetTests(unittest.TestCase):
                         previous_bottom = 0
                         for (title, _), prefix, moment in zip(
                             songs, ("Debut", "Gloire", "Fin"),
-                            (MOMENTS[0], MOMENTS[2], MOMENTS[11]),
+                            (MOMENTS[0], MOMENTS[2], 'Envoi'),
                         ):
                             heading = page.search_for(title)[0]
                             if moment not in IMPLICIT_MOMENTS:

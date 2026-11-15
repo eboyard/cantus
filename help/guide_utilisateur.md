@@ -31,14 +31,16 @@ déjà affichée au démarrage, cliquez sur **Récupérer le nom et le psaume su
 Si plusieurs messes ou psaumes sont proposés pour cette date, choisissez celui
 qui correspond à la célébration. Dépliez le titre du psaume pour lire son refrain
 et ses strophes, puis cliquez sur **Utiliser le psaume du jour**. Le psaume remplace
-celui déjà présent dans la liste ou s’ajoute avant l’acclamation et les chants
-suivants. Il est disponible pour le PowerPoint et les feuilles téléphone,
+celui déjà présent dans la liste et se place après le Gloria et avant l’Alléluia.
+Il est disponible pour le PowerPoint et les feuilles téléphone,
 imprimable et publiée. Les fichiers du carnet, y compris les psaumes avec des
 syllabes soulignées, ne sont pas modifiés.
 
 Si un fichier Markdown du dossier `chants` porte le même numéro de psaume et
 contient les mêmes versets, cette version mise en page par l’équipe est utilisée
-en priorité, dans l’aperçu et les exports. La comparaison ignore la mise en forme,
+en priorité, dans l’aperçu et les exports. Les titres de la première et de la
+deuxième lecture encadrent aussi cette version du carnet, dans l’aperçu du
+psaume et les documents générés. La comparaison ignore la mise en forme,
 les accents et la ponctuation. Sinon, les paroles AELF sont utilisées.
 
 Le champ `intro_lue` de la lecture qui précède le psaume apparaît en gras avant
@@ -57,7 +59,9 @@ récupéré les textes AELF, vous pouvez garder un psaume du carnet (notamment
 avec des syllabes soulignées). Les introductions figureront dans la publication
 et seront restaurées à sa réouverture, sans remplacer les paroles du carnet.
 
-Après un chant affecté au moment **Anamnèse**, le titre **Notre Père** est ajouté
+Le moment **Notre Père** se situe après **Anamnèse** et avant **Agneau de Dieu**
+(ou Agnus). Un chant « Notre Père » du carnet est reconnu et inséré à cette place.
+Quand aucun chant n'est affecté à ce moment, après **Anamnèse**, le titre **Notre Père** est ajouté
 automatiquement en gras, dans le même style que les introductions des lectures.
 Ces introductions et **Notre Père** ont la même taille de police que les titres
 des chants sur les feuilles pour téléphone et à imprimer.
@@ -78,7 +82,10 @@ le signale et le nom ainsi que la liste des chants en cours sont conservés.
 Le menu **Choisir un chant à ajouter** contient les chants du catalogue,
 triés par titre et non par nom de fichier, sans tenir compte des majuscules.
 Vous pouvez saisir une partie du titre pour retrouver un chant dans la liste.
-Sélectionnez-le, puis cliquez sur **Ajouter le chant**.
+Sélectionnez-le, puis cliquez sur **Ajouter le chant**. Les chants dont le type
+est connu sont insérés dans l’ordre des moments de la messe : Gloria, psaume,
+Alléluia, etc. Les chants sans type sont ajoutés à la fin. Vous pouvez ensuite
+ajuster l’ordre avec **Monter** et **Descendre**.
 
 Un même chant peut être ajouté plusieurs fois, par exemple s’il est repris à
 plusieurs moments de la célébration. Les boutons **Monter** et **Descendre**
@@ -282,7 +289,7 @@ l’application pour sa configuration.
 Dans **Ordre des chants**, choisissez le **Moment de la messe** pour chaque chant,
 y compris le premier et le dernier :
 entrée, préparation pénitentielle, Gloire à Dieu, psaume, acclamation de l’Évangile,
-prières universelles, offertoire, Sanctus, anamnèse, Agneau de Dieu, communion ou envoi.
+prières universelles, offertoire, Sanctus, anamnèse, Notre Père, Agneau de Dieu, communion ou envoi.
 Le type du carnet est proposé automatiquement lorsqu’il est connu. Vous pouvez
 le remplacer pour cette célébration, y compris si un même chant est utilisé deux fois.
 Les propositions **Chant d’entrée** et **Envoi** aux extrémités d’une liste chargée

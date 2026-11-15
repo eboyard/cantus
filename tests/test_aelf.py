@@ -11,7 +11,7 @@ from urllib.error import URLError
 from streamlit.testing.v1 import AppTest
 
 from scripts.aelf import api_url, html_paragraphs, load_aelf_masses, parse_aelf_response, psalm_catalog, preferred_psalm_key
-from scripts.markdown_to_pptx import build_song_parts
+from scripts.markdown_to_pptx import build_song_parts, read_title
 from scripts.sheet_library import aelf_psalms_from_contents, aelf_context_from_contents, songs_from_contents, title_from_contents, verses_from_contents
 from scripts.song_sheet import create_song_sheet
 from scripts.song_selection import selected_song_parts
@@ -26,6 +26,52 @@ def response():
 
 
 class AelfTests(unittest.TestCase):
+    def test_team_psalm_has_reading_titles_in_preview_and_is_inserted_between_gloria_and_alleluia(self):
+        payload = response()
+        before, after = "Lecture du livre des Proverbes", "Lecture de la lettre de saint Paul"
+        payload["messes"][0]["lectures"] = [
+            {"type": "lecture_1", "intro_lue": before},
+            payload["messes"][0]["lectures"][0],
+            {"type": "lecture_2", "intro_lue": after},
+        ]
+        mass, = parse_aelf_response(payload, DAY)
+        root = Path(__file__).resolve().parents[1]
+        names = ["gloria_messe_de_st_augustin.md", "psaume_127.md", "alleluia_messe_de_st_augustin.md"]
+        keys = [f"chants/{name}" for name in names]
+        catalog = {key: (read_title(root / key), root / key) for key in keys}
+        original = catalog[keys[1]][1].read_bytes()
+        with TemporaryDirectory() as directory, patch("app.ROOT", Path(directory)), \
+                patch("app.song_catalog", side_effect=lambda: dict(catalog)), \
+                patch("app.load_aelf_masses", return_value=[mass]):
+            app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
+            app.session_state["celebration_date"] = DAY
+            app.run()
+            # Ajout volontairement dans le désordre ; les types déterminent l'insertion.
+            for key in reversed(keys):
+                next(box for box in app.selectbox if box.label == "Choisir un chant à ajouter").select(key).run()
+                next(button for button in app.button if button.label == "Ajouter le chant").click().run()
+            self.assertFalse(app.exception)
+            self.assertEqual(app.session_state["song_order"], keys)
+            self.assertEqual(app.session_state["song_moments"], ["Gloire à Dieu", "Psaume", "Acclamation de l’Évangile"])
+            app.session_state["song_verses"] = [[], None, None]
+            app.button(key="retrieve_aelf").click().run()
+            preview = next(item for item in app.expander if item.label == catalog[keys[1]][0])
+            text = "\n".join(item.value for item in preview.markdown)
+            self.assertIn(before, text)
+            self.assertIn(after, text)
+            self.assertLess(text.index(before), text.index("Heu<u>reux"))
+            self.assertLess(text.index("Heu<u>reux"), text.index(after))
+            app.button(key="use_aelf_psalm").click().run()
+            self.assertEqual(app.session_state["song_order"], keys)
+            self.assertEqual(app.session_state["song_verses"], [[], [], []])
+            # Un psaume déjà présent mais mal placé est replacé sans perdre les autres choix.
+            app.button(key="down-1").click().run()
+            self.assertEqual(app.session_state["song_order"], [keys[0], keys[2], keys[1]])
+            app.button(key="use_aelf_psalm").click().run()
+            self.assertEqual(app.session_state["song_order"], keys)
+            self.assertEqual(app.session_state["song_verses"], [[], [], []])
+        self.assertEqual(catalog[keys[1]][1].read_bytes(), original)
+
     def test_multiline_refrain_has_a_readable_title_and_legacy_cache_is_rendered(self):
         from scripts.markdown_to_pptx import read_title
 

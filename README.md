@@ -104,6 +104,18 @@ Pour générer le diaporama d'une messe à partir de son index :
 
 ### carnet de chants
 
+Dans la préparation, l'ajout d'un chant typé l'insère selon l'ordre des moments
+liturgiques. Le psaume du jour est placé après le Gloria et avant l'Alléluia,
+y compris lorsqu'il remplace un psaume déjà sélectionné. Les titres du carnet
+au format « Messe de … - Gloria » ou « Messe de … - Alléluia » sont reconnus.
+La version du psaume trouvée dans le carnet conserve ses paroles et sa mise en
+forme ; les titres AELF des lectures l'encadrent dans l'aperçu et les exports.
+
+Le moment **Notre Père** suit **Anamnèse** et précède **Agneau de Dieu** (Agnus).
+Les chants « Notre Père » sont reconnus et insérés à cette place. Si un tel
+chant est sélectionné, aucun titre « Notre Père » supplémentaire n'est ajouté
+après l'anamnèse dans l'aperçu ou les exports. Sinon, ce titre reste ajouté automatiquement.
+
 L’onglet **carnet de chants** permet de rechercher un chant par son titre
 dans tout le catalogue, puis de vérifier ses paroles sans l’ajouter à une
 célébration. Les parties sont affichées dans l’ordre de projection, avec les

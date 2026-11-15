@@ -22,7 +22,7 @@ from scripts.print_song_sheet import create_print_song_sheet
 from scripts.github_pages import prepare_pages_export
 from scripts.github_publish import publish_sheet
 from scripts.song_editor import SongDraft, create_song, load_song, new_song_path, save_song, serialize_song
-from scripts.song_types import MOMENTS, celebration_moments, read_song_type, song_type, set_song_type
+from scripts.song_types import MOMENTS, celebration_moments, moment_insertion_index, read_song_type, song_type, set_song_type
 from scripts.lyrics_format import lyrics_html
 from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents, verses_from_contents, title_from_contents
 from scripts.sheet_library import aelf_psalms_from_contents, aelf_context_from_contents, moments_from_contents
@@ -60,7 +60,7 @@ def create_presentation(
     for position, (_, path) in enumerate(songs):
         parts = selected_song_parts(path, None if verses is None else verses[position])
         parts = with_reading_introductions(parts, moments[position], context)
-        parts = with_liturgical_introductions(parts, moments[position], gospel_intro)
+        parts = with_liturgical_introductions(parts, moments[position], gospel_intro, moments=moments)
         if not parts:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole après sélection.")
         if sections:
@@ -501,7 +501,10 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
                 st.caption("Version du carnet mise en page par l’équipe.")
             # Une seule occurrence de chaque partie dans cet aperçu.
             seen = set()
-            for part in selected_song_parts(catalog[preferred_key][1]):
+            parts = with_reading_introductions(
+                selected_song_parts(catalog[preferred_key][1]), "Psaume", chosen.markdown,
+            )
+            for part in parts:
                 if part.identifier not in seen:
                     st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
                     seen.add(part.identifier)
@@ -511,18 +514,15 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
             assigned = st.session_state.song_moments
             verses = st.session_state.song_verses
             position = next((i for i, moment in enumerate(assigned) if moment == "Psaume"), None)
-            if position is None:
-                # Place le psaume avant l'acclamation ou les chants suivants.
-                position = next((i for i, moment in enumerate(assigned)
-                                 if i > 0 and moment in MOMENTS[4:]), len(order))
-                if position == len(order) and len(order) > 1:
-                    position -= 1
-                order.insert(position, preferred_key)
-                assigned.insert(position, "Psaume")
-                verses.insert(position, None)
-            else:
-                order[position] = preferred_key
-                verses[position] = None
+            if position is not None:
+                order.pop(position)
+                assigned.pop(position)
+                verses.pop(position)
+            position = moment_insertion_index(assigned, "Psaume")
+            order.insert(position, preferred_key)
+            assigned.insert(position, "Psaume")
+            verses.insert(position, None)
+            st.session_state.selected_aelf_context = chosen.markdown
             st.session_state.selected_daily_psalm = preferred_key
             clear_moment_widgets()
             st.rerun()
@@ -560,9 +560,11 @@ def show_preparation() -> None:
         format_func=lambda key: catalog[key][0],
     )
     if st.button("Ajouter le chant"):
-        st.session_state.song_order.append(selected)
-        st.session_state.song_moments.append(read_song_type(catalog[selected][1]) or (MOMENTS[0] if len(st.session_state.song_order) == 1 else ""))
-        st.session_state.song_verses.append(None)
+        moment = read_song_type(catalog[selected][1]) or (MOMENTS[0] if not st.session_state.song_order else "")
+        position = moment_insertion_index(st.session_state.song_moments, moment)
+        st.session_state.song_order.insert(position, selected)
+        st.session_state.song_moments.insert(position, moment)
+        st.session_state.song_verses.insert(position, None)
         clear_moment_widgets()
         st.rerun()
 
@@ -639,11 +641,16 @@ def show_preparation() -> None:
                 context = ""
             for position, key in enumerate(song_order, start=1):
                 title, path = catalog[key]
-                st.markdown(f"**{position}. {title}**")
                 try:
                     parts = selected_song_parts(path, verses[position - 1])
                     parts = with_reading_introductions(parts, moments[position - 1], context)
-                    for part in with_liturgical_introductions(parts, moments[position - 1], gospel_intro):
+                    for part in parts:
+                        if part.kind == "lecture" and part.identifier == "L1":
+                            st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
+                    st.markdown(f"**{position}. {title}**")
+                    for part in with_liturgical_introductions(parts, moments[position - 1], gospel_intro, moments=moments):
+                        if part.kind == "lecture" and part.identifier == "L1":
+                            continue
                         st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
                 except (OSError, ValueError) as error:
                     st.error(f"Impossible de lire {path.name} : {error}")
