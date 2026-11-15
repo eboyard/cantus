@@ -153,6 +153,7 @@ class SongTypesTests(unittest.TestCase):
                 app = AppTest.from_string("from app import show_lyrics\nshow_lyrics()").run()
                 app.selectbox(key="lyrics_song").select("chants/chant.md").run()
                 next(b for b in app.button if b.label == "Modifier").click().run()
+                app.text_input(key="song_edit_password").set_value("configured")
                 app.selectbox(key="song_edit_type").select(MOMENTS[10])
                 next(b for b in app.button if b.label == "Enregistrer").click().run()
                 self.assertFalse(app.exception)

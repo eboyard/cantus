@@ -119,6 +119,26 @@ Vous pouvez consulter tous les chants du catalogue sans les ajouter à une
 célébration. La consultation conserve votre préparation en cours. Pour
 signaler une correction sans accès à l’édition, indiquez le titre du chant au responsable du catalogue.
 
+## Ajouter un chant
+
+1. Dans **carnet de chants**, cliquez sur **Ajouter un chant**.
+2. Saisissez le **Titre du chant** et ses **Paroles (Markdown)**.
+   Séparez les parties par `---` et identifiez les refrains avec
+   `<!-- refrain -->` et les couplets avec `<!-- couplet: C1 -->`, puis C2, C3…
+3. Choisissez si souhaité le **Type du chant dans le carnet**.
+4. Saisissez le **Code de publication**, le même que pour GitHub Pages,
+   puis cliquez sur **Enregistrer**. Le chant est enregistré sur GitHub, puis
+   sélectionné dans le carnet. Vous pouvez ensuite le choisir dans la préparation.
+
+**Annuler** ferme le formulaire sans créer de chant. Votre préparation en cours
+est conservée. Si un chant utilise déjà le même nom de fichier, précisez
+l'auteur ou la messe dans le titre pour distinguer cette nouvelle version.
+En cas d'erreur, vos saisies restent affichées pour pouvoir les corriger ou les copier.
+
+Une connexion Internet et l'accès GitHub configuré pour la modification des
+chants sont nécessaires. Si **Ajouter un chant** est désactivé, demandez au
+responsable de configurer cet accès et le code de publication.
+
 ## Modifier un chant
 
 1. Dans **carnet de chants**, choisissez un chant puis cliquez sur **Modifier**.
@@ -126,11 +146,12 @@ signaler une correction sans accès à l’édition, indiquez le titre du chant 
    l’ensemble du fichier, y compris le titre et les paroles.
 3. Conservez les repères de parties et les séparateurs `---` pour organiser
    la projection. Le contenu saisi est enregistré tel quel.
-4. Cliquez sur **Enregistrer**. Un message confirme l’enregistrement et propose un lien
+4. Saisissez le **Code de publication**, le même que pour GitHub Pages,
+   puis cliquez sur **Enregistrer**. Un message confirme l’enregistrement et propose un lien
    vers la modification sur GitHub.
 
 **Annuler** ferme le formulaire sans enregistrer. Si le bouton **Modifier** est
-désactivé, demandez au responsable de configurer l’accès GitHub.
+désactivé, demandez au responsable de configurer l’accès GitHub et le code de publication.
 Une connexion Internet est nécessaire pour modifier un chant.
 
 Si une autre personne a modifié le chant entre-temps, vos changements ne sont

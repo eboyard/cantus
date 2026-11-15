@@ -21,7 +21,7 @@ from scripts.song_selection import selected_song_parts, gospel_introduction, wit
 from scripts.print_song_sheet import create_print_song_sheet
 from scripts.github_pages import prepare_pages_export
 from scripts.github_publish import publish_sheet
-from scripts.song_editor import load_song, save_song
+from scripts.song_editor import SongDraft, create_song, load_song, new_song_path, save_song, serialize_song
 from scripts.song_types import MOMENTS, celebration_moments, read_song_type, song_type, set_song_type
 from scripts.lyrics_format import lyrics_html
 from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents, verses_from_contents, title_from_contents
@@ -214,6 +214,7 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
 def show_song_editor(selected: str, path: Path, title: str) -> bool:
     """Charge la version distante, conserve le brouillon et protège les écritures."""
     token = github_setting("token")
+    password = github_setting("publish_password")
     repository = github_setting("repository", "eboyard/cantus")
     branch = github_setting("branch", "main")
     signature = (selected, repository, branch)
@@ -222,7 +223,7 @@ def show_song_editor(selected: str, path: Path, title: str) -> bool:
         st.session_state.pop("song_editor", None)
         editor = None
     if not editor:
-        if st.button("Modifier", disabled=not token):
+        if st.button("Modifier", disabled=not token or not password):
             try:
                 with st.spinner("Chargement du chant depuis GitHub…"):
                     document, sha = load_song(token, repository, branch, selected)
@@ -235,8 +236,8 @@ def show_song_editor(selected: str, path: Path, title: str) -> bool:
                 st.rerun()
             except ValueError as error:
                 st.error(str(error))
-        if not token:
-            st.caption("L’édition sera disponible après configuration de l’accès GitHub.")
+        if not token or not password:
+            st.caption("L’édition sera disponible après configuration de l’accès GitHub et du code de publication.")
         return False
 
     with st.form("song_editor_form"):
@@ -247,13 +248,15 @@ def show_song_editor(selected: str, path: Path, title: str) -> bool:
             index=["", *MOMENTS].index(initial_type), key="song_edit_type",
             format_func=lambda value: value or "Non renseigné",
         )
-        submitted = st.form_submit_button("Enregistrer", type="primary", disabled=not token)
+        publication_code = st.text_input("Code de publication", type="password", key="song_edit_password")
+        submitted = st.form_submit_button("Enregistrer", type="primary", disabled=not token or not password)
         cancelled = st.form_submit_button("Annuler")
     if cancelled:
         st.session_state.pop("song_editor", None)
         st.rerun()
     if submitted:
         try:
+            check_song_publication_code(publication_code, password, token)
             if selected_type != initial_type:
                 document = set_song_type(document, selected_type)
             if document == editor[1]:
@@ -279,9 +282,87 @@ def show_song_editor(selected: str, path: Path, title: str) -> bool:
     return True
 
 
+def check_song_publication_code(code: str, password: str, token: str) -> None:
+    if not token or not password:
+        raise ValueError("Configurez l’accès GitHub et le code de publication pour enregistrer un chant.")
+    if not hmac.compare_digest(code.encode("utf-8"), password.encode("utf-8")):
+        raise ValueError("Le code de publication est incorrect.")
+
+
+def show_song_creator() -> bool:
+    token = github_setting("token")
+    password = github_setting("publish_password")
+    repository = github_setting("repository", "eboyard/cantus")
+    branch = github_setting("branch", "main")
+    signature = (repository, branch)
+    if st.session_state.get("song_creator") != signature:
+        st.session_state.pop("song_creator", None)
+    if "song_creator" not in st.session_state:
+        if st.button("Ajouter un chant", type="primary", disabled=not token or not password):
+            for key in list(st.session_state):
+                if key.startswith("song_create_"):
+                    del st.session_state[key]
+            st.session_state.pop("song_editor", None)
+            st.session_state.song_creator = signature
+            st.rerun()
+        if not token or not password:
+            st.caption("L’ajout sera disponible après configuration de l’accès GitHub et du code de publication.")
+        return False
+
+    st.subheader("Ajouter un chant")
+    with st.form("song_creator_form"):
+        title = st.text_input("Titre du chant", key="song_create_title")
+        lyrics = st.text_area("Paroles (Markdown)", height=400, key="song_create_lyrics",
+                              help="Séparez les parties par --- ; utilisez <!-- refrain --> et <!-- couplet --> pour les identifier.")
+        selected_type = st.selectbox(
+            "Type du chant dans le carnet", options=["", *MOMENTS], key="song_create_type",
+            format_func=lambda value: value or "Non renseigné",
+        )
+        publication_code = st.text_input("Code de publication", type="password", key="song_create_password")
+        submitted = st.form_submit_button("Enregistrer", type="primary", disabled=not token or not password)
+        cancelled = st.form_submit_button("Annuler")
+    if cancelled:
+        st.session_state.pop("song_creator", None)
+        st.rerun()
+    if submitted:
+        try:
+            check_song_publication_code(publication_code, password, token)
+            document = set_song_type(serialize_song(SongDraft(title, lyrics)), selected_type)
+            selected = new_song_path(title)
+            path = ROOT / selected
+            if path.exists():
+                raise ValueError("Un chant utilise déjà ce nom de fichier. Choisissez un titre distinct, par exemple en ajoutant l’auteur ou la messe.")
+            with st.spinner("Enregistrement sur GitHub…"):
+                commit_url = create_song(token, repository, branch, selected, document)
+        except ValueError as error:
+            st.error(str(error))
+            return True
+        warning = ""
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("x", encoding="utf-8") as output:
+                output.write(document)
+        except OSError:
+            warning = "Le chant est enregistré sur GitHub, mais la copie locale n’a pas pu être actualisée. Rechargez le déploiement pour le consulter."
+        st.session_state.pop("song_creator", None)
+        st.session_state.song_create_result = (commit_url, warning)
+        if not warning:
+            st.session_state.lyrics_song = selected
+        st.rerun()
+    return True
+
+
 def show_lyrics() -> None:
     st.title("carnet de chants")
     st.caption("Choisissez un chant du catalogue pour vérifier ses paroles avant de préparer la célébration.")
+    result = st.session_state.get("song_create_result")
+    if result:
+        st.success("Le nouveau chant a été enregistré sur GitHub.")
+        st.link_button("Voir l’ajout", result[0])
+        if result[1]:
+            st.warning(result[1])
+    if show_song_creator():
+        return
     catalog = song_catalog()
     if not catalog:
         st.info("Aucun chant n’a été trouvé dans le catalogue.")

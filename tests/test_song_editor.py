@@ -66,7 +66,7 @@ class SongEditorTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             song = Path(directory) / "song.md"
             song.write_text(serialize_song(SongDraft("Chant", "Ancien", "Auteur", "Do Sol", "Do", "Licence")), encoding="utf-8")
-            settings = {"token": "token", "repository": "owner/repo", "branch": "main"}
+            settings = {"publish_password": "code-test", "token": "token", "repository": "owner/repo", "branch": "main"}
             with patch("app.song_catalog", return_value={"chants/song.md": ("Chant", song)}), \
                     patch("app.github_setting", side_effect=lambda name, default="": settings.get(name, default)), \
                     patch("app.load_song", return_value=(song.read_text(encoding="utf-8"), "a" * 40)), \
@@ -75,7 +75,8 @@ class SongEditorTests(unittest.TestCase):
                 app.session_state["song_order"] = ["chants/song.md"]
                 app.selectbox[0].select("chants/song.md").run()
                 next(button for button in app.button if button.label == "Modifier").click().run()
-                self.assertFalse(app.text_input)
+                app.text_input(key="song_edit_password").set_value("code-test")
+                self.assertEqual([field.label for field in app.text_input], ["Code de publication"])
                 self.assertEqual([field.label for field in app.text_area], ["Contenu Markdown"])
                 original = song.read_text(encoding="utf-8")
                 self.assertEqual(app.text_area[0].value, original)
@@ -94,7 +95,7 @@ class SongEditorTests(unittest.TestCase):
             song = Path(directory) / "song.md"
             original = "<!-- titre: Chant -->\nAncien"
             song.write_text(original, encoding="utf-8")
-            settings = {"token": "token", "repository": "owner/repo", "branch": "main"}
+            settings = {"publish_password": "code-test", "token": "token", "repository": "owner/repo", "branch": "main"}
             with patch("app.song_catalog", return_value={"chants/song.md": ("Chant", song)}), \
                     patch("app.github_setting", side_effect=lambda name, default="": settings.get(name, default)), \
                     patch("app.load_song", return_value=(original, "a" * 40)), \
@@ -102,6 +103,7 @@ class SongEditorTests(unittest.TestCase):
                 app = AppTest.from_string("from app import show_lyrics\nshow_lyrics()").run()
                 app.selectbox[0].select("chants/song.md").run()
                 next(button for button in app.button if button.label == "Modifier").click().run()
+                app.text_input(key="song_edit_password").set_value("code-test")
                 app.text_area[0].set_value("Mon brouillon")
                 next(button for button in app.button if button.label == "Enregistrer").click().run()
                 self.assertFalse(app.exception)
@@ -130,13 +132,14 @@ class SongEditorTests(unittest.TestCase):
             song = Path(directory) / "song.md"
             original = "<!-- titre: Chant -->\nAncien"
             song.write_text(original, encoding="utf-8")
-            settings = {"token": "token", "repository": "owner/repo", "branch": "main"}
+            settings = {"publish_password": "code-test", "token": "token", "repository": "owner/repo", "branch": "main"}
             with patch("app.song_catalog", return_value={"chants/song.md": ("Chant", song)}), \
                     patch("app.github_setting", side_effect=lambda name, default="": settings.get(name, default)), \
                     patch("app.load_song", return_value=(original, "a" * 40)), patch("app.save_song") as save:
                 app = AppTest.from_string("from app import show_lyrics\nshow_lyrics()").run()
                 app.selectbox[0].select("chants/song.md").run()
                 next(button for button in app.button if button.label == "Modifier").click().run()
+                app.text_input(key="song_edit_password").set_value("code-test")
                 for invalid in ("", "<!-- titre: Chant -->", "<!-- ordre: C2 -->\nUn seul couplet"):
                     with self.subTest(document=invalid):
                         app.text_area[0].set_value(invalid)

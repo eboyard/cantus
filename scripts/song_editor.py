@@ -1,9 +1,10 @@
-"""Formulaire de chant et mise à jour d'un fichier existant sur GitHub."""
+"""Formulaire, création et mise à jour des chants sur GitHub."""
 
 import base64
 from dataclasses import dataclass
 import json
 import re
+import unicodedata
 from urllib.error import HTTPError
 from urllib.parse import quote, urlencode
 
@@ -105,6 +106,40 @@ def save_song(token: str, repository: str, branch: str, path: str,
         "content": base64.b64encode(document.encode("utf-8")).decode("ascii"),
         "sha": _sha(expected_sha), "branch": branch,
     })
+    commit = result.get("commit")
+    sha = _sha(commit.get("sha") if isinstance(commit, dict) else None)
+    return f"https://github.com/{repository}/commit/{sha}"
+
+
+def new_song_path(title: str) -> str:
+    normalized = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode("ascii")
+    slug = re.sub(r"[^a-z0-9]+", "_", normalized.lower()).strip("_")
+    if not slug:
+        raise ValueError("Le titre doit contenir au moins une lettre ou un chiffre utilisable dans le nom du fichier.")
+    return f"chants/{slug}.md"
+
+
+def create_song(token: str, repository: str, branch: str, path: str, document: str) -> str:
+    """Crée sans SHA : GitHub refuse atomiquement tout fichier déjà existant."""
+    endpoint = _endpoint(repository, branch, path, token)
+    draft = parse_song(document)
+    if not draft.title.strip() or not any(part.strip() for part in build_slides(document)):
+        raise ValueError("Renseignez le titre et les paroles du chant.")
+    try:
+        result = _request("PUT", endpoint, token, {
+            "message": f"Ajouter le chant {draft.title}",
+            "content": base64.b64encode(document.encode("utf-8")).decode("ascii"),
+            "branch": branch,
+        })
+    except HTTPError as error:
+        message = {
+            401: "Le jeton GitHub est invalide ou expiré.",
+            403: "GitHub refuse l'accès. Vérifiez les droits Contents: Read and write et les règles du dépôt.",
+            404: "Dépôt ou branche introuvable, ou jeton sans accès.",
+            409: "La création a été refusée. Un chant existe peut-être déjà à ce nom : vérifiez le carnet et choisissez un titre distinct.",
+            422: "La création a été refusée. Un chant existe peut-être déjà à ce nom, ou les règles de la branche empêchent l'ajout. Vérifiez le dépôt avant de réessayer.",
+        }.get(error.code, "Échec GitHub. Vérifiez le dépôt avant de réessayer.")
+        raise GitHubPublishError(message) from None
     commit = result.get("commit")
     sha = _sha(commit.get("sha") if isinstance(commit, dict) else None)
     return f"https://github.com/{repository}/commit/{sha}"

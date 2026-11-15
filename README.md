@@ -110,6 +110,23 @@ célébration. Les parties sont affichées dans l’ordre de projection, avec le
 reprises du refrain et la mise en forme Markdown. La préparation en cours est
 conservée pendant la consultation.
 
+### Ajouter un chant sur GitHub
+
+Dans **carnet de chants**, cliquer sur **Ajouter un chant**, renseigner le
+**Titre du chant**, les **Paroles (Markdown)** et, si souhaité, le **Type du chant
+dans le carnet**, puis cliquer sur **Enregistrer**. Le titre devient un commentaire
+de métadonnées ; les paroles acceptent les séparateurs `---`, les repères de
+parties et la directive `ordre` habituels. **Annuler** abandonne la création.
+
+Le fichier `chants/*.md` est nommé automatiquement à partir du titre, sans accents.
+Si ce nom existe déjà, l'ajout est refusé : préciser par exemple l'auteur ou la
+messe dans le titre pour distinguer les versions. La création GitHub n'envoie
+aucun SHA et ne peut pas écraser un fichier existant, même créé entre-temps.
+L'ajout utilise le même accès GitHub que l'édition et reste disponible si le
+catalogue est vide. Après succès, le nouveau chant est sélectionné dans le carnet
+et disponible pour la préparation. La sélection de la célébration est conservée.
+En cas d'erreur, le brouillon reste affiché et aucun fichier local n'est créé.
+
 ### Modifier un chant sur GitHub
 
 Dans **carnet de chants**, sélectionner un chant, cliquer sur **Modifier**,
@@ -129,8 +146,10 @@ Le nom du fichier reste stable lorsque son titre change.
 Le jeton, le dépôt et la branche sont les mêmes que pour la publication des
 feuilles : le jeton doit avoir la permission **Contents: Read and write**.
 Le bouton reste désactivé tant que le jeton n’est pas configuré. Le jeton reste
-côté serveur. L’édition ne demande aucun code : les personnes qui ont accès
-à l’application peuvent enregistrer des modifications du carnet.
+côté serveur. L'ajout et la modification demandent le même **Code de publication**
+que GitHub Pages (`github.publish_password` ou `SHEET_PUBLISH_PASSWORD`).
+Ce code est vérifié côté serveur avant chaque enregistrement. Sans jeton ou sans
+code configuré, les boutons d'ajout et de modification sont désactivés.
 Le paramètre `edit_password` n’est plus utilisé et peut être retiré des secrets.
 
 ```toml
@@ -138,6 +157,7 @@ Le paramètre `edit_password` n’est plus utilisé et peut être retiré des se
 token = "VOTRE_JETON_GITHUB"
 repository = "eboyard/cantus"
 branch = "main"
+publish_password = "UN_CODE_LONG_RESERVE_AUX_ORGANISATEURS"
 ```
 
 Les séparateurs `---`, les marques de parties et la directive `ordre` sont
