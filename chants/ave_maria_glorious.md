@@ -1,4 +1,4 @@
-<!-- titre: Ave Maria (Glorious) -->
+<!-- titre: Glorious - Ave Maria -->) -->
 
 Je te salue Marie, comblée de grâce,
 le Seigneur est avec toi.

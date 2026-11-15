@@ -1,4 +1,4 @@
-<!-- titre: Emmanuel (Glorious) -->
+<!-- titre: Glorious - Emmanuel -->) -->
 
 <!-- ordre: C1 R C2 R -->
 

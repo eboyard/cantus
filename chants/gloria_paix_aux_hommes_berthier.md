@@ -1,4 +1,4 @@
-<!-- titre: Gloire à Dieu, paix aux hommes (Berthier) -->
+<!-- titre: Berthier - Gloire à Dieu, paix aux hommes -->) -->
 
 <!-- ordre: R C1 R C2 R -->
 

@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Bethel) -->
+<!-- titre: Bethel - Anamnèse -->) -->
 
 <!-- ordre: R C1 R -->
 
