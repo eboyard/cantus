@@ -1,4 +1,4 @@
-<!-- titre: Pour chanter la foi (Messe de St Pierre et St Paul) -->
+<!-- titre: Messe de St Pierre et St Paul - Pour chanter la foi -->
 
 Je crois en Dieu le Père, qui est, qui était et qui vient.
 **Je crois en Dieu le Père, qui est, qui était et qui vient.**

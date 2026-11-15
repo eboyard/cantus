@@ -1,4 +1,4 @@
-<!-- titre: Kyrie (Messe de la Divine Miséricorde) -->
+<!-- titre: Messe de la Divine Miséricorde - Kyrie -->
 
 <!-- ordre: C1 R C2 P1 C3 R -->
 

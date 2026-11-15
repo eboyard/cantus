@@ -1,4 +1,4 @@
-<!-- titre: Gloire à Dieu (Messe de Prier) -->
+<!-- titre: Messe de Prier - Gloire à Dieu -->
 
 **Gloire à Dieu, au plus haut des cieux,**
 **et paix sur la terre aux hommes qu'il aime.**

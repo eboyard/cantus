@@ -1,4 +1,4 @@
-<!-- titre: Nos mains vers le ciel (Hymne FRAT 2017) -->
+<!-- titre: Messe du FRAT - Nos mains vers le ciel (Hymne FRAT 2017) -->
 
 <!-- ordre: C1 R C2 R C3 R -->
 

@@ -1,4 +1,4 @@
-<!-- titre: Gloire au Christ (Messe du Jubilé) -->
+<!-- titre: Messe du Jubilé - Gloire au Christ -->
 
 Gloire au Christ,
 Parole éternelle du Dieu vivant.

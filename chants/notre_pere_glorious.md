@@ -1,4 +1,4 @@
-<!-- titre:  Notre Père (Glorious) -->
+<!-- titre: Glorious - Notre Père -->
 
 Notre Père qui es aux cieux,
 Que Ton nom soit sanctifié.

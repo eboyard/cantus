@@ -24,6 +24,21 @@ SONG = (
 
 
 class SongSelectionTests(unittest.TestCase):
+    def test_song_picker_sorts_titles_without_reordering_selected_songs(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            song = root / "chant.md"
+            song.write_text(SONG, encoding="utf-8")
+            catalog = {"a": ("Zulu", song), "m": ("beta", song), "z": ("Alpha", song)}
+            with patch("app.ROOT", root), patch("app.song_catalog", return_value=catalog):
+                app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=15)
+                app.session_state["song_order"] = ["a", "z"]
+                app.run()
+                self.assertFalse(app.exception)
+                picker = next(box for box in app.selectbox if box.label == "Choisir un chant à ajouter")
+                self.assertEqual(picker.options, ["Alpha", "beta", "Zulu"])
+                self.assertEqual(app.session_state["song_order"], ["a", "z"])
+
     def test_filter_preserves_order_bridge_and_refrains_without_changing_source(self):
         with TemporaryDirectory() as directory:
             song = Path(directory) / "chant.md"

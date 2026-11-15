@@ -1,4 +1,4 @@
-<!-- titre: Agnus (Messe du FRAT) -->
+<!-- titre: Messe du FRAT - Agnus -->
 
 <!-- ordre: C1 C1 C2 -->
 

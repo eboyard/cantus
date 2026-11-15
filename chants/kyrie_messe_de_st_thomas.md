@@ -1,4 +1,4 @@
-<!-- titre: Kyrie (Messe de St Thomas) -->
+<!-- titre: Messe de St Thomas - Kyrie -->
 
 **Kyrie eleison.**
 

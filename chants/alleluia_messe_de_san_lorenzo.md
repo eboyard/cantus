@@ -1,3 +1,3 @@
-<!-- titre: Alléluia (Messe de San Lorenzo) -->
+<!-- titre: Messe de San Lorenzo - Alléluia -->
 
 **Alléluia, alléluia, alléluia !**

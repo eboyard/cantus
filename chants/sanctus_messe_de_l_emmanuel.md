@@ -1,4 +1,4 @@
-<!-- titre: Sanctus (Messe de l'Emmanuel) -->
+<!-- titre: Messe de l'Emmanuel - Sanctus -->
 
 <!-- ordre: R C1 P1 C2 P1 -->
 

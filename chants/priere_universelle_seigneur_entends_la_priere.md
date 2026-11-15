@@ -1,4 +1,4 @@
-<!-- titre: Seigneur, entends la prière (Prière universelle) -->
+<!-- titre: Prière universelle - Seigneur, entends la prière-->
 
 **Seigneur, entends la prière**
 **qui monte de nos cœurs !**

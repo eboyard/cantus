@@ -1,4 +1,4 @@
-<!-- titre: Sanctus (Messe de San Lorenzo) -->
+<!-- titre: Messe de San Lorenzo - Sanctus -->
 
 **Sanctus, Sanctus, Dominus,**
 **Sanctus, Sanctus, Dominus,**

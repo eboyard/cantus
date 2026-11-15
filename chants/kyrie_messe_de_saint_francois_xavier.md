@@ -1,4 +1,4 @@
-<!-- titre: Kyrie (Messe de Saint François-Xavier) -->
+<!-- titre: Messe de Saint François-Xavier - Kyrie -->
 
 Pardonne-moi, Seigneur, j'ai renié ton Nom,
 Pardonne-moi, Seigneur, j'ai quitté ta maison,

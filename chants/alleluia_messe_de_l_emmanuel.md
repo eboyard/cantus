@@ -1,4 +1,4 @@
-<!-- titre: Alléluia (Messe de l'Emmanuel) -->
+<!-- titre: Messe de l'Emmanuel - Alléluia -->
 
 **Alléluia, alléluia,**
 **alléluia, alléluia !**

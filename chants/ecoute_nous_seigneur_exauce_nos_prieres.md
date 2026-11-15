@@ -1,4 +1,4 @@
-<!-- titre: Écoute-nous, Seigneur, exauce nos prières (prière universelle) -->
+<!-- titre: Prière universelle - Écoute-nous, Seigneur, exauce nos prières-->
 
 <!-- refrain -->
 **Écoute-nous, écoute-nous, Seigneur,**

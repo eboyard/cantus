@@ -1,4 +1,4 @@
-<!-- titre: Gloria (Messe de la Visitation) -->
+<!-- titre: Messe de la Visitation - Gloria -->
 
 <!-- ordre: R C1 C2 C3 -->
 

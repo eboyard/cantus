@@ -1,4 +1,4 @@
-<!-- titre: Hosanna (Bethel) -->
+<!-- titre: Bethel - Hosanna -->
 
 **Hosanna ! Hosanna !**
 **Saint, saint le Seigneur !**

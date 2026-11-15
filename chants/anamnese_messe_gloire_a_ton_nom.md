@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Messe Gloire à ton Nom) -->
+<!-- titre: Messe Gloire à ton Nom - Anamnèse -->
 
 Proclamons le mystère de la foi :
 

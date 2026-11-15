@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Messe de la Visitation) -->
+<!-- titre: Messe de la Visitation - Anamnèse -->
 
 Acclamons le mystère de la foi :
 

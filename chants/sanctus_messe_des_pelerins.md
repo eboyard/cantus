@@ -1,4 +1,4 @@
-<!-- titre: Saint, le Seigneur, Dieu de l'univers (Messe des pèlerins) -->
+<!-- titre: Messe des pèlerins - Saint, le Seigneur, Dieu de l'univers -->
 
 **Saint ! Saint ! Saint, le Seigneur,**
 **Dieu de l'univers !**

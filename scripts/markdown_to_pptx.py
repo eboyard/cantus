@@ -24,7 +24,7 @@ from pptx.util import Inches, Pt
 # lt2 (#000080), avec une luminosité de 50 %, soit #000040.
 BACKGROUND_COLOR = RGBColor(0, 0, 64)
 FONT_NAME = "Comic Sans MS"
-TITLE_TAG = re.compile(r"^[ \t]*<!--[ \t]*titre[ \t]*:([^\r\n]*?)-->[ \t]*\r?$", re.MULTILINE | re.IGNORECASE)
+TITLE_TAG = re.compile(r"^[ \t]*<!--[ \t]*titre[ \t]*:(.*?)-->[ \t]*\r?$", re.MULTILINE | re.IGNORECASE | re.DOTALL)
 METADATA_TAG = re.compile(
     r"^[ \t]*<!--[ \t]*(auteur|accords|tonalite|informations|type|lecture_avant|lecture_apres|evangile_intro)[ \t]*:([^\r\n]*?)-->[ \t]*\r?$",
     re.MULTILINE | re.IGNORECASE,
@@ -35,7 +35,7 @@ def read_title(path: Path) -> str:
     """Utilise le titre déclaré, sinon le titre déduit du nom du fichier."""
     marker = TITLE_TAG.search(path.read_text(encoding="utf-8-sig"))
     if marker and marker.group(1).strip():
-        return marker.group(1).strip()
+        return " ".join(marker.group(1).split())
     return path.stem.replace("_", " ").replace("-", " ").title()
 
 

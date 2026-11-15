@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Messe de St Augustin)  -->
+<!-- titre: Messe de St Augustin - Anamnèse -->
 
 Quand nous mangeons ce pain et buvons à cette coupe,  
 nous annonçons ta mort, Seigneur ressuscité,  

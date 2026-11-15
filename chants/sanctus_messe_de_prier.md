@@ -1,4 +1,4 @@
-<!-- titre: Saint, le Seigneur (Messe de Prier) -->
+<!-- titre: Messe de Prier - Saint, le Seigneur -->
 
 **Saint ! Saint ! Saint, le Seigneur,**
 **Dieu de l'univers !**

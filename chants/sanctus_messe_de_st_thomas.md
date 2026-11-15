@@ -1,4 +1,4 @@
-<!-- titre: Sanctus (Messe de St Thomas) -->
+<!-- titre: Messe de St Thomas - Sanctus -->
 
 **Saint ! Saint ! Saint, le Seigneur,**
 **Dieu de l'univers !**

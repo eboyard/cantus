@@ -1,4 +1,4 @@
-<!-- titre: Agneau de Dieu, vainqueur de toute mort (Messe des pèlerins) -->
+<!-- titre: Messe des pèlerins - Agneau de Dieu, vainqueur de toute mort -->
 
 <!-- couplet: C1 -->
 Agneau de Dieu, vainqueur de toute mort,

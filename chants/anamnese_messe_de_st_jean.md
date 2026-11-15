@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Messe de St Jean) -->
+<!-- titre: Messe de St Jean - Anamnèse -->
 
 Proclamons le mystère de la foi !
 

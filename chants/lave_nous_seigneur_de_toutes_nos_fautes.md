@@ -1,4 +1,4 @@
-<!-- titre: Lave-nous, Seigneur, de toutes nos fautes (Messe des pèlerins) -->
+<!-- titre: Messe des pèlerins - Lave-nous, Seigneur, de toutes nos fautes -->
 
 Lave-nous, Seigneur, de toutes nos fautes,
 conduis-nous, Seigneur, à la joie !

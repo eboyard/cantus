@@ -1,4 +1,4 @@
-<!-- titre: Alléluia (Messe de St Paul) -->
+<!-- titre: Messe de St Paul - Alléluia -->
 
 Acclamons la Parole de Dieu !
 

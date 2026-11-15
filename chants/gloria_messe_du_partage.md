@@ -1,4 +1,4 @@
-<!-- titre: Gloire à Dieu (Messe du Partage) -->
+<!-- titre: Messe du Partage - Gloire à Dieu -->
 
 Gloire à Dieu au plus haut des cieux
 **et paix sur la terre aux hommes qu'il aime.**

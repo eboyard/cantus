@@ -1,4 +1,4 @@
-<!-- titre: Alléluia (Messe de St Jean) -->
+<!-- titre: Messe de St Jean - Alléluia -->
 
 **Alléluia, alléluia, alléluia,**
 **alléluia, alléluia, alléluia.**

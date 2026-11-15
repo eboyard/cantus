@@ -1,4 +1,4 @@
-<!-- titre: Saint le Seigneur (Messe de St Pierre et St Paul) -->
+<!-- titre: Messe de St Pierre et St Paul - Saint le Seigneur -->
 
 **Saint ! Saint ! Le Seigneur,**
 **Dieu de l'univers !**

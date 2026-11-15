@@ -1,4 +1,4 @@
-<!-- titre: Kyrie (Messe de la Visitation) -->
+<!-- titre: Messe de la Visitation - Kyrie -->
 
 <!-- ordre: C1 R C2 P1 C3 R -->
 

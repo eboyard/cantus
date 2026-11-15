@@ -1,4 +1,4 @@
-<!-- titre: Agnus (Messe de St Boniface) -->
+<!-- titre: Messe de St Boniface - Agnus -->
 
 Agnus Dei, qui tollis peccata mundi,
 miserere nobis.

@@ -1,4 +1,4 @@
-<!-- titre: Sanctus (Messe vers Toi Seigneur) -->
+<!-- titre: Messe vers Toi Seigneur - Sanctus -->
 
 **Saint, saint, saint le Seigneur,**
 **Dieu de l'univers.**

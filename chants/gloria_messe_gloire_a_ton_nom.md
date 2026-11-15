@@ -1,4 +1,4 @@
-<!-- titre: Gloire à Dieu (Messe Gloire à ton Nom) -->
+<!-- titre: Messe Gloire à ton Nom - Gloire à Dieu -->
 
 <!-- ordre: R C1 R C2 R C3 R C4 R -->
 

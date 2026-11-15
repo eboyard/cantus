@@ -1,4 +1,4 @@
-<!-- titre: Kyrie (Messe de Saint Augustin) -->
+<!-- titre: Messe de Saint Augustin - Kyrie -->
 
 Seigneur Jésus envoyé par le Père pour guérir et sauver tous les hommes : prends pitié de nous !  
 **Kyrie Kyrie eleison !** (bis)

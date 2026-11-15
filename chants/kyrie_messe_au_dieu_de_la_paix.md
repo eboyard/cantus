@@ -1,4 +1,4 @@
-<!-- titre: Seigneur, prends pitié (Messe au Dieu de la paix) -->
+<!-- titre: Messe au Dieu de la paix - Seigneur, prends pitié -->
 
 <!-- ordre: C1 R C2 R C3 R -->
 

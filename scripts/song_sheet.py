@@ -33,7 +33,7 @@ def create_song_sheet(
     for position, (song_title, path) in enumerate(songs, start=1):
         parts = selected_song_parts(path, None if verses is None else verses[position - 1])
         parts = with_reading_introductions(parts, moments[position - 1], context)
-        parts = with_liturgical_introductions(parts, moments[position - 1], gospel_intro)
+        parts = with_liturgical_introductions(parts, moments[position - 1], gospel_intro, moments=moments)
         blocks = [part.text for part in parts]
         if not blocks:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")

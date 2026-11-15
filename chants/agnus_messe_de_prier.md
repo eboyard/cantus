@@ -1,4 +1,4 @@
-<!-- titre: Agneau de Dieu (Messe de Prier) -->
+<!-- titre: Messe de Prier - Agneau de Dieu -->
 
 **Agneau de Dieu, qui enlèves le péché du monde,**
 **prends pitié de nous.**

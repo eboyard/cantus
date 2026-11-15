@@ -1,4 +1,4 @@
-<!-- titre: Agneau de Dieu (Messe de St Pierre et St Paul) -->
+<!-- titre: Messe de St Pierre et St Paul - Agneau de Dieu -->
 
 Agneau de Dieu, qui enlèves le péché du monde,
 prends pitié de nous.

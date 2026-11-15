@@ -1,4 +1,4 @@
-<!-- titre: Gloire à Dieu (Messe de St Giniez) -->
+<!-- titre: Messe de St Giniez - Gloire à Dieu -->
 
 <!-- refrain -->
 **Gloire à Dieu au plus haut des cieux,**

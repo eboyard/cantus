@@ -1,4 +1,4 @@
-<!-- titre: Agnus (Messe de St Jean) -->
+<!-- titre: Messe de St Jean - Agnus -->
 
 Agnus Dei, qui tollis peccata mundi,
 miserere nobis.

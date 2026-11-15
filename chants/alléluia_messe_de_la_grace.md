@@ -1,4 +1,4 @@
-<!-- titre:  Alléluia (Messe de la grâce) -->
+<!-- titre: Messe de la grâce - Alléluia -->
 
 Alléluia, Alléluia.
 Sur ma vie, un seul Nom,

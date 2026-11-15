@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Messe des pèlerins) -->
+<!-- titre: Messe des pèlerins - Anamnèse -->
 
 Quand nous mangeons ce pain et buvons à cette coupe,
 nous célébrons le mystère de la foi.

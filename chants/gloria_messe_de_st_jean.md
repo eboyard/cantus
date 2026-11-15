@@ -1,4 +1,4 @@
-<!-- titre: Gloria (Messe de St Jean) -->
+<!-- titre: Messe de St Jean - Gloria -->
 
 <!-- ordre: R C1 R C2 R C3 R C4 -->
 

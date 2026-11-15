@@ -1,4 +1,4 @@
-<!-- titre: Gloria (Messe de San Lorenzo) -->
+<!-- titre: Messe de San Lorenzo - Gloria -->
 
 **Gloria, gloria, gloria,**
 **in excelsis Deo.**

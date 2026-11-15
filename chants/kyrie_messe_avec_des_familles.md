@@ -1,4 +1,4 @@
-<!-- titre: Seigneur, prends pitié (Messe avec des familles) -->
+<!-- titre: Messe avec des familles - Seigneur, prends pitié -->
 
 Ô Seigneur, notre ami, tu appelles au bonheur.
 Ô Seigneur, notre ami, tu connais notre cœur !

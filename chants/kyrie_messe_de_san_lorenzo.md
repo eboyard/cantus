@@ -1,4 +1,4 @@
-<!-- titre: Kyrie (Messe de San Lorenzo) -->
+<!-- titre: Messe de San Lorenzo - Kyrie -->
 
 **Kyrie eleison, Kyrie eleison, Kyrie eleison.**
 

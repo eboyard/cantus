@@ -31,10 +31,17 @@ déjà affichée au démarrage, cliquez sur **Récupérer le nom et le psaume su
 Si plusieurs messes ou psaumes sont proposés pour cette date, choisissez celui
 qui correspond à la célébration. Dépliez le titre du psaume pour lire son refrain
 et ses strophes, puis cliquez sur **Utiliser le psaume du jour**. Le psaume remplace
-celui déjà présent dans la liste ou s’ajoute avant l’acclamation et les chants
-suivants. Il est disponible pour le PowerPoint et les feuilles téléphone,
+celui déjà présent dans la liste et se place après le Gloria et avant l’Alléluia.
+Il est disponible pour le PowerPoint et les feuilles téléphone,
 imprimable et publiée. Les fichiers du carnet, y compris les psaumes avec des
 syllabes soulignées, ne sont pas modifiés.
+
+Si un fichier Markdown du dossier `chants` porte le même numéro de psaume et
+contient les mêmes versets, cette version mise en page par l’équipe est utilisée
+en priorité, dans l’aperçu et les exports. Les titres de la première et de la
+deuxième lecture encadrent aussi cette version du carnet, dans l’aperçu du
+psaume et les documents générés. La comparaison ignore la mise en forme,
+les accents et la ponctuation. Sinon, les paroles AELF sont utilisées.
 
 Le champ `intro_lue` de la lecture qui précède le psaume apparaît en gras avant
 son titre, et celui de la lecture suivante apparaît en gras après ses paroles.
@@ -52,7 +59,9 @@ récupéré les textes AELF, vous pouvez garder un psaume du carnet (notamment
 avec des syllabes soulignées). Les introductions figureront dans la publication
 et seront restaurées à sa réouverture, sans remplacer les paroles du carnet.
 
-Après un chant affecté au moment **Anamnèse**, le titre **Notre Père** est ajouté
+Le moment **Notre Père** se situe après **Anamnèse** et avant **Agneau de Dieu**
+(ou Agnus). Un chant « Notre Père » du carnet est reconnu et inséré à cette place.
+Quand aucun chant n'est affecté à ce moment, après **Anamnèse**, le titre **Notre Père** est ajouté
 automatiquement en gras, dans le même style que les introductions des lectures.
 Ces introductions et **Notre Père** ont la même taille de police que les titres
 des chants sur les feuilles pour téléphone et à imprimer.
@@ -70,9 +79,13 @@ le signale et le nom ainsi que la liste des chants en cours sont conservés.
 
 ## Choisir et ordonner les chants
 
-Le menu **Choisir un chant à ajouter** contient les chants du catalogue.
+Le menu **Choisir un chant à ajouter** contient les chants du catalogue,
+triés par titre et non par nom de fichier, sans tenir compte des majuscules.
 Vous pouvez saisir une partie du titre pour retrouver un chant dans la liste.
-Sélectionnez-le, puis cliquez sur **Ajouter le chant**.
+Sélectionnez-le, puis cliquez sur **Ajouter le chant**. Les chants dont le type
+est connu sont insérés dans l’ordre des moments de la messe : Gloria, psaume,
+Alléluia, etc. Les chants sans type sont ajoutés à la fin. Vous pouvez ensuite
+ajuster l’ordre avec **Monter** et **Descendre**.
 
 Un même chant peut être ajouté plusieurs fois, par exemple s’il est repris à
 plusieurs moments de la célébration. Les boutons **Monter** et **Descendre**
@@ -113,6 +126,26 @@ Vous pouvez consulter tous les chants du catalogue sans les ajouter à une
 célébration. La consultation conserve votre préparation en cours. Pour
 signaler une correction sans accès à l’édition, indiquez le titre du chant au responsable du catalogue.
 
+## Ajouter un chant
+
+1. Dans **carnet de chants**, cliquez sur **Ajouter un chant**.
+2. Saisissez le **Titre du chant** et ses **Paroles (Markdown)**.
+   Séparez les parties par `---` et identifiez les refrains avec
+   `<!-- refrain -->` et les couplets avec `<!-- couplet: C1 -->`, puis C2, C3…
+3. Choisissez si souhaité le **Type du chant dans le carnet**.
+4. Saisissez le **Code de publication**, le même que pour GitHub Pages,
+   puis cliquez sur **Enregistrer**. Le chant est enregistré sur GitHub, puis
+   sélectionné dans le carnet. Vous pouvez ensuite le choisir dans la préparation.
+
+**Annuler** ferme le formulaire sans créer de chant. Votre préparation en cours
+est conservée. Si un chant utilise déjà le même nom de fichier, précisez
+l'auteur ou la messe dans le titre pour distinguer cette nouvelle version.
+En cas d'erreur, vos saisies restent affichées pour pouvoir les corriger ou les copier.
+
+Une connexion Internet et l'accès GitHub configuré pour la modification des
+chants sont nécessaires. Si **Ajouter un chant** est désactivé, demandez au
+responsable de configurer cet accès et le code de publication.
+
 ## Modifier un chant
 
 1. Dans **carnet de chants**, choisissez un chant puis cliquez sur **Modifier**.
@@ -120,11 +153,12 @@ signaler une correction sans accès à l’édition, indiquez le titre du chant 
    l’ensemble du fichier, y compris le titre et les paroles.
 3. Conservez les repères de parties et les séparateurs `---` pour organiser
    la projection. Le contenu saisi est enregistré tel quel.
-4. Cliquez sur **Enregistrer**. Un message confirme l’enregistrement et propose un lien
+4. Saisissez le **Code de publication**, le même que pour GitHub Pages,
+   puis cliquez sur **Enregistrer**. Un message confirme l’enregistrement et propose un lien
    vers la modification sur GitHub.
 
 **Annuler** ferme le formulaire sans enregistrer. Si le bouton **Modifier** est
-désactivé, demandez au responsable de configurer l’accès GitHub.
+désactivé, demandez au responsable de configurer l’accès GitHub et le code de publication.
 Une connexion Internet est nécessaire pour modifier un chant.
 
 Si une autre personne a modifié le chant entre-temps, vos changements ne sont
@@ -255,7 +289,7 @@ l’application pour sa configuration.
 Dans **Ordre des chants**, choisissez le **Moment de la messe** pour chaque chant,
 y compris le premier et le dernier :
 entrée, préparation pénitentielle, Gloire à Dieu, psaume, acclamation de l’Évangile,
-prières universelles, offertoire, Sanctus, anamnèse, Agneau de Dieu, communion ou envoi.
+prières universelles, offertoire, Sanctus, anamnèse, Notre Père, Agneau de Dieu, communion ou envoi.
 Le type du carnet est proposé automatiquement lorsqu’il est connu. Vous pouvez
 le remplacer pour cette célébration, y compris si un même chant est utilisé deux fois.
 Les propositions **Chant d’entrée** et **Envoi** aux extrémités d’une liste chargée

@@ -1,4 +1,4 @@
-<!-- titre: Gloria (Messe de St Boniface) -->
+<!-- titre: Messe de St Boniface - Gloria -->
 
 <!-- ordre: R C1 R C2 R C3 R C4 -->
 

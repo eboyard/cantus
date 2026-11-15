@@ -1,4 +1,4 @@
-<!-- titre: Agnus (Messe de la Divine Miséricorde) -->
+<!-- titre: Messe de la Divine Miséricorde - Agnus -->
 
 <!-- ordre: C1 C1 C2 -->
 

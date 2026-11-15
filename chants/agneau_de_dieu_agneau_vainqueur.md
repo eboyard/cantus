@@ -1,4 +1,4 @@
-<!-- titre: Agneau de Dieu, Agneau vainqueur (Messe Que tes œuvres sont belles) -->
+<!-- titre: Messe Que tes œuvres sont belles - Agneau de Dieu, Agneau vainqueur -->
 <!-- ordre: R C1 R C2 R C3 P1 P1 -->
 
 <!-- refrain -->

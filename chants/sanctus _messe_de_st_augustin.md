@@ -1,4 +1,4 @@
-<!-- titre:  Sanctus (Messe de St Augustin) -->
+<!-- titre: Messe de St Augustin - Sanctus -->
 
 **Sanctus, sanctus, sanctus Dominus Deus Sabaoth. (bis)**
 Pleni sunt coeli et terra gloria tua  

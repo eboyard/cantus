@@ -1,4 +1,4 @@
-<!-- titre: Grande paix, gloire à Dieu (Messe de St Pierre et St Paul) -->
+<!-- titre: Messe de St Pierre et St Paul - Grande paix, gloire à Dieu -->
 
 <!-- ordre: R C1 R C2 R -->
 

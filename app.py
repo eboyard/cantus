@@ -21,12 +21,12 @@ from scripts.song_selection import selected_song_parts, gospel_introduction, wit
 from scripts.print_song_sheet import create_print_song_sheet
 from scripts.github_pages import prepare_pages_export
 from scripts.github_publish import publish_sheet
-from scripts.song_editor import load_song, save_song
-from scripts.song_types import MOMENTS, celebration_moments, read_song_type, song_type, set_song_type
+from scripts.song_editor import SongDraft, create_song, load_song, new_song_path, save_song, serialize_song
+from scripts.song_types import MOMENTS, celebration_moments, moment_insertion_index, read_song_type, song_type, set_song_type
 from scripts.lyrics_format import lyrics_html
 from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents, verses_from_contents, title_from_contents
 from scripts.sheet_library import aelf_psalms_from_contents, aelf_context_from_contents, moments_from_contents
-from scripts.aelf import load_aelf_masses, mass_url, psalm_catalog
+from scripts.aelf import load_aelf_masses, mass_url, psalm_catalog, preferred_psalm_key
 
 
 ROOT = Path(__file__).resolve().parent
@@ -60,7 +60,7 @@ def create_presentation(
     for position, (_, path) in enumerate(songs):
         parts = selected_song_parts(path, None if verses is None else verses[position])
         parts = with_reading_introductions(parts, moments[position], context)
-        parts = with_liturgical_introductions(parts, moments[position], gospel_intro)
+        parts = with_liturgical_introductions(parts, moments[position], gospel_intro, moments=moments)
         if not parts:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole après sélection.")
         if sections:
@@ -187,6 +187,7 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
                 st.session_state.song_order = order
                 st.session_state.song_moments = moments
                 st.session_state.song_verses = verses
+                st.session_state.pop("selected_daily_psalm", None)
                 if title is not None:
                     st.session_state.celebration_title = title
                 clear_moment_widgets()
@@ -213,6 +214,7 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
 def show_song_editor(selected: str, path: Path, title: str) -> bool:
     """Charge la version distante, conserve le brouillon et protège les écritures."""
     token = github_setting("token")
+    password = github_setting("publish_password")
     repository = github_setting("repository", "eboyard/cantus")
     branch = github_setting("branch", "main")
     signature = (selected, repository, branch)
@@ -221,7 +223,7 @@ def show_song_editor(selected: str, path: Path, title: str) -> bool:
         st.session_state.pop("song_editor", None)
         editor = None
     if not editor:
-        if st.button("Modifier", disabled=not token):
+        if st.button("Modifier", disabled=not token or not password):
             try:
                 with st.spinner("Chargement du chant depuis GitHub…"):
                     document, sha = load_song(token, repository, branch, selected)
@@ -234,8 +236,8 @@ def show_song_editor(selected: str, path: Path, title: str) -> bool:
                 st.rerun()
             except ValueError as error:
                 st.error(str(error))
-        if not token:
-            st.caption("L’édition sera disponible après configuration de l’accès GitHub.")
+        if not token or not password:
+            st.caption("L’édition sera disponible après configuration de l’accès GitHub et du code de publication.")
         return False
 
     with st.form("song_editor_form"):
@@ -246,13 +248,15 @@ def show_song_editor(selected: str, path: Path, title: str) -> bool:
             index=["", *MOMENTS].index(initial_type), key="song_edit_type",
             format_func=lambda value: value or "Non renseigné",
         )
-        submitted = st.form_submit_button("Enregistrer", type="primary", disabled=not token)
+        publication_code = st.text_input("Code de publication", type="password", key="song_edit_password")
+        submitted = st.form_submit_button("Enregistrer", type="primary", disabled=not token or not password)
         cancelled = st.form_submit_button("Annuler")
     if cancelled:
         st.session_state.pop("song_editor", None)
         st.rerun()
     if submitted:
         try:
+            check_song_publication_code(publication_code, password, token)
             if selected_type != initial_type:
                 document = set_song_type(document, selected_type)
             if document == editor[1]:
@@ -278,9 +282,87 @@ def show_song_editor(selected: str, path: Path, title: str) -> bool:
     return True
 
 
+def check_song_publication_code(code: str, password: str, token: str) -> None:
+    if not token or not password:
+        raise ValueError("Configurez l’accès GitHub et le code de publication pour enregistrer un chant.")
+    if not hmac.compare_digest(code.encode("utf-8"), password.encode("utf-8")):
+        raise ValueError("Le code de publication est incorrect.")
+
+
+def show_song_creator() -> bool:
+    token = github_setting("token")
+    password = github_setting("publish_password")
+    repository = github_setting("repository", "eboyard/cantus")
+    branch = github_setting("branch", "main")
+    signature = (repository, branch)
+    if st.session_state.get("song_creator") != signature:
+        st.session_state.pop("song_creator", None)
+    if "song_creator" not in st.session_state:
+        if st.button("Ajouter un chant", type="primary", disabled=not token or not password):
+            for key in list(st.session_state):
+                if key.startswith("song_create_"):
+                    del st.session_state[key]
+            st.session_state.pop("song_editor", None)
+            st.session_state.song_creator = signature
+            st.rerun()
+        if not token or not password:
+            st.caption("L’ajout sera disponible après configuration de l’accès GitHub et du code de publication.")
+        return False
+
+    st.subheader("Ajouter un chant")
+    with st.form("song_creator_form"):
+        title = st.text_input("Titre du chant", key="song_create_title")
+        lyrics = st.text_area("Paroles (Markdown)", height=400, key="song_create_lyrics",
+                              help="Séparez les parties par --- ; utilisez <!-- refrain --> et <!-- couplet --> pour les identifier.")
+        selected_type = st.selectbox(
+            "Type du chant dans le carnet", options=["", *MOMENTS], key="song_create_type",
+            format_func=lambda value: value or "Non renseigné",
+        )
+        publication_code = st.text_input("Code de publication", type="password", key="song_create_password")
+        submitted = st.form_submit_button("Enregistrer", type="primary", disabled=not token or not password)
+        cancelled = st.form_submit_button("Annuler")
+    if cancelled:
+        st.session_state.pop("song_creator", None)
+        st.rerun()
+    if submitted:
+        try:
+            check_song_publication_code(publication_code, password, token)
+            document = set_song_type(serialize_song(SongDraft(title, lyrics)), selected_type)
+            selected = new_song_path(title)
+            path = ROOT / selected
+            if path.exists():
+                raise ValueError("Un chant utilise déjà ce nom de fichier. Choisissez un titre distinct, par exemple en ajoutant l’auteur ou la messe.")
+            with st.spinner("Enregistrement sur GitHub…"):
+                commit_url = create_song(token, repository, branch, selected, document)
+        except ValueError as error:
+            st.error(str(error))
+            return True
+        warning = ""
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("x", encoding="utf-8") as output:
+                output.write(document)
+        except OSError:
+            warning = "Le chant est enregistré sur GitHub, mais la copie locale n’a pas pu être actualisée. Rechargez le déploiement pour le consulter."
+        st.session_state.pop("song_creator", None)
+        st.session_state.song_create_result = (commit_url, warning)
+        if not warning:
+            st.session_state.lyrics_song = selected
+        st.rerun()
+    return True
+
+
 def show_lyrics() -> None:
     st.title("carnet de chants")
     st.caption("Choisissez un chant du catalogue pour vérifier ses paroles avant de préparer la célébration.")
+    result = st.session_state.get("song_create_result")
+    if result:
+        st.success("Le nouveau chant a été enregistré sur GitHub.")
+        st.link_button("Voir l’ajout", result[0])
+        if result[1]:
+            st.warning(result[1])
+    if show_song_creator():
+        return
     catalog = song_catalog()
     if not catalog:
         st.info("Aucun chant n’a été trouvé dans le catalogue.")
@@ -361,12 +443,16 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
         chosen = next(mass for mass in masses if mass.key == st.session_state.aelf_mass_choice)
         st.session_state.selected_aelf_context = chosen.markdown
         st.session_state.celebration_title = chosen.title
+        preferred_key = preferred_psalm_key(chosen, catalog)
+        previous_key = st.session_state.get("selected_daily_psalm")
         # Un psaume déjà importé suit la nouvelle date ou la nouvelle messe choisie.
         for position, key in enumerate(st.session_state.song_order):
-            if key.startswith("aelf/") and key != chosen.key:
-                st.session_state.song_order[position] = chosen.key
-                st.session_state.song_verses[position] = None
-                st.session_state.song_moments[position] = "Psaume"
+            if key.startswith("aelf/") or key == previous_key:
+                if key != preferred_key:
+                    st.session_state.song_order[position] = preferred_key
+                    st.session_state.song_verses[position] = None
+                    st.session_state.song_moments[position] = "Psaume"
+                st.session_state.selected_daily_psalm = preferred_key
         for key in ("generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
             st.session_state.pop(key, None)
         clear_moment_widgets()
@@ -408,11 +494,17 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
             chosen = options[st.session_state.aelf_mass_choice]
         else:
             chosen = masses[0]
-        with st.expander(chosen.psalm_title):
+        preferred_key = preferred_psalm_key(chosen, catalog)
+        with st.expander(catalog[preferred_key][0]):
             st.caption(f"{chosen.name} — {chosen.reference}")
+            if preferred_key != chosen.key:
+                st.caption("Version du carnet mise en page par l’équipe.")
             # Une seule occurrence de chaque partie dans cet aperçu.
             seen = set()
-            for part in selected_song_parts(catalog[chosen.key][1]):
+            parts = with_reading_introductions(
+                selected_song_parts(catalog[preferred_key][1]), "Psaume", chosen.markdown,
+            )
+            for part in parts:
                 if part.identifier not in seen:
                     st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
                     seen.add(part.identifier)
@@ -422,18 +514,16 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
             assigned = st.session_state.song_moments
             verses = st.session_state.song_verses
             position = next((i for i, moment in enumerate(assigned) if moment == "Psaume"), None)
-            if position is None:
-                # Place le psaume avant l'acclamation ou les chants suivants.
-                position = next((i for i, moment in enumerate(assigned)
-                                 if i > 0 and moment in MOMENTS[4:]), len(order))
-                if position == len(order) and len(order) > 1:
-                    position -= 1
-                order.insert(position, chosen.key)
-                assigned.insert(position, "Psaume")
-                verses.insert(position, None)
-            else:
-                order[position] = chosen.key
-                verses[position] = None
+            if position is not None:
+                order.pop(position)
+                assigned.pop(position)
+                verses.pop(position)
+            position = moment_insertion_index(assigned, "Psaume")
+            order.insert(position, preferred_key)
+            assigned.insert(position, "Psaume")
+            verses.insert(position, None)
+            st.session_state.selected_aelf_context = chosen.markdown
+            st.session_state.selected_daily_psalm = preferred_key
             clear_moment_widgets()
             st.rerun()
     else:
@@ -466,13 +556,15 @@ def show_preparation() -> None:
     celebration = st.text_input("Nom de la célébration", key="celebration_title")
     selected = st.selectbox(
         "Choisir un chant à ajouter",
-        options=list(catalog),
+        options=sorted(catalog, key=lambda key: (catalog[key][0].casefold(), key)),
         format_func=lambda key: catalog[key][0],
     )
     if st.button("Ajouter le chant"):
-        st.session_state.song_order.append(selected)
-        st.session_state.song_moments.append(read_song_type(catalog[selected][1]) or (MOMENTS[0] if len(st.session_state.song_order) == 1 else ""))
-        st.session_state.song_verses.append(None)
+        moment = read_song_type(catalog[selected][1]) or (MOMENTS[0] if not st.session_state.song_order else "")
+        position = moment_insertion_index(st.session_state.song_moments, moment)
+        st.session_state.song_order.insert(position, selected)
+        st.session_state.song_moments.insert(position, moment)
+        st.session_state.song_verses.insert(position, None)
         clear_moment_widgets()
         st.rerun()
 
@@ -549,11 +641,16 @@ def show_preparation() -> None:
                 context = ""
             for position, key in enumerate(song_order, start=1):
                 title, path = catalog[key]
-                st.markdown(f"**{position}. {title}**")
                 try:
                     parts = selected_song_parts(path, verses[position - 1])
                     parts = with_reading_introductions(parts, moments[position - 1], context)
-                    for part in with_liturgical_introductions(parts, moments[position - 1], gospel_intro):
+                    for part in parts:
+                        if part.kind == "lecture" and part.identifier == "L1":
+                            st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
+                    st.markdown(f"**{position}. {title}**")
+                    for part in with_liturgical_introductions(parts, moments[position - 1], gospel_intro, moments=moments):
+                        if part.kind == "lecture" and part.identifier == "L1":
+                            continue
                         st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
                 except (OSError, ValueError) as error:
                     st.error(f"Impossible de lire {path.name} : {error}")

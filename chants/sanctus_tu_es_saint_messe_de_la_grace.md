@@ -1,4 +1,4 @@
-<!-- titre:  Sanctus (Messe de la grâce) -->
+<!-- titre: Messe de la grâce - Sanctus -->
 
 Tu es Saint, Dieu de l'univers,
 Tu es Saint, Dieu de l'univers.

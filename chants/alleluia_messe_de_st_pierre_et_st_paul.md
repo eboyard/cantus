@@ -1,4 +1,4 @@
-<!-- titre: Alléluia (Messe de St Pierre et St Paul) -->
+<!-- titre: Messe de St Pierre et St Paul - Alléluia -->
 
 <!-- ordre: R C1 R C2 R -->
 

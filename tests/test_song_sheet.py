@@ -25,6 +25,53 @@ class Document(HTMLParser):
 
 
 class SongSheetTests(unittest.TestCase):
+    def test_explicit_notre_pere_is_inserted_between_anamnesis_and_agnus_without_duplicate(self):
+        from io import BytesIO
+        import pymupdf
+        from pptx import Presentation
+        from app import create_presentation
+        from scripts.print_song_sheet import create_print_song_sheet
+        from scripts.sheet_library import moments_from_contents
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            catalog = {}
+            for name, title, lyrics in (("anamnese", "Anamnèse", "Nous rappelons ta mort"),
+                                        ("notre_pere", "Notre Père", "Qui es aux cieux"),
+                                        ("agnus", "Agnus Dei", "Donne-nous la paix")):
+                path = root / f"{name}.md"
+                path.write_text(f"<!-- titre: {title} -->\n{lyrics}", encoding="utf-8")
+                catalog[f"chants/{name}.md"] = (title, path)
+            with patch("app.song_catalog", side_effect=lambda: dict(catalog)):
+                app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20).run()
+                for key in reversed(catalog):
+                    next(box for box in app.selectbox if box.label == "Choisir un chant à ajouter").select(key).run()
+                    next(button for button in app.button if button.label == "Ajouter le chant").click().run()
+                self.assertFalse(app.exception)
+                self.assertEqual(app.session_state["song_order"], list(catalog))
+                self.assertEqual(app.session_state["song_moments"], ["Anamnèse", "Notre Père", "Agneau de Dieu"])
+                options = app.selectbox(key="sheet_moment_0").options
+                self.assertLess(options.index("9. Anamnèse"), options.index("10. Notre Père"))
+                self.assertLess(options.index("10. Notre Père"), options.index("11. Agneau de Dieu"))
+            songs = list(catalog.values())
+            moments = ["Anamnèse", "Notre Père", "Agneau de Dieu"]
+            html = create_song_sheet("Messe", songs).decode()
+            self.assertNotIn("<strong>Notre Père</strong>", html)
+            self.assertLess(html.index("Nous rappelons ta mort"), html.index('<h2 id="titre-2">Notre Père</h2>'))
+            self.assertLess(html.index("Qui es aux cieux"), html.index('<h2 id="titre-3">'))
+            self.assertEqual(moments_from_contents(html, list(catalog), catalog), moments)
+            pdf, _ = create_print_song_sheet("Messe", songs)
+            with pymupdf.open(stream=pdf, filetype="pdf") as document:
+                text = "\n".join(page.get_text() for page in document)
+                self.assertEqual(text.count("Notre Père"), 1)
+                self.assertLess(text.index("Nous rappelons ta mort"), text.index("Qui es aux cieux"))
+                self.assertLess(text.index("Qui es aux cieux"), text.index("Donne-nous la paix"))
+            data, _ = create_presentation(songs)
+            presentation = Presentation(BytesIO(data))
+            text = [shape.text for slide in presentation.slides for shape in slide.shapes if shape.has_text_frame]
+            self.assertEqual(len(presentation.slides), 5)
+            self.assertEqual(text, ["Nous rappelons ta mort", "Qui es aux cieux", "Donne-nous la paix"])
+
     def test_notre_pere_follows_anamnesis_in_bold_in_all_exports(self):
         import pymupdf
         from pptx import Presentation

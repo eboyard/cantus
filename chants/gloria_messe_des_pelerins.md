@@ -1,4 +1,4 @@
-<!-- titre: Gloire à Dieu (Messe des pèlerins) -->
+<!-- titre: Messe des pèlerins - Gloire à Dieu -->
 
 <!-- ordre: R C1 R C2 R C3 R -->
 
