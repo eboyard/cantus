@@ -1,4 +1,4 @@
-<!-- titre: Berthier - J'ai vu l'eau vive -->) -->
+<!-- titre: Berthier - J'ai vu l'eau vive -->
 
 J'ai vu l'eau vive jaillissant du cœur du Christ,
 **alléluia, alléluia !**

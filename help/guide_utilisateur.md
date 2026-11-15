@@ -75,7 +75,8 @@ le signale et le nom ainsi que la liste des chants en cours sont conservés.
 
 ## Choisir et ordonner les chants
 
-Le menu **Choisir un chant à ajouter** contient les chants du catalogue.
+Le menu **Choisir un chant à ajouter** contient les chants du catalogue,
+triés par titre et non par nom de fichier, sans tenir compte des majuscules.
 Vous pouvez saisir une partie du titre pour retrouver un chant dans la liste.
 Sélectionnez-le, puis cliquez sur **Ajouter le chant**.
 

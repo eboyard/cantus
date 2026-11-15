@@ -1,4 +1,4 @@
-<!-- titre: Toi qui es lumière (Prière universelle) -->
+<!-- titre: Prière universelle - Toi qui es lumière-->
 
 **Toi qui es lumière,**
 **Toi qui es l’amour,**

@@ -1,4 +1,4 @@
-<!-- titre: Ô Christ ressuscité, exauce-nous (Prière universelle) -->
+<!-- titre: Prière universelle - Ô Christ ressuscité, exauce-nous-->
 
 **Ô Christ ressuscité, exauce-nous.**
 

@@ -1,4 +1,4 @@
-<!-- titre: Glorious - Je suis dans la joie -->) -->
+<!-- titre: Glorious - Je suis dans la joie -->
 
 <!-- refrain -->
 **Je suis dans la joie, une joie immense !**

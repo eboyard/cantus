@@ -1,4 +1,4 @@
-<!-- titre: Berthier - Saint, le Dieu de l'univers -->) -->
+<!-- titre: Berthier - Saint, le Dieu de l'univers -->
 
 **Saint est le Seigneur, le Dieu de l'univers !**
 **Hosanna au plus haut des cieux.**

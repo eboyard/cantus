@@ -1,4 +1,4 @@
-<!-- titre: Bethel - Agneau de Dieu -->) -->
+<!-- titre: Bethel - Agneau de Dieu -->
 
 <!-- ordre: C1 P1 C2 P1 C3 -->
 

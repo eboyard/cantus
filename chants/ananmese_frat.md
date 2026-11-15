@@ -1,4 +1,4 @@
-<!-- titre: Anamnèse (Frat)  -->
+<!-- titre: Messe du FRAT - Anamnèse -->
 
 Gloire à toi qui étais mort,
 Gloire à toi qui es vivant,

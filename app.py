@@ -475,7 +475,7 @@ def show_preparation() -> None:
     celebration = st.text_input("Nom de la célébration", key="celebration_title")
     selected = st.selectbox(
         "Choisir un chant à ajouter",
-        options=list(catalog),
+        options=sorted(catalog, key=lambda key: (catalog[key][0].casefold(), key)),
         format_func=lambda key: catalog[key][0],
     )
     if st.button("Ajouter le chant"):
