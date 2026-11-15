@@ -36,6 +36,11 @@ suivants. Il est disponible pour le PowerPoint et les feuilles téléphone,
 imprimable et publiée. Les fichiers du carnet, y compris les psaumes avec des
 syllabes soulignées, ne sont pas modifiés.
 
+Si un fichier Markdown du dossier `chants` porte le même numéro de psaume et
+contient les mêmes versets, cette version mise en page par l’équipe est utilisée
+en priorité, dans l’aperçu et les exports. La comparaison ignore la mise en forme,
+les accents et la ponctuation. Sinon, les paroles AELF sont utilisées.
+
 Le champ `intro_lue` de la lecture qui précède le psaume apparaît en gras avant
 son titre, et celui de la lecture suivante apparaît en gras après ses paroles.
 Ces introductions sont conservées dans les exports et les feuilles publiées,

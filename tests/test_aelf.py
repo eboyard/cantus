@@ -10,7 +10,7 @@ from urllib.error import URLError
 
 from streamlit.testing.v1 import AppTest
 
-from scripts.aelf import api_url, html_paragraphs, load_aelf_masses, parse_aelf_response, psalm_catalog
+from scripts.aelf import api_url, html_paragraphs, load_aelf_masses, parse_aelf_response, psalm_catalog, preferred_psalm_key
 from scripts.markdown_to_pptx import build_song_parts
 from scripts.sheet_library import aelf_psalms_from_contents, aelf_context_from_contents, songs_from_contents, title_from_contents, verses_from_contents
 from scripts.song_sheet import create_song_sheet
@@ -26,6 +26,104 @@ def response():
 
 
 class AelfTests(unittest.TestCase):
+    def test_multiline_refrain_has_a_readable_title_and_legacy_cache_is_rendered(self):
+        from scripts.markdown_to_pptx import read_title
+
+        payload = json.loads(FIXTURE.with_name("aelf_2026_11_22.json").read_text(encoding="utf-8"))
+        mass, = parse_aelf_response(payload, date(2026, 11, 22))
+        expected = "Psaume 22 (23) — Le Seigneur est mon berger : rien ne saurait me manquer."
+        self.assertEqual(mass.psalm_title, expected)
+        self.assertNotIn("\n", mass.markdown.split("-->", 1)[0])
+        self.assertEqual(preferred_psalm_key(mass, {}), mass.key)
+        # Compatibilité avec les anciens fichiers dont le titre occupait deux lignes.
+        legacy = mass.markdown.replace(": rien ne saurait me manquer. -->", ":\nrien ne saurait me manquer. -->", 1)
+        for document in (mass.markdown, legacy):
+            with self.subTest(legacy=document == legacy), TemporaryDirectory() as directory:
+                catalog = psalm_catalog({mass.key: document}, Path(directory))
+                self.assertEqual(catalog[mass.key][0], expected)
+                self.assertEqual(read_title(catalog[mass.key][1]), expected)
+                parts = selected_song_parts(catalog[mass.key][1])
+                self.assertTrue(parts)
+                self.assertTrue(all("<!--" not in part.text for part in parts))
+                html = create_song_sheet(mass.title, [catalog[mass.key]]).decode()
+                self.assertIn(f'<h2 id="titre-1">{expected}</h2>', html)
+                self.assertNotIn("&lt;!--", html.split("</h2>", 1)[1])
+
+    def test_daily_psalm_22_uses_team_file_in_preview_and_exports(self):
+        payload = json.loads(FIXTURE.with_name("aelf_2026_11_22.json").read_text(encoding="utf-8"))
+        mass, = parse_aelf_response(payload, date(2026, 11, 22))
+        root = Path(__file__).resolve().parents[1]
+        key = "chants/psaume_22_23.md"
+        path = root / key
+        title = "Psaume 22 23"
+        original = path.read_text(encoding="utf-8")
+        self.assertEqual(preferred_psalm_key(mass, {key: (title, path)}), key)
+        with TemporaryDirectory() as directory, patch("app.ROOT", Path(directory)), \
+                patch("app.song_catalog", side_effect=lambda: {key: (title, path)}), \
+                patch("app.load_aelf_masses", return_value=[mass]):
+            app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
+            app.session_state["celebration_date"] = mass.day
+            app.run()
+            app.button(key="retrieve_aelf").click().run()
+            self.assertTrue(any(item.label == title for item in app.expander))
+            self.assertTrue(any("Version du carnet" in item.value for item in app.caption))
+            app.button(key="use_aelf_psalm").click().run()
+            self.assertFalse(app.exception)
+            self.assertEqual(app.session_state["song_order"], [key])
+            next(b for b in app.button if b.label == "Créer la feuille de chants").click().run()
+            next(b for b in app.button if b.label == "Préparer pour GitHub Pages").click().run()
+            self.assertFalse(app.exception)
+            for html in (app.session_state["generated_song_sheet"][1].decode(),
+                         app.session_state["pages_export"][1].document.decode()):
+                self.assertIn(f'<h2 id="titre-1">{title}</h2>', html)
+                self.assertEqual(songs_from_contents(html, {key: (title, path)}), [key])
+                self.assertNotIn("&lt;!--", html.split("</h2>", 1)[1])
+                self.assertIn("je ne manque de rien.", html)
+        self.assertEqual(path.read_text(encoding="utf-8"), original)
+
+    def test_daily_psalm_prefers_matching_team_markdown_and_updates_with_mass(self):
+        mass, = parse_aelf_response(response(), DAY)
+        payload = response()
+        payload["messes"][0]["lectures"][0]["contenu"] = "<p>Autres versets du même psaume.</p>"
+        other, = parse_aelf_response(payload, DAY)
+        root = Path(__file__).resolve().parents[1]
+        key = "chants/psaume_127.md"
+        path = root / key
+        original = path.read_text(encoding="utf-8")
+        catalog = {key: ("Psaume 127 — Heureux qui craint le Seigneur", path)}
+        with TemporaryDirectory() as directory, patch("app.ROOT", Path(directory)), \
+                patch("app.song_catalog", side_effect=lambda: dict(catalog)), \
+                patch("app.load_aelf_masses", return_value=[mass]) as fetch:
+            app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
+            app.session_state["celebration_date"] = DAY
+            app.run()
+            app.button(key="retrieve_aelf").click().run()
+            app.button(key="use_aelf_psalm").click().run()
+            self.assertFalse(app.exception)
+            self.assertEqual(app.session_state["song_order"], [key])
+            self.assertEqual(app.session_state["selected_aelf_context"], mass.markdown)
+            next(b for b in app.button if b.label == "Créer la feuille de chants").click().run()
+            document = app.session_state["generated_song_sheet"][1].decode()
+            self.assertIn("<u>", document)
+            self.assertEqual(songs_from_contents(document, catalog), [key])
+            self.assertEqual(aelf_context_from_contents(document), mass.markdown)
+            source = Path(directory) / "docs/paroisse/2026-11-15/index.html"
+            source.parent.mkdir(parents=True)
+            source.write_text(document, encoding="utf-8")
+            reopened = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20).run()
+            reopened.selectbox(key="existing_sheet_choice").select("paroisse/2026-11-15/index.html").run()
+            self.assertFalse(reopened.exception)
+            self.assertEqual(reopened.session_state["song_order"], [key])
+            self.assertEqual(reopened.session_state["selected_aelf_context"], mass.markdown)
+            fetch.return_value = [other]
+            app.button(key="retrieve_aelf").click().run()
+            self.assertEqual(app.session_state["song_order"], [other.key])
+            fetch.return_value = [mass]
+            app.button(key="retrieve_aelf").click().run()
+            self.assertEqual(app.session_state["song_order"], [key])
+            self.assertFalse(app.exception)
+        self.assertEqual(path.read_text(encoding="utf-8"), original)
+
     def test_publication_keeps_reading_headers_with_manual_psalm_and_after_reopening(self):
         payload = response()
         before = "Lecture du livre des Proverbes"

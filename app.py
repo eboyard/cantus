@@ -26,7 +26,7 @@ from scripts.song_types import MOMENTS, celebration_moments, read_song_type, son
 from scripts.lyrics_format import lyrics_html
 from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents, verses_from_contents, title_from_contents
 from scripts.sheet_library import aelf_psalms_from_contents, aelf_context_from_contents, moments_from_contents
-from scripts.aelf import load_aelf_masses, mass_url, psalm_catalog
+from scripts.aelf import load_aelf_masses, mass_url, psalm_catalog, preferred_psalm_key
 
 
 ROOT = Path(__file__).resolve().parent
@@ -187,6 +187,7 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
                 st.session_state.song_order = order
                 st.session_state.song_moments = moments
                 st.session_state.song_verses = verses
+                st.session_state.pop("selected_daily_psalm", None)
                 if title is not None:
                     st.session_state.celebration_title = title
                 clear_moment_widgets()
@@ -361,12 +362,16 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
         chosen = next(mass for mass in masses if mass.key == st.session_state.aelf_mass_choice)
         st.session_state.selected_aelf_context = chosen.markdown
         st.session_state.celebration_title = chosen.title
+        preferred_key = preferred_psalm_key(chosen, catalog)
+        previous_key = st.session_state.get("selected_daily_psalm")
         # Un psaume déjà importé suit la nouvelle date ou la nouvelle messe choisie.
         for position, key in enumerate(st.session_state.song_order):
-            if key.startswith("aelf/") and key != chosen.key:
-                st.session_state.song_order[position] = chosen.key
-                st.session_state.song_verses[position] = None
-                st.session_state.song_moments[position] = "Psaume"
+            if key.startswith("aelf/") or key == previous_key:
+                if key != preferred_key:
+                    st.session_state.song_order[position] = preferred_key
+                    st.session_state.song_verses[position] = None
+                    st.session_state.song_moments[position] = "Psaume"
+                st.session_state.selected_daily_psalm = preferred_key
         for key in ("generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
             st.session_state.pop(key, None)
         clear_moment_widgets()
@@ -408,11 +413,14 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
             chosen = options[st.session_state.aelf_mass_choice]
         else:
             chosen = masses[0]
-        with st.expander(chosen.psalm_title):
+        preferred_key = preferred_psalm_key(chosen, catalog)
+        with st.expander(catalog[preferred_key][0]):
             st.caption(f"{chosen.name} — {chosen.reference}")
+            if preferred_key != chosen.key:
+                st.caption("Version du carnet mise en page par l’équipe.")
             # Une seule occurrence de chaque partie dans cet aperçu.
             seen = set()
-            for part in selected_song_parts(catalog[chosen.key][1]):
+            for part in selected_song_parts(catalog[preferred_key][1]):
                 if part.identifier not in seen:
                     st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
                     seen.add(part.identifier)
@@ -428,12 +436,13 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
                                  if i > 0 and moment in MOMENTS[4:]), len(order))
                 if position == len(order) and len(order) > 1:
                     position -= 1
-                order.insert(position, chosen.key)
+                order.insert(position, preferred_key)
                 assigned.insert(position, "Psaume")
                 verses.insert(position, None)
             else:
-                order[position] = chosen.key
+                order[position] = preferred_key
                 verses[position] = None
+            st.session_state.selected_daily_psalm = preferred_key
             clear_moment_widgets()
             st.rerun()
     else:

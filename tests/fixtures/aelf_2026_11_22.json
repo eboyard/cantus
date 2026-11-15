@@ -1,0 +1,37 @@
+{
+  "informations": {
+    "date": "2026-11-22",
+    "zone": "romain",
+    "couleur": "blanc",
+    "annee": "A",
+    "temps_liturgique": "ordinaire",
+    "semaine": null,
+    "jour": "dimanche",
+    "jour_liturgique_nom": "Notre Seigneur Jésus Christ Roi de l'Univers",
+    "fete": "Solennité",
+    "degre": "Solennité du Seigneur",
+    "ligne1": "Notre Seigneur Jésus Christ Roi de l'Univers",
+    "ligne2": "Solennité",
+    "ligne3": "",
+    "couleur2": null,
+    "couleur3": null
+  },
+  "messes": [
+    {
+      "nom": "Messe du jour",
+      "lectures": [
+        {
+          "type": "psaume",
+          "refrain_psalmique": "<p><strong>Le Seigneur est mon berger :<br />\nrien ne saurait me manquer.</strong></p>",
+          "ref_refrain": "cf. Ps 22, 1",
+          "titre": null,
+          "contenu": "<p>Le Seigneur est mon berger :<br />\nje ne manque de rien.<br />\nSur des prés d’herbe fraîche,<br />\nil me fait reposer.</p>\n\n<p>Il me mène vers les eaux tranquilles<br />\net me fait revivre ;<br />\nil me conduit par le juste chemin<br />\npour l’honneur de son nom.</p>\n\n<p>Si je traverse les ravins de la mort,<br />\nje ne crains aucun mal,<br />\ncar tu es avec moi :<br />\nton bâton me guide et me rassure.</p>\n\n<p>Tu prépares la table pour moi<br />\ndevant mes ennemis ;<br />\ntu répands le parfum sur ma tête,<br />\nma coupe est débordante.</p>\n\n<p>Grâce et bonheur m’accompagnent<br />\ntous les jours de ma vie ;<br />\nj’habiterai la maison du Seigneur<br />\npour la durée de mes jours.</p>",
+          "ref": "Ps 22 (23), 1-2ab, 2c-3, 4, 5, 6",
+          "intro_lue": null,
+          "verset_evangile": "",
+          "ref_verset": null
+        }
+      ]
+    }
+  ]
+}

@@ -7,10 +7,11 @@ from html.parser import HTMLParser
 import json
 from pathlib import Path
 import re
+import unicodedata
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
-from scripts.markdown_to_pptx import METADATA_TAG, build_slides, read_title
+from scripts.markdown_to_pptx import METADATA_TAG, build_slides, build_song_parts, plain_text, read_title
 
 
 def mass_url(day: date) -> str:
@@ -103,7 +104,7 @@ def parse_aelf_response(payload: dict, day: date) -> list[AelfMass]:
             reference = " ".join(reference.split())
             short = re.match(r"Ps\s+(\d+(?:\s*\(\d+\))?)", reference)
             name = f"Psaume {short[1]}" if short else f"Psaume ({reference})"
-            psalm_title = f"{name} — {refrain}"
+            psalm_title = f"{name} — {' '.join(refrain.split())}"
             index = len(result) + 1
             key = f"aelf/{day.isoformat()}/{index}"
             source = f"AELF : {api_url(day)}#psaume-{index}\nRéférence : {reference}"
@@ -169,6 +170,28 @@ def psalm_source_key(markdown: str) -> str | None:
                 if match:
                     return f"aelf/{date.fromisoformat(match[1]).isoformat()}/{match[2]}"
     return None
+
+
+def preferred_psalm_key(mass: AelfMass, catalog: dict[str, tuple[str, Path]]) -> str:
+    """Privilégie les versets du carnet sans confondre deux extraits du même psaume."""
+    number = re.match(r"Ps\s+(\d+)\b", mass.reference)
+    if not number:
+        return mass.key
+
+    def verses(markdown: str) -> str:
+        text = " ".join(plain_text(part.text) for part in build_song_parts(markdown)
+                        if part.kind == "couplet")
+        text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
+        return re.sub(r"[^a-z0-9]", "", text)
+
+    expected = verses(mass.markdown)
+    for key, (title, path) in catalog.items():
+        if not key.startswith("chants/"):
+            continue
+        candidate = re.match(r"Psaume\s+(\d+)\b", title, re.IGNORECASE)
+        if candidate and candidate[1] == number[1] and verses(path.read_text(encoding="utf-8-sig")) == expected:
+            return key
+    return mass.key
 
 
 def psalm_catalog(documents: dict[str, str], root: Path) -> dict[str, tuple[str, Path]]:
