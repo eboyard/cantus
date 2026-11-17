@@ -33,7 +33,7 @@ def _element(tag, **attrs):
     return element
 
 
-def _paragraph(text, style="CantusParoles", *, label="", force_bold=False, keep_next=False):
+def _paragraph(text, style="CantusParoles", *, label="", force_bold=False, keep_next=False, lines=None):
     paragraph = _element("p")
     props = _element("pPr")
     props.append(_element("pStyle", val=style))
@@ -61,7 +61,7 @@ def _paragraph(text, style="CantusParoles", *, label="", force_bold=False, keep_
 
     if label:
         add_run(label, bold=True)
-    for index, line in enumerate(formatted_lines(text)):
+    for index, line in enumerate(formatted_lines(text) if lines is None else lines):
         if index:
             run = _element("r")
             run.append(_element("br"))
@@ -121,7 +121,7 @@ def _slot(root, name):
     return paragraphs[0]
 
 
-def _body_blocks(parts, font_size):
+def _body_blocks(parts, font_size, *, two_columns=False):
     units = []
     refrain_seen = False
     for part in parts:
@@ -139,6 +139,18 @@ def _body_blocks(parts, font_size):
             units.append(("autre", [_paragraph(part.text, "CantusRefrain")], part.text))
         else:
             label = part.identifier[1:] + ". " if part.selectable else "Pont. " if part.kind == "pont" else ""
+            # Certains psaumes du carnet sont un seul bloc, sans séparateurs de strophes.
+            if two_columns and part.kind == "couplet" and sum(p.kind == "couplet" for p in parts) == 1:
+                lines = formatted_lines(part.text)
+                if len(lines) > 1:
+                    middle = (len(lines) + 1) // 2
+                    breaks = [i for i in range(1, len(lines)) if not lines[i]]
+                    if breaks:
+                        middle = min(breaks, key=lambda i: abs(i - middle))
+                    left = _paragraph(part.text, label=label, lines=lines[:middle])
+                    right = _paragraph(part.text, lines=lines[middle + (not lines[middle]):])
+                    units.append(("autre", [_table([left], [right], keep_row=False)], part.text))
+                    continue
             units.append(("couplet" if part.kind == "couplet" else "autre",
                           [_paragraph(part.text, label=label)], part.text))
 
@@ -147,7 +159,8 @@ def _body_blocks(parts, font_size):
         widths = [sum(stringWidth(fragment.text, "Helvetica-Bold" if fragment.bold else "Helvetica", font_size)
                       for fragment in line) for line in lines]
         # Estimation prudente pour Calibri, avec une réserve pour la numérotation.
-        return unit[0] == "couplet" and len(lines) <= 20 and max(widths, default=0) <= 275
+        return (unit[0] == "couplet" and len(lines) <= 20
+                and (two_columns or max(widths, default=0) <= 275))
 
     blocks = []
     index = 0
@@ -155,6 +168,10 @@ def _body_blocks(parts, font_size):
         if index + 1 < len(units) and compact(units[index]) and compact(units[index + 1]):
             blocks.append(_table(units[index][1], units[index + 1][1]))
             index += 2
+        elif two_columns and compact(units[index]):
+            # Une dernière strophe impaire conserve la largeur d’une colonne.
+            blocks.append(_table(units[index][1], []))
+            index += 1
         else:
             blocks.extend(units[index][1])
             index += 1
@@ -228,7 +245,7 @@ def create_word_song_sheet(
                 run.append(text)
                 heading.append(run)
             blocks.append(heading)
-            content = _body_blocks(parts, font_size)
+            content = _body_blocks(parts, font_size, two_columns=moment == "Psaume")
             if moment == "Agneau de Dieu":
                 blocks.append(_table(content, [deepcopy(illustration)], widths=(8000, 2600), keep_row=False))
             else:

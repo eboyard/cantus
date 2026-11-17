@@ -18,6 +18,46 @@ def document(data):
 
 
 class WordSongSheetTests(unittest.TestCase):
+    def test_single_block_psalm_22_has_text_in_both_columns(self):
+        path = Path(__file__).resolve().parents[1] / "chants/psaume_22_23.md"
+        root = document(create_word_song_sheet("Messe", [("Psaume 22 23", path)], moments=["Psaume"]))
+        cells = root.xpath("//w:body/w:tbl[last()]/w:tr/w:tc", namespaces=NS)
+        self.assertEqual(len(cells), 2)
+        left, right = [" ".join(c.xpath(".//w:t/text()", namespaces=NS)) for c in cells]
+        self.assertIn("Le Seigneur est mon berger", left)
+        self.assertIn("pour la durée de mes jours.", right)
+        self.assertNotIn("pour la durée de mes jours.", left)
+
+    def test_single_block_columns_preserve_formatting_across_split(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "psaume.md"
+            path.write_text("**<u>Début\\nSuite\\nEncore\\nFin</u>**".replace("\\n", "\n"), encoding="utf-8")
+            root = document(create_word_song_sheet("Messe", [("Psaume", path)], moments=["Psaume"]))
+        cells = root.xpath("//w:body/w:tbl[last()]/w:tr/w:tc", namespaces=NS)
+        for cell in cells:
+            self.assertTrue(cell.xpath(".//w:r[w:rPr/w:b and w:rPr/w:u]/w:t", namespaces=NS))
+        self.assertEqual("".join(cells[1].xpath(".//w:t/text()", namespaces=NS)), "EncoreFin")
+
+    def test_psalm_long_lines_and_odd_stanza_use_two_columns(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "psaume.md"
+            stanzas = [f"Strophe {i} " + "une longue ligne de psaume " * 5 for i in range(1, 4)]
+            path.write_text("<!-- refrain -->\n**Seigneur, écoute-nous**\n---\n" +
+                            "\n---\n".join(stanzas), encoding="utf-8")
+            for size in (9, 10, 11, 12):
+                with self.subTest(font_size=size):
+                    root = document(create_word_song_sheet(
+                        "Messe", [("Psaume", path)], moments=["Psaume"], font_size=size))
+                    tables = root.xpath("//w:body/w:tbl", namespaces=NS)[1:]
+                    self.assertEqual(len(tables), 2)
+                    cells = [table.xpath("./w:tr/w:tc", namespaces=NS) for table in tables]
+                    for cell, stanza in zip((cells[0][0], cells[0][1], cells[1][0]), stanzas):
+                        self.assertIn(stanza.rstrip(), "".join(cell.xpath(".//w:t/text()", namespaces=NS)))
+                    self.assertFalse(cells[1][1].xpath(".//w:t/text()", namespaces=NS))
+                    self.assertEqual(len(root.xpath('//w:p[w:pPr/w:pStyle/@w:val="CantusRefrain"]', namespaces=NS)), 1)
+            other = document(create_word_song_sheet("Messe", [("Chant", path)], moments=["Envoi"]))
+            self.assertEqual(len(other.xpath("//w:body/w:tbl", namespaces=NS)), 1)
+
     def test_template_generation_preserves_selected_lyrics_styles_and_package(self):
         with TemporaryDirectory() as folder:
             path = Path(folder) / "chant.md"
