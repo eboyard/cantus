@@ -12,6 +12,7 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from scripts.markdown_to_pptx import METADATA_TAG, build_slides, build_song_parts, plain_text, read_title
+from scripts.psautier import PSALM_REFERENCE, format_stanzas
 
 
 def mass_url(day: date) -> str:
@@ -73,7 +74,7 @@ def html_paragraphs(value: str) -> list[str]:
     return [part.strip() for part in re.split(r"\n\s*\n", text) if part.strip()]
 
 
-def parse_aelf_response(payload: dict, day: date) -> list[AelfMass]:
+def parse_aelf_response(payload: dict, day: date, *, format_psalms: bool = False) -> list[AelfMass]:
     if not isinstance(payload, dict) or not isinstance(payload.get("informations"), dict):
         raise ValueError("La réponse de l’API AELF est invalide.")
     info = payload["informations"]
@@ -102,12 +103,18 @@ def parse_aelf_response(payload: dict, day: date) -> list[AelfMass]:
             if not isinstance(reference, str) or not reference.strip() or not refrain or not stanzas:
                 raise ValueError("La référence, le refrain ou le texte du psaume AELF est incomplet.")
             reference = " ".join(reference.split())
-            short = re.match(r"Ps\s+(\d+(?:\s*\(\d+\))?)", reference)
-            name = f"Psaume {short[1]}" if short else f"Psaume ({reference})"
+            short = PSALM_REFERENCE.match(reference)
+            name = f"Psaume ({reference})"
+            if short:
+                name = f"Psaume {short[1]}" + (f" ({short[2]})" if short[2] else "")
             psalm_title = f"{name} — {' '.join(refrain.split())}"
             index = len(result) + 1
             key = f"aelf/{day.isoformat()}/{index}"
             source = f"AELF : {api_url(day)}#psaume-{index}\nRéférence : {reference}"
+            if format_psalms:
+                stanzas, formatting_url = format_stanzas(reference, stanzas)
+                if formatting_url:
+                    source += f"\nMise en forme : {formatting_url}"
             order = "R " + " ".join(f"C{i} R" for i in range(1, len(stanzas) + 1))
             blocks = [f"<!-- refrain -->\n{refrain}"]
             blocks.extend(f"<!-- couplet: C{i} -->\n{stanza}" for i, stanza in enumerate(stanzas, 1))
@@ -155,7 +162,7 @@ def load_aelf_masses(day: date) -> list[AelfMass]:
         payload = json.loads(document.decode("utf-8-sig"))
     except (URLError, OSError, UnicodeError, json.JSONDecodeError) as error:
         raise ValueError("Impossible de récupérer la messe sur AELF. Vérifiez la connexion et réessayez.") from error
-    return parse_aelf_response(payload, day)
+    return parse_aelf_response(payload, day, format_psalms=True)
 
 
 def psalm_source_key(markdown: str) -> str | None:
@@ -174,7 +181,7 @@ def psalm_source_key(markdown: str) -> str | None:
 
 def preferred_psalm_key(mass: AelfMass, catalog: dict[str, tuple[str, Path]]) -> str:
     """Privilégie les versets du carnet sans confondre deux extraits du même psaume."""
-    number = re.match(r"Ps\s+(\d+)\b", mass.reference)
+    number = PSALM_REFERENCE.match(mass.reference)
     if not number:
         return mass.key
 

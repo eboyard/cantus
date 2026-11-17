@@ -370,6 +370,9 @@ class AelfTests(unittest.TestCase):
         self.assertIn("Is 12", masses[1].psalm_title)
 
     def test_api_get_and_readable_failures(self):
+        formatting = patch("scripts.aelf.format_stanzas", side_effect=lambda ref, stanzas: (stanzas, None))
+        formatting.start()
+        self.addCleanup(formatting.stop)
         with patch("scripts.aelf.urlopen", return_value=BytesIO(FIXTURE.read_bytes())) as get:
             self.assertEqual(len(load_aelf_masses(DAY)), 1)
             self.assertEqual(get.call_args.args[0].full_url, api_url(DAY))

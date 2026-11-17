@@ -1,0 +1,37 @@
+{
+  "informations": {
+    "date": "2026-11-29",
+    "zone": "romain",
+    "couleur": "violet",
+    "annee": "B",
+    "temps_liturgique": "avent",
+    "semaine": "1ère Semaine de l'Avent",
+    "jour": "dimanche",
+    "jour_liturgique_nom": "1er Dimanche de l'Avent (semaine I du Psautier)",
+    "fete": "",
+    "degre": "",
+    "ligne1": "1er Dimanche de l'Avent (semaine I du Psautier)",
+    "ligne2": "",
+    "ligne3": "",
+    "couleur2": null,
+    "couleur3": null
+  },
+  "messes": [
+    {
+      "nom": "Messe du jour",
+      "lectures": [
+        {
+          "type": "psaume",
+          "refrain_psalmique": "<p>Dieu, fais-nous revenir ;<br />\nque ton visage s’éclaire,<br />\net nous serons sauvés !<br />\n </p>",
+          "ref_refrain": "79, 4",
+          "titre": null,
+          "contenu": "<p>Berger d’Israël, écoute,<br />\nresplendis au-dessus des Kéroubim !<br />\nRéveille ta vaillance<br />\net viens nous sauver.</p>\n\n<p>Dieu de l’univers, reviens !<br />\nDu haut des cieux, regarde et vois :<br />\nvisite cette vigne, protège-la,<br />\ncelle qu’a plantée ta main puissante.</p>\n\n<p>Que ta main soutienne ton protégé,<br />\nle fils de l’homme qui te doit sa force.<br />\nJamais plus nous n’irons loin de toi :<br />\nfais-nous vivre et invoquer ton nom !</p>",
+          "ref": "79 (80), 2ac.3bc, 15-16a, 18-19",
+          "intro_lue": null,
+          "verset_evangile": null,
+          "ref_verset": null
+        }
+      ]
+    }
+  ]
+}

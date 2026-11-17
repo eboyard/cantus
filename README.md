@@ -111,6 +111,22 @@ au format « Messe de … - Gloria » ou « Messe de … - Alléluia » sont rec
 La version du psaume trouvée dans le carnet conserve ses paroles et sa mise en
 forme ; les titres AELF des lectures l'encadrent dans l'aperçu et les exports.
 
+À la récupération sur AELF, les psaumes bénéficient des soulignements, du gras
+éventuel et des retours à la ligne de psautier.org. L’index des pages est fourni
+dans `scripts/psautier_index.json`, extrait de l’index HTML du site. Seuls les
+passages dont les paroles correspondent sont enrichis : refrain, sélection des
+versets, ponctuation et strophes restent ceux de l’AELF. Les prières et commentaires
+du site ne sont pas importés. La source de la mise en forme est conservée dans les
+informations du psaume, avec les paroles mises en forme pour la réouverture et
+les exports HTML, PDF et PowerPoint. Les pages consultées sont mises en cache en
+mémoire. En cas d’indisponibilité du site ou de correspondance ambiguë, le texte
+AELF est conservé ; un nouvel essai de récupération peut enrichir la mise en forme.
+Les versions du carnet restent prioritaires. Les cantiques et les références
+sans page correspondante conservent leur présentation AELF.
+Les références numériques sans préfixe « Ps » sont également reconnues.
+Lorsqu’une strophe saute des demi-versets, les lignes correspondantes sont mises
+en forme séparément, sans réintroduire les passages omis.
+
 Le moment **Notre Père** suit **Anamnèse** et précède **Agneau de Dieu** (Agnus).
 Les chants « Notre Père » sont reconnus et insérés à cette place. Si un tel
 chant est sélectionné, aucun titre « Notre Père » supplémentaire n'est ajouté
