@@ -118,7 +118,7 @@ passages dont les paroles correspondent sont enrichis : refrain, sélection des
 versets, ponctuation et strophes restent ceux de l’AELF. Les prières et commentaires
 du site ne sont pas importés. La source de la mise en forme est conservée dans les
 informations du psaume, avec les paroles mises en forme pour la réouverture et
-les exports HTML, PDF et PowerPoint. Les pages consultées sont mises en cache en
+les exports HTML, Word et PowerPoint. Les pages consultées sont mises en cache en
 mémoire. En cas d’indisponibilité du site ou de correspondance ambiguë, le texte
 AELF est conservé ; un nouvel essai de récupération peut enrichir la mise en forme.
 Les versions du carnet restent prioritaires. Les cantiques et les références
@@ -165,7 +165,7 @@ est enregistré sans réécriture automatique. **Annuler** abandonne le brouillo
 L’éditeur ne comporte ni barre de mise en forme ni aperçu pendant la saisie.
 
 Le gras est enregistré en Markdown (`**texte**`) et le soulignement avec `<u>`.
-Les deux styles sont conservés dans la consultation, les feuilles HTML et PDF
+Les deux styles sont conservés dans la consultation, les feuilles HTML et Word
 et les exports PowerPoint. Ces balises se modifient directement dans le Markdown.
 Le formulaire charge la dernière version du fichier sur GitHub. Un enregistrement
 crée un commit dans le même fichier `chants/*.md`, sur la branche configurée.
@@ -217,7 +217,7 @@ L’adresse est définie par `GITHUB_PAGES_URL` et vaut par défaut
 L’onglet **Aide en ligne** de l’application propose un guide destiné aux
 utilisateurs, consultable en entier ou par rubrique, tout en conservant la
 préparation dans l’onglet **Préparer la célébration**. Il couvre la sélection
-des chants, la reprise d’une feuille, les exports PowerPoint, HTML et PDF,
+des chants, la reprise d’une feuille, les exports PowerPoint, HTML et Word,
 la publication et les difficultés courantes.
 
 Son contenu est maintenu dans [help/guide_utilisateur.md](help/guide_utilisateur.md)
@@ -230,10 +230,10 @@ Dans **Ordre des chants**, la liste **Couplets à garder** de chaque chant propo
 une case à cocher par couplet, avec le début de ses paroles. Toutes les cases sont
 masquées lorsqu’il n’y a qu’un seul couplet, conservé automatiquement. Elles sont
 cochées par défaut ; décocher les couplets à retirer. Les choix
-s’appliquent à l’aperçu, au PowerPoint et aux feuilles HTML téléchargées, publiées et PDF imprimables.
+s’appliquent à l’aperçu, au PowerPoint et aux feuilles HTML téléchargées, publiées et Word imprimables.
 Ils sont propres à chaque occurrence et suivent les déplacements du chant.
 Le carnet reste intact ; les refrains suivent les couplets retenus et les ponts
-sont conservés. Les numéros des couplets du PDF restent ceux du carnet.
+sont conservés. Les numéros des couplets du document Word restent ceux du carnet.
 Après un changement, recréer la feuille et préparer à nouveau sa publication.
 Le PowerPoint contient uniquement les couplets cochés, avec les refrains et les ponts.
 Après un changement de couplets, recréer le PowerPoint pour télécharger la version à jour.
@@ -244,7 +244,7 @@ Ouvrir **Repartir d’une feuille existante**, puis choisir une paroisse et une 
 dans **Choisir une feuille de chants existante**. La sélection remplace immédiatement
 la liste des chants par ceux de la feuille, dans le même ordre, y compris les chants
 présents plusieurs fois. Vous pouvez ensuite ajouter, retirer ou déplacer des chants
-et créer une nouvelle feuille HTML, un PDF ou un PowerPoint. Le nom de la nouvelle
+et créer une nouvelle feuille HTML, un document Word ou un PowerPoint. Le nom de la nouvelle
 célébration et sa date restent à choisir pour cette nouvelle feuille.
 
 Les feuilles présentes dans `docs/` sont proposées au démarrage. Le bouton
@@ -258,36 +258,41 @@ feuilles conservent la référence du chant dans sa section de paroles pour perm
 reprise même si son titre change. Si un chant manque ou si plusieurs chants ont le même
 titre, un message les signale et la liste actuelle reste intacte.
 
-### Feuille de chants à imprimer
+### Feuille de chants à imprimer dans Word
 
-Après avoir choisi et ordonné les chants, cliquer sur **Créer la version à imprimer**,
-puis **Télécharger la version à imprimer (.pdf)**. Cette génération est indépendante
-du PowerPoint et de la feuille pour téléphone.
+Après avoir choisi et ordonné les chants, renseigner le **Lieu de la célébration**,
+puis cliquer sur **Créer la version à imprimer** et **Télécharger la version à
+imprimer (.docx)**. Le document Word remplace le téléchargement PDF dans
+l’application. Cette génération est indépendante du PowerPoint et de la feuille
+pour téléphone.
 
-Le premier chant reçoit automatiquement la rubrique **Chant d’entrée**, et le
-dernier la rubrique **Envoi**, selon leur position dans la sélection. Avec un seul
-chant, la rubrique est **Chant d’entrée**. Les rubriques intermédiaires restent modifiables.
+Le modèle `templates/feuille_chants.dotx` reprend la feuille de Saint Pierre–Boussy
+du 14 novembre 2026 : A4 portrait, police Calibri 12 points par défaut, photo de
+l’église, date et lieu, nom de la célébration, rubriques grasses soulignées, titres
+italiques, refrains gras et couplets courts côte à côte. Les strophes longues
+occupent la largeur disponible. Le document ajoute des pages selon le contenu ;
+la taille choisie (9, 10, 11 ou 12 points) n’est jamais réduite automatiquement.
+Les soulignements des psaumes, les couplets choisis, leur numérotation d’origine,
+l’ordre des parties, les ponts et les introductions des lectures sont conservés.
+Le refrain complet paraît une fois, puis les reprises sont indiquées par
+« Refrain ». L’illustration de la Cène accompagne l’Agneau de Dieu.
 
-Le PDF utilise le format A4 portrait, deux colonnes, des marges de 12 mm et du texte
-noir sur fond blanc. Choisir **9 ou 10 points** pour une feuille plus compacte,
-**11 points** (taille par défaut) ou **12 points** pour des caractères plus grands.
-Les couplets sont numérotés ; chaque refrain est
-écrit en gras à sa première occurrence, puis remplacé par « Refrain » aux reprises.
-L'ordre explicite des parties et les ponts sont conservés. Les blocs de chants se
-suivent verticalement : rubrique et titre sur toute la largeur, puis paroles en
-deux colonnes propres au chant. Le chant suivant commence sous les deux colonnes
-du précédent. Les couplets restent entiers lorsqu'ils tiennent dans une colonne ;
-les chants longs peuvent se poursuivre sur plusieurs pages.
+Le lieu est modifiable pour chaque feuille. La date suit la date de célébration
+sélectionnée. Un changement de date, de lieu, de taille, de chant, de couplet ou
+de moment nécessite une nouvelle génération. Ouvrir le résultat dans Word pour
+vérifier l’aperçu, ajuster la disposition et imprimer en recto verso avec
+retournement sur le bord long. Word calcule la pagination à l’ouverture ; aucun
+nombre de pages approximatif n’est affiché dans l’application.
 
-Imprimer à **taille réelle (100 %)**, avec **une page par face**, en **recto verso,
-retournement sur le bord long**. Le nombre de pages est affiché avant téléchargement :
-le document ajoute des pages si nécessaire sans réduire la taille choisie.
-
-La génération PDF utilise ReportLab, inclus dans `requirements.txt`, et ses polices
-Unicode embarquées. Pour lancer les tests, y compris la vérification des PDF :
+Pour adapter la présentation, ouvrir le fichier DOTX dans Word et modifier les
+styles `Cantus` ou les images, puis enregistrer au même emplacement. Conserver
+les emplacements `{{DATE}}`, `{{LIEU}}`, `{{CELEBRATION}}`, `{{ANNEE}}`,
+`{{CHANTS}}` et `{{ILLUSTRATION}}`. Le générateur `scripts/word_song_sheet.py`
+utilise ce modèle à chaque création et produit un DOCX autonome, sans installation
+de Word sur le serveur. L’ancien module PDF reste disponible pour les scripts
+existants, mais n’est plus proposé dans l’interface.
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m unittest discover -s tests
 ```
 

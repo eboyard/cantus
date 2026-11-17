@@ -18,7 +18,7 @@ import streamlit.components.v1 as components
 from scripts.markdown_to_pptx import build_slides, plain_text, read_slides, read_title, write_slides
 from scripts.song_sheet import create_song_sheet
 from scripts.song_selection import selected_song_parts, gospel_introduction, with_liturgical_introductions, reading_context, with_reading_introductions
-from scripts.print_song_sheet import create_print_song_sheet
+from scripts.word_song_sheet import create_word_song_sheet, DEFAULT_PLACE, MIME as WORD_MIME
 from scripts.github_pages import prepare_pages_export
 from scripts.github_publish import publish_sheet
 from scripts.song_editor import SongDraft, create_song, load_song, new_song_path, save_song, serialize_song
@@ -706,41 +706,32 @@ def show_preparation() -> None:
                           aelf_context=aelf_context)
 
     st.subheader("Feuille de chants à imprimer")
-    st.caption("PDF A4 en deux colonnes, en noir et blanc. Chaque refrain est écrit une fois par chant.")
-    print_size = st.selectbox("Taille du texte imprimé", options=[9, 10, 11, 12], index=2,
+    st.caption("Document Word modifiable, selon le modèle de Saint Pierre–Boussy. Ouvrez-le dans Word pour ajuster la mise en page et l’imprimer.")
+    word_place = st.text_input("Lieu de la célébration", value=DEFAULT_PLACE, key="word_place")
+    print_size = st.selectbox("Taille du texte imprimé", options=[9, 10, 11, 12], index=3,
                               format_func=lambda size: f"{size} points")
-    print_signature = (signature, print_size, tuple(moments), verse_signature)
+    print_signature = ("word-v1", signature, day, word_place.strip(), print_size, tuple(moments), verse_signature)
     if st.button("Créer la version à imprimer", disabled=not song_order):
         try:
-            pdf, pages = create_print_song_sheet(
-                celebration, [catalog[key] for key in song_order], font_size=print_size, moments=moments, verses=verses,
-                aelf_context=aelf_context,
+            document = create_word_song_sheet(
+                celebration, [catalog[key] for key in song_order], day=day, place=word_place,
+                font_size=print_size, moments=moments, verses=verses, aelf_context=aelf_context,
             )
-            st.session_state.generated_print_sheet = (print_signature, pdf, pages)
+            st.session_state.generated_print_sheet = (print_signature, document)
         except (OSError, ValueError) as error:
-            st.error(f"La création du PDF a échoué : {error}")
-        except TypeError as error:
-            logging.getLogger(__name__).exception("Échec de la création du PDF imprimable")
-            if "unexpected keyword argument 'moments'" in str(error):
-                st.error(
-                    "Le générateur PDF chargé ne prend pas en charge les rubriques de messe. "
-                    "Vérifiez que app.py et scripts/print_song_sheet.py sont déployés dans leur "
-                    "dernière version, puis redémarrez l'application via Manage app → Reboot app."
-                )
-            else:
-                st.error(
-                    "La création du PDF a échoué à cause d'une erreur interne (TypeError). "
-                    "Le détail est disponible dans les logs de Manage app, "
-                    "sous « Échec de la création du PDF imprimable »."
-                )
+            st.error(f"La création du document Word a échoué : {error}")
+        except TypeError:
+            logging.getLogger(__name__).exception("Échec de la création du document Word")
+            st.error("La création du document Word a échoué à cause d’une erreur interne. Le détail est disponible dans les journaux de l’application.")
     printed = st.session_state.get("generated_print_sheet")
     if printed and printed[0] == print_signature:
         st.download_button(
-            "Télécharger la version à imprimer (.pdf)", data=printed[1],
-            file_name="feuille_" + Path(download_name(celebration)).with_suffix(".pdf").name,
-            mime="application/pdf",
+            "Télécharger la version à imprimer (.docx)", data=printed[1],
+            file_name="feuille_" + Path(download_name(celebration)).with_suffix(".docx").name,
+            mime=WORD_MIME,
         )
-        st.caption(f"{printed[2]} page(s) A4 — Imprimer à taille réelle (100 %), en recto verso, retournement sur le bord long.")
+        st.caption("La pagination est calculée par Word à l’ouverture. Vérifiez l’aperçu avant impression, puis imprimez en recto verso sur le bord long.")
+
 
 
 def main() -> None:
