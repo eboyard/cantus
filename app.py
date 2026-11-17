@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 import streamlit as st
 import streamlit.components.v1 as components
 
-from scripts.markdown_to_pptx import build_slides, read_slides, read_title, write_slides
+from scripts.markdown_to_pptx import build_slides, plain_text, read_slides, read_title, write_slides
 from scripts.song_sheet import create_song_sheet
 from scripts.song_selection import selected_song_parts, gospel_introduction, with_liturgical_introductions, reading_context, with_reading_introductions
 from scripts.print_song_sheet import create_print_song_sheet
@@ -600,7 +600,7 @@ def show_preparation() -> None:
                     verses[position] = [
                         identifier for identifier, text in couplets.items()
                         if title_col.checkbox(
-                            f"Couplet {identifier[1:]} — {text.splitlines()[0]}",
+                            f"Couplet {identifier[1:]} — {plain_text(text).splitlines()[0]}",
                             value=identifier in selected_verses,
                             key=f"sheet_verses_{position}_{identifier}",
                             help="Choix pour le PowerPoint et les feuilles téléphone, à publier et à imprimer. Les refrains et les ponts sont conservés.",
