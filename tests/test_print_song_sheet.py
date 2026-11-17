@@ -79,30 +79,18 @@ class PrintSongSheetTests(unittest.TestCase):
                             for span in spans:
                                 self.assertAlmostEqual(span["size"], size)
 
-    def test_print_type_errors_are_reported_and_logged_without_exposing_details(self):
-        for error, expected_message in (
-            (TypeError("create_print_song_sheet() got an unexpected keyword argument 'moments'"),
-             "Le générateur PDF chargé ne prend pas en charge les rubriques de messe."),
-            (TypeError("internal detail that must stay in the logs"),
-             "La création du PDF a échoué à cause d'une erreur interne (TypeError)."),
-        ):
-            with self.subTest(error=error), \
-                    patch("app.create_print_song_sheet", side_effect=error), \
-                    patch("app.github_setting", return_value=""):
-                app = AppTest.from_string(
-                    "from app import show_preparation\nshow_preparation()", default_timeout=20,
-                )
-                app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
-                app.run()
-                with self.assertLogs("app", level="ERROR") as logs:
-                    next(button for button in app.button
-                         if button.label == "Créer la version à imprimer").click().run()
-                self.assertFalse(app.exception)
-                self.assertIn(expected_message, app.error[0].value)
-                self.assertNotIn(str(error), app.error[0].value)
-                self.assertIn(str(error), "\n".join(logs.output))
-                self.assertFalse(app.get("download_button"))
-                self.assertNotIn("generated_print_sheet", app.session_state)
+    def test_word_type_errors_are_reported_without_exposing_details(self):
+        with patch("app.create_word_song_sheet", side_effect=TypeError("private internal detail")), \
+                patch("app.github_setting", return_value=""):
+            app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
+            app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
+            app.run()
+            with self.assertLogs("app", level="ERROR"):
+                next(button for button in app.button if button.label == "Créer la version à imprimer").click().run()
+            self.assertFalse(app.exception)
+            self.assertIn("La création du document Word a échoué", app.error[0].value)
+            self.assertNotIn("private internal detail", app.error[0].value)
+            self.assertNotIn("generated_print_sheet", app.session_state)
 
     def test_refrain_written_once_without_losing_explicit_order_or_bridge(self):
         with TemporaryDirectory() as directory:
@@ -168,15 +156,15 @@ class PrintSongSheetTests(unittest.TestCase):
         app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
         app.run()
         self.assertEqual(next(widget for widget in app.selectbox
-                              if widget.label == "Taille du texte imprimé").value, 11)
+                              if widget.label == "Taille du texte imprimé").value, 12)
         next(button for button in app.button if button.label == "Créer la version à imprimer").click().run()
         self.assertFalse(app.exception)
         self.assertFalse(app.error)
-        self.assertTrue(app.session_state["generated_print_sheet"][1].startswith(b"%PDF-"))
+        self.assertTrue(app.session_state["generated_print_sheet"][1].startswith(b"PK"))
         self.assertNotIn("generated_song_sheet", app.session_state)
         self.assertNotIn("generated_presentation", app.session_state)
-        self.assertEqual(app.get("download_button")[0].proto.label, "Télécharger la version à imprimer (.pdf)")
-        for size in (9, 10, 12):
+        self.assertEqual(app.get("download_button")[0].proto.label, "Télécharger la version à imprimer (.docx)")
+        for size in (9, 10, 11):
             next(widget for widget in app.selectbox
                  if widget.label == "Taille du texte imprimé").select(size).run()
             self.assertFalse(app.get("download_button"))

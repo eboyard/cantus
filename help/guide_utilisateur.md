@@ -1,5 +1,5 @@
 Cantus permet de choisir les chants d’une célébration et de produire un
-PowerPoint pour la projection, une feuille pour téléphone ou un PDF à imprimer.
+PowerPoint pour la projection, une feuille pour téléphone ou un document Word à imprimer.
 Chaque format se crée et se télécharge séparément, à partir de la même liste de chants.
 
 Choisissez une rubrique ci-dessus ou parcourez le guide complet. Vous pouvez
@@ -102,7 +102,7 @@ Toutes les cases sont cochées au départ ; le début des paroles
 permet de les reconnaître. Le choix s’applique au PowerPoint et aux feuilles pour téléphone,
 à publier et à imprimer, sans modifier le chant du carnet. Les refrains suivent
 les couplets conservés et les ponts restent présents. La numérotation des couplets
-dans le PDF conserve les numéros d’origine.
+dans le document Word conserve les numéros d’origine.
 
 Les choix restent attachés à chaque occurrence lorsque vous déplacez les chants.
 Vous pouvez donc garder des couplets différents pour deux occurrences du même chant.
@@ -284,48 +284,33 @@ leurs liens et QR codes restent accessibles.
 Si la publication directe est désactivée, contactez le responsable de
 l’application pour sa configuration.
 
-## Créer et imprimer un PDF
+## Créer une feuille Word et l’imprimer
 
-Dans **Ordre des chants**, choisissez le **Moment de la messe** pour chaque chant,
-y compris le premier et le dernier :
-entrée, préparation pénitentielle, Gloire à Dieu, psaume, acclamation de l’Évangile,
-prières universelles, offertoire, Sanctus, anamnèse, Notre Père, Agneau de Dieu, communion ou envoi.
-Le type du carnet est proposé automatiquement lorsqu’il est connu. Vous pouvez
-le remplacer pour cette célébration, y compris si un même chant est utilisé deux fois.
-Les propositions **Chant d’entrée** et **Envoi** aux extrémités d’une liste chargée
-ne remplacent jamais un type connu. Un Kyrie placé en dernier reste une préparation
-pénitentielle. Les moments choisis suivent les chants après un déplacement.
-**Non renseigné** conserve uniquement le titre du chant dans le PDF.
-Les rubriques choisies apparaissent au-dessus des titres et des paroles ; deux chants
-consécutifs du même moment partagent une rubrique. Seuls les moments utilisés sont
-imprimés. Les boutons **Monter** et **Descendre** permettent de suivre la trame souhaitée.
+Dans **Ordre des chants**, choisissez le **Moment de la messe** et les couplets à
+garder pour chaque chant. Les boutons **Monter** et **Descendre** fixent leur ordre.
+Les refrains, les ponts et les introductions des lectures suivent la sélection.
 
-Dans le **carnet de chants**, **Modifier** permet de renseigner le **Type du chant
-dans le carnet**, puis de l’enregistrer avec les paroles. Les types évidents tels que
-Kyrie, Gloria et Sanctus sont reconnus d’après le titre. Les chants dont l’usage varie
-restent à renseigner. Le type enregistré est conservé dans une ligne
-`<!-- type: Gloire à Dieu -->`, qui n’apparaît pas dans les paroles ni les projections.
+1. Dans **Feuille de chants à imprimer**, renseignez le **Lieu de la célébration**.
+2. Choisissez la **Taille du texte imprimé** : **12 points** reprend le modèle ;
+   **9, 10 ou 11 points** donnent une feuille plus compacte.
+3. Cliquez sur **Créer la version à imprimer**.
+4. Cliquez sur **Télécharger la version à imprimer (.docx)**.
+5. Ouvrez le fichier dans Word. Vérifiez l’aperçu avant impression et ajustez la
+   disposition si nécessaire. Imprimez en A4, à taille réelle, en recto verso
+   avec retournement sur le bord long.
 
-1. Dans **Feuille de chants à imprimer**, choisissez la **Taille du texte imprimé** :
-   **9 ou 10 points** pour une feuille plus compacte, **11 points** par défaut
-   ou **12 points** pour des caractères plus grands.
-2. Cliquez sur **Créer la version à imprimer**. Le nombre de pages est affiché.
-3. Cliquez sur **Télécharger la version à imprimer (.pdf)**.
-4. Imprimez à **taille réelle (100 %)**, avec **une page par face**, en
-   **recto verso, retournement sur le bord long**.
+Le modèle reprend la feuille de Saint Pierre–Boussy : photo de l’église, date et
+lieu, titre de la célébration, rubriques soulignées, titres des chants en italique,
+refrains en gras et couplets courts côte à côte. Les paroles longues restent sur
+la largeur disponible. Les accents et les soulignements des psaumes sont conservés.
+Le refrain complet apparaît une fois ; les reprises sont indiquées par « Refrain ».
+Les couplets gardent leurs numéros d’origine et l’ordre prévu des parties est respecté.
 
-Le PDF est au format A4 portrait, en deux colonnes, avec des marges de 12 mm
-et du texte noir sur fond blanc. Les couplets sont numérotés. Chaque refrain
-est écrit en gras à sa première occurrence, puis indiqué par « Refrain » lors
-des reprises. L’ordre prévu des parties et les ponts sont conservés.
-
-Chaque chant forme un bloc : sa rubrique et son titre occupent toute la largeur,
-puis ses paroles sont réparties en deux colonnes. Le bloc du chant suivant commence
-en dessous des deux colonnes du précédent, jamais à côté. Les couplets restent
-ensemble lorsqu’ils tiennent dans une colonne ; les chants longs peuvent se
-poursuivre sur plusieurs pages.
-Si nécessaire, le document ajoute des pages sans réduire la taille du texte choisie.
-Après un changement de taille, créez à nouveau le PDF.
+Le document Word remplace le PDF dans l’application. Il reste modifiable après
+téléchargement. Word calcule le nombre de pages à l’ouverture et ajoute des pages
+si nécessaire sans réduire automatiquement la taille du texte.
+Après tout changement de date, de lieu, de taille ou de sélection, créez à nouveau
+le document pour actualiser le téléchargement.
 
 ## Comprendre les paroles et les refrains
 
@@ -381,6 +366,6 @@ le QR code. Si le problème persiste, contactez le responsable du site.
 
 ### Le texte est trop petit ou déborde
 
-Pour le PDF, essayez **12 points** et recréez le fichier.
+Pour la feuille Word, choisissez **12 points** et recréez le document.
 Pour la projection, vérifiez le PowerPoint et demandez au responsable du
 catalogue de répartir les passages trop longs sur plusieurs diapositives.
