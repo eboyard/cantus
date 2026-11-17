@@ -86,6 +86,24 @@ class WordSongSheetTests(unittest.TestCase):
                 if name not in {"word/document.xml", "word/styles.xml", "docProps/core.xml", "[Content_Types].xml"}:
                     self.assertEqual(template.read(name), generated.read(name), name)
 
+    def test_word_compacts_c1_c2_c1_sequence(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "kyrie.md"
+            path.write_text(
+                "<!-- ordre: C1 C2 C1 -->\n"
+                "<!-- couplet: C1 -->\nSeigneur, je viens pour implorer\n---\n"
+                "<!-- couplet: C2 -->\nÔ Christ, je viens pour implorer",
+                encoding="utf-8",
+            )
+            root = document(create_word_song_sheet("Messe", [("Kyrie", path)]))
+        text = " ".join(root.xpath("//w:t/text()", namespaces=NS))
+        self.assertEqual(text.count("Seigneur, je viens pour implorer"), 1)
+        self.assertIn("1-3.", text)
+        self.assertIn("2.", text)
+        self.assertIn("Ô Christ, je viens pour implorer", text)
+        self.assertLess(text.index("1-3."), text.index("Seigneur, je viens pour implorer"))
+        self.assertLess(text.index("2."), text.index("Ô Christ, je viens pour implorer"))
+
     def test_readings_and_illustration_and_long_verses(self):
         from scripts.aelf import parse_aelf_response
         import json

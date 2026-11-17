@@ -122,10 +122,17 @@ def _slot(root, name):
 
 
 def _body_blocks(parts, font_size, *, two_columns=False):
+    parts = [part for part in parts if part.kind != "lecture"]
+    compact_triplet = (
+        len(parts) == 3
+        and all(part.kind == "couplet" for part in parts)
+        and parts[0].identifier == parts[2].identifier
+        and parts[0].identifier != parts[1].identifier
+    )
     units = []
     refrain_seen = False
-    for part in parts:
-        if part.kind == "lecture":
+    for index, part in enumerate(parts):
+        if compact_triplet and index == 2:
             continue
         if part.kind == "refrain":
             if refrain_seen:
@@ -138,7 +145,10 @@ def _body_blocks(parts, font_size, *, two_columns=False):
             refrain_seen = True
             units.append(("autre", [_paragraph(part.text, "CantusRefrain")], part.text))
         else:
-            label = part.identifier[1:] + ". " if part.selectable else "Pont. " if part.kind == "pont" else ""
+            if compact_triplet:
+                label = "1-3. " if index == 0 else "2. "
+            else:
+                label = part.identifier[1:] + ". " if part.selectable else "Pont. " if part.kind == "pont" else ""
             # Certains psaumes du carnet sont un seul bloc, sans séparateurs de strophes.
             if two_columns and part.kind == "couplet" and sum(p.kind == "couplet" for p in parts) == 1:
                 lines = formatted_lines(part.text)
