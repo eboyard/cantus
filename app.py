@@ -478,7 +478,11 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
         "Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date(),
         key="celebration_date", on_change=retrieve,
     )
-    st.button("Récupérer le nom et le psaume sur AELF", key="retrieve_aelf", on_click=retrieve)
+    consult_column, retrieve_column = st.columns(2)
+    with consult_column:
+        st.link_button("Consulter la messe du jour sur AELF", mass_url(day))
+    with retrieve_column:
+        st.button("Récupérer le nom et le psaume sur AELF", key="retrieve_aelf", on_click=retrieve)
     st.caption("Changer la date récupère automatiquement les textes AELF du jour exact choisi. Le titre reste modifiable.")
     status = st.session_state.get("aelf_import_error")
     if status and status[0] == day:
@@ -526,8 +530,6 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
             st.session_state.selected_daily_psalm = preferred_key
             clear_moment_widgets()
             st.rerun()
-    else:
-        st.link_button("Consulter la messe du jour sur AELF", mass_url(day))
     return day
 
 
