@@ -1,5 +1,5 @@
 from copy import deepcopy
-from datetime import date
+from datetime import date, timedelta
 from io import BytesIO
 import json
 from pathlib import Path
@@ -44,7 +44,7 @@ class AelfTests(unittest.TestCase):
                 patch("app.song_catalog", side_effect=lambda: dict(catalog)), \
                 patch("app.load_aelf_masses", return_value=[mass]):
             app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
-            app.session_state["celebration_date"] = DAY
+            app.session_state["celebration_date"] = DAY - timedelta(days=1)
             app.run()
             # Ajout volontairement dans le désordre ; les types déterminent l'insertion.
             for key in reversed(keys):
@@ -54,7 +54,7 @@ class AelfTests(unittest.TestCase):
             self.assertEqual(app.session_state["song_order"], keys)
             self.assertEqual(app.session_state["song_moments"], ["Gloire à Dieu", "Psaume", "Acclamation de l’Évangile"])
             app.session_state["song_verses"] = [[], None, None]
-            app.button(key="retrieve_aelf").click().run()
+            app.date_input(key="celebration_date").set_value(DAY).run()
             preview = next(item for item in app.expander if item.label == catalog[keys[1]][0])
             text = "\n".join(item.value for item in preview.markdown)
             self.assertIn(before, text)
@@ -108,9 +108,9 @@ class AelfTests(unittest.TestCase):
                 patch("app.song_catalog", side_effect=lambda: {key: (title, path)}), \
                 patch("app.load_aelf_masses", return_value=[mass]):
             app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
-            app.session_state["celebration_date"] = mass.day
+            app.session_state["celebration_date"] = mass.day - timedelta(days=1)
             app.run()
-            app.button(key="retrieve_aelf").click().run()
+            app.date_input(key="celebration_date").set_value(mass.day).run()
             self.assertTrue(any(item.label == title for item in app.expander))
             self.assertTrue(any("Version du carnet" in item.value for item in app.caption))
             app.button(key="use_aelf_psalm").click().run()
@@ -131,7 +131,8 @@ class AelfTests(unittest.TestCase):
         mass, = parse_aelf_response(response(), DAY)
         payload = response()
         payload["messes"][0]["lectures"][0]["contenu"] = "<p>Autres versets du même psaume.</p>"
-        other, = parse_aelf_response(payload, DAY)
+        payload["informations"]["date"] = (DAY + timedelta(days=1)).isoformat()
+        other, = parse_aelf_response(payload, DAY + timedelta(days=1))
         root = Path(__file__).resolve().parents[1]
         key = "chants/psaume_127.md"
         path = root / key
@@ -141,9 +142,9 @@ class AelfTests(unittest.TestCase):
                 patch("app.song_catalog", side_effect=lambda: dict(catalog)), \
                 patch("app.load_aelf_masses", return_value=[mass]) as fetch:
             app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
-            app.session_state["celebration_date"] = DAY
+            app.session_state["celebration_date"] = DAY - timedelta(days=1)
             app.run()
-            app.button(key="retrieve_aelf").click().run()
+            app.date_input(key="celebration_date").set_value(DAY).run()
             app.button(key="use_aelf_psalm").click().run()
             self.assertFalse(app.exception)
             self.assertEqual(app.session_state["song_order"], [key])
@@ -162,10 +163,10 @@ class AelfTests(unittest.TestCase):
             self.assertEqual(reopened.session_state["song_order"], [key])
             self.assertEqual(reopened.session_state["selected_aelf_context"], mass.markdown)
             fetch.return_value = [other]
-            app.button(key="retrieve_aelf").click().run()
+            app.date_input(key="celebration_date").set_value(other.day).run()
             self.assertEqual(app.session_state["song_order"], [other.key])
             fetch.return_value = [mass]
-            app.button(key="retrieve_aelf").click().run()
+            app.date_input(key="celebration_date").set_value(DAY).run()
             self.assertEqual(app.session_state["song_order"], [key])
             self.assertFalse(app.exception)
         self.assertEqual(path.read_text(encoding="utf-8"), original)
@@ -196,9 +197,9 @@ class AelfTests(unittest.TestCase):
                 patch("app.load_aelf_masses", return_value=[mass]):
             app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
             app.session_state["song_order"] = list(catalog)
-            app.session_state["celebration_date"] = DAY
+            app.session_state["celebration_date"] = DAY - timedelta(days=1)
             app.run()
-            app.button(key="retrieve_aelf").click().run()
+            app.date_input(key="celebration_date").set_value(DAY).run()
             # Garde le psaume du carnet : aucun clic sur « Utiliser le psaume du jour ».
             self.assertEqual(app.session_state["song_order"], list(catalog))
             next(b for b in app.button if b.label == "Créer la feuille de chants").click().run()
@@ -424,6 +425,7 @@ class AelfTests(unittest.TestCase):
             app.session_state["celebration_date"] = date(2026, 11, 14)
             app.run()
             fetch.assert_not_called()
+            self.assertFalse(any(button.key == "retrieve_aelf" for button in app.button))
             app.date_input(key="celebration_date").set_value(DAY).run()
             self.assertFalse(app.exception)
             self.assertEqual(app.text_input(key="celebration_title").value, mass.title)
@@ -475,9 +477,9 @@ class AelfTests(unittest.TestCase):
                 patch("app.load_aelf_masses", return_value=variants) as fetch:
             app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
             app.session_state["song_order"] = list(catalog)
-            app.session_state["celebration_date"] = DAY
+            app.session_state["celebration_date"] = DAY - timedelta(days=1)
             app.run()
-            app.button(key="retrieve_aelf").click().run()
+            app.date_input(key="celebration_date").set_value(DAY).run()
             app.button(key="use_aelf_psalm").click().run()
             self.assertEqual(app.session_state["song_order"], ["entry", "gloria", variants[0].key, "exit"])
             app.selectbox(key="aelf_mass_choice").select(variants[1].key).run()

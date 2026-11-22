@@ -474,15 +474,16 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
         except (OSError, ValueError) as error:
             st.session_state.aelf_import_error = (day, str(error))
 
-    day = st.date_input(
-        "Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date(),
-        key="celebration_date", on_change=retrieve,
-    )
-    consult_column, retrieve_column = st.columns(2)
+    date_column, consult_column = st.columns([2, 3], vertical_alignment="bottom")
+    with date_column:
+        day = st.date_input(
+            "Date de la célébration", value=datetime.now(ZoneInfo("Europe/Paris")).date(),
+            key="celebration_date", on_change=retrieve,
+        )
     with consult_column:
         st.link_button("Consulter la messe du jour sur AELF", mass_url(day))
-    with retrieve_column:
-        st.button("Récupérer le nom et le psaume sur AELF", key="retrieve_aelf", on_click=retrieve)
+    st.session_state.setdefault("celebration_title", "Messe")
+    st.text_input("Nom de la célébration", key="celebration_title")
     st.caption("Changer la date récupère automatiquement les textes AELF du jour exact choisi. Le titre reste modifiable.")
     status = st.session_state.get("aelf_import_error")
     if status and status[0] == day:
@@ -554,8 +555,7 @@ def show_preparation() -> None:
         clear_moment_widgets()
     day = show_aelf_import(catalog)
     aelf_context = st.session_state.get("selected_aelf_context")
-    st.session_state.setdefault("celebration_title", "Messe")
-    celebration = st.text_input("Nom de la célébration", key="celebration_title")
+    celebration = st.session_state.celebration_title
     selected = st.selectbox(
         "Choisir un chant à ajouter",
         options=sorted(catalog, key=lambda key: (catalog[key][0].casefold(), key)),

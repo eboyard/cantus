@@ -25,8 +25,8 @@ téléphone, puis suivez la rubrique **Publier une feuille et partager son QR co
 
 Choisissez la **Date de la célébration**, en haut de la préparation : l’application
 interroge l’API AELF pour cette date et remplit le **Nom de la célébration**, année
-liturgique comprise. Le titre reste modifiable. Pour charger les textes de la date
-déjà affichée au démarrage, cliquez sur **Récupérer le nom et le psaume sur AELF**.
+liturgique comprise. La récupération est automatique au changement de date,
+sans bouton supplémentaire. Le titre reste modifiable.
 
 Si plusieurs messes ou psaumes sont proposés pour cette date, choisissez celui
 qui correspond à la célébration. Dépliez le titre du psaume pour lire son refrain
