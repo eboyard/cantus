@@ -116,8 +116,10 @@ class WordSongSheetTests(unittest.TestCase):
             psalm.write_text(mass.markdown, encoding="utf-8")
             agnus.write_text("Agneau de Dieu", encoding="utf-8")
             long.write_text("\n".join(f"Ligne longue {i}" for i in range(160)), encoding="utf-8")
-            result = create_word_song_sheet("Messe", [("Psaume", psalm), ("Agnus", agnus), ("Long", long)],
-                                            moments=["Psaume", "Agneau de Dieu", "Envoi"], font_size=10)
+            from scripts.liturgical_texts import reading_catalog, reading_documents
+            readings = list(reading_catalog(reading_documents(mass.markdown), Path(folder)).values())
+            result = create_word_song_sheet("Messe", [readings[0], ("Psaume", psalm), readings[1], ("Agnus", agnus), ("Long", long)],
+                                            moments=["", "Psaume", "", "Agneau de Dieu", "Envoi"], font_size=10)
         root = document(result)
         text = " ".join(root.xpath("//w:t/text()", namespaces=NS))
         self.assertLess(text.index("Lecture avant"), text.index("Heureux"))

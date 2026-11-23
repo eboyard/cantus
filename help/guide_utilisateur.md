@@ -12,7 +12,7 @@ revenir à l’onglet **Préparer la célébration** pour poursuivre votre prép
    renseigner librement le **Nom de la célébration**.
 2. Choisissez un chant dans **Choisir un chant à ajouter**, puis cliquez sur
    **Ajouter le chant**. Répétez pour chaque chant.
-3. Dans **Ordre des chants**, utilisez **Monter**, **Descendre** et **Retirer**
+3. Dans **Ordre des chants et des textes**, utilisez **Monter**, **Descendre** et **Retirer**
    pour ajuster la liste.
 4. Ouvrez **Aperçu des paroles** pour vérifier le contenu et l’ordre des parties.
 5. Cliquez sur **Créer le PowerPoint**, **Créer la feuille de chants** ou
@@ -60,28 +60,21 @@ Leur conservation sur un autre serveur nécessite de transférer ces fichiers
 avec le carnet. L’import et les exports doivent être couverts par vos droits
 de reproduction des textes.
 
-Si un fichier Markdown du dossier `chants` porte le même numéro de psaume et
-contient les mêmes versets, cette version mise en page par l’équipe est utilisée
-en priorité, dans l’aperçu et les exports. Les titres de la première et de la
-deuxième lecture encadrent aussi cette version du carnet, dans l’aperçu du
-psaume et les documents générés. La comparaison ignore la mise en forme,
-les accents et la ponctuation. Sinon, les paroles AELF sont utilisées.
+### Ajouter les intitulés des lectures et de l’Évangile
 
-Le champ `intro_lue` de la lecture qui précède le psaume apparaît en gras avant
-son titre, et celui de la lecture suivante apparaît en gras après ses paroles.
-Ces introductions sont conservées dans les exports et les feuilles publiées,
-même si certaines strophes sont décochées. Aucun texte n’est ajouté si le champ
-est absent ou vide dans la réponse AELF.
+Après avoir choisi la date et, si nécessaire, la messe AELF, utilisez les boutons
+**Ajouter : Première lecture**, **Ajouter : Deuxième lecture** et **Ajouter : Évangile**.
+Chaque clic ajoute uniquement l’intitulé correspondant (« Lecture du livre… »,
+« Évangile de Jésus Christ… »), en gras, à la fin de la liste.
+Un bouton est proposé seulement si cet intitulé est fourni par l’AELF.
 
-L’`intro_lue` de la section `evangile` de la même messe apparaît en gras après
-le chant affecté à **Acclamation de l’Évangile** (Alléluia). Si l’API propose aussi
-un Évangile en forme brève, l’introduction n’est affichée qu’une fois. Elle est
-conservée avec le psaume importé et retrouvée à la réouverture de la feuille.
-
-Les introductions sont aussi mémorisées pour la célébration : après avoir
-récupéré les textes AELF, vous pouvez garder un psaume du carnet (notamment
-avec des syllabes soulignées). Les introductions figureront dans la publication
-et seront restaurées à sa réouverture, sans remplacer les paroles du carnet.
+Dans **Ordre des chants et des textes**, utilisez **Monter**, **Descendre** ou
+**Retirer** pour placer ou supprimer chaque intitulé indépendamment, comme un
+chant. Aucun intitulé n’est inséré automatiquement avec le psaume ou l’Alléluia.
+Les intitulés ajoutés et leur ordre sont conservés dans les aperçus, tous les
+exports et lors de la réouverture d’une feuille publiée. Changer la date ou la
+messe conserve les intitulés déjà ajoutés : retirez-les et ajoutez ceux de la
+nouvelle célébration si nécessaire.
 
 Le moment **Notre Père** se situe après **Anamnèse** et avant **Agneau de Dieu**
 (ou Agnus). Un chant « Notre Père » du carnet est reconnu et inséré à cette place.
@@ -310,9 +303,10 @@ l’application pour sa configuration.
 
 ## Créer une feuille Word et l’imprimer
 
-Dans **Ordre des chants**, choisissez le **Moment de la messe** et les couplets à
+Dans **Ordre des chants et des textes**, choisissez le **Moment de la messe** et les couplets à
 garder pour chaque chant. Les boutons **Monter** et **Descendre** fixent leur ordre.
-Les refrains, les ponts et les introductions des lectures suivent la sélection.
+Les refrains et les ponts suivent la sélection. Les intitulés des lectures et
+de l’Évangile sont des éléments séparés, ajoutés manuellement.
 
 1. Dans **Feuille de chants à imprimer**, renseignez le **Lieu de la célébration**.
 2. Choisissez la **Taille du texte imprimé** : **12 points** reprend le modèle ;
@@ -359,7 +353,7 @@ refrain supplémentaire. L’aperçu et le PowerPoint utilisent ce même ordre.
 
 ### Un bouton de création est désactivé
 
-Ajoutez au moins un chant dans **Ordre des chants**.
+Ajoutez au moins un chant ou un texte dans **Ordre des chants et des textes**.
 
 ### Un bouton de téléchargement a disparu après une modification
 

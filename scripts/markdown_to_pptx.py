@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 from dataclasses import dataclass
 from pathlib import Path
 import re
@@ -85,28 +84,6 @@ def build_slides(markdown: str) -> list[str]:
 
 
 def build_song_parts(markdown: str) -> list[SongPart]:
-    parts = _build_song_parts(markdown)
-    if not parts:
-        return parts
-    introductions = {}
-    for marker in METADATA_TAG.finditer(markdown):
-        name = marker[1].lower()
-        if name not in ("lecture_avant", "lecture_apres"):
-            continue
-        try:
-            value = json.loads(marker[2])
-        except ValueError:
-            value = marker[2].strip()
-        if not isinstance(value, str):
-            raise ValueError("L’introduction d’une lecture doit être du texte.")
-        if value.strip():
-            introductions[name] = " ".join(value.split())
-    before = [SongPart("L1", "lecture", f"**{introductions['lecture_avant']}**")] if "lecture_avant" in introductions else []
-    after = [SongPart("L2", "lecture", f"**{introductions['lecture_apres']}**")] if "lecture_apres" in introductions else []
-    return before + parts + after
-
-
-def _build_song_parts(markdown: str) -> list[SongPart]:
     """Les commentaires de type sont placés au début d'un bloc séparé par ---.
 
     La directive ordre en tête de fichier choisit les parties à projeter.

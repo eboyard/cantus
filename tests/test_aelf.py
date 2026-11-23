@@ -15,6 +15,7 @@ from scripts.markdown_to_pptx import build_song_parts, read_title
 from scripts.sheet_library import aelf_psalms_from_contents, aelf_context_from_contents, songs_from_contents, title_from_contents, verses_from_contents
 from scripts.song_sheet import create_song_sheet
 from scripts.song_selection import selected_song_parts
+from scripts.liturgical_texts import reading_catalog, reading_documents
 
 
 DAY = date(2026, 11, 15)
@@ -57,10 +58,8 @@ class AelfTests(unittest.TestCase):
             app.date_input(key="celebration_date").set_value(DAY).run()
             preview = next(item for item in app.expander if item.label == "Aperçu des paroles")
             text = "\n".join(item.value for item in preview.markdown)
-            self.assertIn(before, text)
-            self.assertIn(after, text)
-            self.assertLess(text.index(before), text.index("Heu<u>reux"))
-            self.assertLess(text.index("Heu<u>reux"), text.index(after))
+            self.assertNotIn(before, text)
+            self.assertNotIn(after, text)
             self.assertFalse(any(button.key == "use_aelf_psalm" for button in app.button))
             self.assertFalse(any(item.label == catalog[keys[1]][0] for item in app.expander))
             self.assertEqual(app.session_state["song_order"], keys)
@@ -203,6 +202,10 @@ class AelfTests(unittest.TestCase):
             app.date_input(key="celebration_date").set_value(DAY).run()
             # La récupération conserve le psaume du carnet déjà choisi.
             self.assertEqual(app.session_state["song_order"], list(catalog))
+            for title in ("Première lecture", "Deuxième lecture", "Évangile"):
+                app.button(key=f"add_{title}").click().run()
+                self.assertFalse(app.exception)
+            self.assertEqual(len(app.session_state["song_order"]), len(catalog) + 3)
             next(b for b in app.button if b.label == "Créer la feuille de chants").click().run()
             next(b for b in app.button if b.label == "Préparer pour GitHub Pages").click().run()
             self.assertFalse(app.exception)
@@ -224,7 +227,7 @@ class AelfTests(unittest.TestCase):
                 self.assertEqual(regenerated.count(f"<strong>{text}</strong>"), 1)
         self.assertEqual(psalm_path.read_text(encoding="utf-8"), original)
 
-    def test_gospel_introduction_follows_alleluia_in_exports_and_after_reopening(self):
+    def test_manual_gospel_position_is_preserved_in_exports_and_after_reopening(self):
         import pymupdf
         from pptx import Presentation
         from app import create_presentation
@@ -248,31 +251,37 @@ class AelfTests(unittest.TestCase):
             other.write_text("Paroles du chant", encoding="utf-8")
             songs = [("Entrée", other), catalog[mass.key], ("Alléluia (Messe)", alleluia), ("Envoi", other)]
             moments = ["", "Psaume", "Acclamation de l’Évangile", ""]
+            automatic = create_song_sheet(mass.title, songs, moments=moments).decode()
+            self.assertNotIn(f"<strong>{intro}</strong>", automatic)
+            readings = reading_catalog(reading_documents(mass.markdown), root)
+            gospel = next(song for song in readings.values() if song[0] == "Évangile")
+            songs.insert(3, gospel)
+            moments.insert(3, "")
             html = create_song_sheet(mass.title, songs, moments=moments).decode()
             sections = html.split('<section ')[1:]
             self.assertNotIn(f"<strong>{intro}</strong>", sections[1])
-            self.assertEqual(sections[2].count(f"<strong>{intro}</strong>"), 1)
-            self.assertLess(sections[2].index("Alléluia !"), sections[2].index(f"<strong>{intro}</strong>"))
+            self.assertNotIn(f"<strong>{intro}</strong>", sections[2])
+            self.assertEqual(sections[3].count(f"<strong>{intro}</strong>"), 1)
             restored = psalm_catalog(aelf_psalms_from_contents(html), root / "restored")
             reopened_songs = [songs[0], restored[mass.key], *songs[2:]]
             self.assertEqual(create_song_sheet(mass.title, reopened_songs, moments=moments).decode(), html)
             pdf, _ = create_print_song_sheet(mass.title, songs, moments=moments)
             with pymupdf.open(stream=pdf, filetype="pdf") as document:
-                text = "\n".join(page.get_text() for page in document)
+                text = " ".join(" ".join(page.get_text() for page in document).split())
                 self.assertEqual(text.count(intro), 1)
                 self.assertLess(text.index("Alléluia !"), text.index(intro))
                 spans = [span for page in document for block in page.get_text("dict")["blocks"]
                          if "lines" in block for line in block["lines"] for span in line["spans"]]
-                self.assertTrue(any(intro in span["text"] and "Bold" in span["font"] for span in spans))
+                self.assertTrue(any("Évangile de Jésus" in span["text"] and "Bold" in span["font"] for span in spans))
             pptx, _ = create_presentation(songs, moments=moments)
             presentation = Presentation(BytesIO(pptx))
             text = ["\n".join(shape.text for shape in slide.shapes if shape.has_text_frame)
                     for slide in presentation.slides]
             self.assertEqual(text.count(intro), 1)
-            self.assertEqual(text.index(intro), text.index("Alléluia !") + 1)
+            self.assertGreater(text.index(intro), text.index("Alléluia !"))
             self.assertEqual(alleluia.read_text(encoding="utf-8"), original)
-            hidden = create_song_sheet(mass.title, songs, moments=["", "Psaume", "Communion", ""]).decode()
-            self.assertNotIn(f"<strong>{intro}</strong>", hidden)
+            independent = create_song_sheet(mass.title, songs, moments=["", "Psaume", "Communion", "", ""]).decode()
+            self.assertIn(f"<strong>{intro}</strong>", independent)
 
     def test_gospel_directly_after_psalm_is_only_announced_after_acclamation(self):
         payload = response()
@@ -285,7 +294,7 @@ class AelfTests(unittest.TestCase):
         mass, = parse_aelf_response(payload, DAY)
         self.assertNotIn("evangile_intro:", mass.markdown)
 
-    def test_adjacent_reading_introductions_surround_selected_psalm_in_all_exports(self):
+    def test_manual_reading_introductions_surround_selected_psalm_in_all_exports(self):
         import pymupdf
         from pptx import Presentation
         from app import create_presentation
@@ -305,16 +314,16 @@ class AelfTests(unittest.TestCase):
             song = catalog[mass.key]
             path = song[1]
             parts = selected_song_parts(path, ["C2"])
-            self.assertEqual([part.identifier for part in parts], ["L1", "R", "C2", "R", "L2"])
-            self.assertEqual(parts[0].text, f"**{before}**")
-            self.assertEqual(parts[-1].text, f"**{after}**")
-            self.assertEqual([part.identifier for part in selected_song_parts(path, [])], ["L1", "R", "L2"])
-            html = create_song_sheet(mass.title, [song], verses=[["C2"]]).decode()
-            self.assertLess(html.index(f"<strong>{before}</strong>"), html.index('<h2 id="titre-1">'))
+            self.assertEqual([part.identifier for part in parts], ["R", "C2", "R"])
+            self.assertEqual([part.identifier for part in selected_song_parts(path, [])], ["R"])
+            readings = list(reading_catalog(reading_documents(mass.markdown), Path(directory)).values())
+            songs = [readings[0], song, readings[1]]
+            html = create_song_sheet(mass.title, songs, verses=[None, ["C2"], None]).decode()
+            self.assertLess(html.index(f"<strong>{before}</strong>"), html.index('<h2 id="titre-2">'))
             self.assertGreater(html.index(f"<strong>{after}</strong>"), html.index("Ta femme sera dans ta maison"))
             restored = psalm_catalog(aelf_psalms_from_contents(html), Path(directory) / "restored")
             self.assertEqual(selected_song_parts(restored[mass.key][1], ["C2"]), parts)
-            pdf, _ = create_print_song_sheet(mass.title, [song], verses=[["C2"]])
+            pdf, _ = create_print_song_sheet(mass.title, songs, verses=[None, ["C2"], None])
             with pymupdf.open(stream=pdf, filetype="pdf") as document:
                 spans = [span for page in document for block in page.get_text("dict")["blocks"]
                          if "lines" in block for line in block["lines"] for span in line["spans"]]
@@ -324,7 +333,7 @@ class AelfTests(unittest.TestCase):
                 for span in spans:
                     if span["text"].startswith(("Lecture du livre", "Lecture de la première", "apôtre aux Thessaloniciens")):
                         self.assertIn("Bold", span["font"])
-            pptx, _ = create_presentation([song], verses=[["C2"]])
+            pptx, _ = create_presentation(songs, verses=[None, ["C2"], None])
             presentation = Presentation(BytesIO(pptx))
             first_runs = [run for shape in presentation.slides[0].shapes if shape.has_text_frame
                           for paragraph in shape.text_frame.paragraphs for run in paragraph.runs]
@@ -343,7 +352,8 @@ class AelfTests(unittest.TestCase):
         payload["messes"].append(other)
         first, second = parse_aelf_response(payload, DAY)
         self.assertFalse(any(part.kind == "lecture" for part in build_song_parts(first.markdown)))
-        self.assertEqual(build_song_parts(second.markdown)[0].text, "**Lecture de la seconde messe**")
+        self.assertEqual(reading_documents(first.markdown), {})
+        self.assertIn("**Lecture de la seconde messe**", next(iter(reading_documents(second.markdown).values())))
 
     def test_user_response_extracts_title_refrain_stanzas_and_line_breaks(self):
         mass, = parse_aelf_response(response(), DAY)

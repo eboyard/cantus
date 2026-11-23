@@ -14,6 +14,7 @@ from urllib.error import HTTPError
 from scripts.github_publish import GitHubPublishError, _nested_sha, _request
 from scripts.song_selection import selected_song_parts
 from scripts.aelf import psalm_source_key
+from scripts.liturgical_texts import text_key
 from scripts.song_types import MOMENTS, celebration_moments, read_song_type
 
 
@@ -106,6 +107,7 @@ class _ContentsParser(HTMLParser):
         self.current_verses: str | None = None
         self.celebration_title: str | None = None
         self.aelf_psalms: dict[str, str] = {}
+        self.reading_texts: dict[str, str] = {}
         self.aelf_context: str | None = None
         self.section_moments: list[str | None] = []
         self.section_moment_explicit: list[bool] = []
@@ -124,6 +126,11 @@ class _ContentsParser(HTMLParser):
             self.aelf_context = context
         if tag == "section" and re.fullmatch(r"chant-\d+", attrs.get("id") or ""):
             self.section_key = attrs.get("data-song-key") or ""
+            reading = attrs.get("data-reading-text")
+            if reading is not None:
+                if len(reading) > 100_000 or text_key(reading) != self.section_key:
+                    raise ValueError("Le texte de lecture mémorisé dans cette feuille est invalide.")
+                self.reading_texts[self.section_key] = reading
             self.current_verses = attrs.get("data-song-verses")
             self.current_moment = attrs.get("data-song-moment")
             self.current_moment_explicit = self.current_moment is not None
@@ -191,6 +198,12 @@ def aelf_psalms_from_contents(document: str) -> dict[str, str]:
     parser = _ContentsParser()
     parser.feed(document)
     return parser.aelf_psalms
+
+
+def reading_texts_from_contents(document: str) -> dict[str, str]:
+    parser = _ContentsParser()
+    parser.feed(document)
+    return parser.reading_texts
 
 
 def aelf_context_from_contents(document: str) -> str | None:

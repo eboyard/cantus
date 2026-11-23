@@ -12,7 +12,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import BalancedColumns, BaseDocTemplate, Frame, PageTemplate, Paragraph
 
-from scripts.song_selection import selected_song_parts, gospel_introduction, with_liturgical_introductions, reading_context, with_reading_introductions
+from scripts.song_selection import selected_song_parts, with_liturgical_introductions
 from scripts.lyrics_format import formatted_lines, fragment_html
 from scripts.song_types import IMPLICIT_MOMENTS, MOMENTS, celebration_moments, read_song_type
 
@@ -90,12 +90,9 @@ def create_print_song_sheet(
         canvas.restoreState()
 
     story = []
-    context = reading_context(songs, aelf_context)
-    gospel_intro = gospel_introduction([], context) if context else ""
     for position, (song_title, path) in enumerate(songs, start=1):
         parts = selected_song_parts(path, None if verses is None else verses[position - 1])
-        parts = with_reading_introductions(parts, moments[position - 1], context)
-        parts = with_liturgical_introductions(parts, moments[position - 1], gospel_intro, moments=moments)
+        parts = with_liturgical_introductions(parts, moments[position - 1], moments=moments)
         if not parts:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
         moment = moments[position - 1]
