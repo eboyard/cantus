@@ -11,10 +11,7 @@ from lxml import etree
 from reportlab.pdfbase.pdfmetrics import stringWidth
 
 from scripts.lyrics_format import formatted_lines
-from scripts.song_selection import (
-    selected_song_parts, reading_context, gospel_introduction,
-    with_reading_introductions, with_liturgical_introductions,
-)
+from scripts.song_selection import selected_song_parts, with_liturgical_introductions
 from scripts.song_types import MOMENTS, celebration_moments, read_song_type
 
 
@@ -231,13 +228,10 @@ def create_word_song_sheet(
             text.text = ""
         insert_at = body.index(anchor)
         body.remove(anchor)
-        context = reading_context(songs, aelf_context)
-        gospel = gospel_introduction([], context) if context else ""
         blocks = []
         for position, (song_title, path) in enumerate(songs):
             parts = selected_song_parts(path, None if verses is None else verses[position])
-            parts = with_reading_introductions(parts, moments[position], context)
-            parts = with_liturgical_introductions(parts, moments[position], gospel, moments=moments)
+            parts = with_liturgical_introductions(parts, moments[position], moments=moments)
             if not parts:
                 raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
             blocks.extend(_paragraph(part.text, "CantusLecture", keep_next=True) for part in parts

@@ -109,7 +109,10 @@ liturgiques. Un psaume ajouté est placé après le Gloria et avant l'Alléluia.
 Les titres du carnet
 au format « Messe de … - Gloria » ou « Messe de … - Alléluia » sont reconnus.
 La version du psaume trouvée dans le carnet conserve ses paroles et sa mise en
-forme ; les titres AELF des lectures l'encadrent dans l'aperçu et les exports.
+forme. Les intitulés AELF des lectures et de l’Évangile s’ajoutent séparément
+avec leurs boutons dédiés. Ils se déplacent et se retirent comme les chants,
+et leur ordre est conservé dans les exports et à la réouverture d’une feuille.
+Le psaume et l’Alléluia n’insèrent plus ces intitulés automatiquement.
 
 Le sélecteur **Choisir un psaume ou cantique à ajouter** reprend les 217 références
 de la page HTML Psautier.org. Chaque ajout conserve les autres chants et permet
@@ -238,7 +241,7 @@ Lors d’un changement du parcours utilisateur, mettre aussi à jour ce guide.
 
 ### Choisir les couplets d’une feuille
 
-Dans **Ordre des chants**, la liste **Couplets à garder** de chaque chant propose
+Dans **Ordre des chants et des textes**, la liste **Couplets à garder** de chaque chant propose
 une case à cocher par couplet, avec le début de ses paroles. Toutes les cases sont
 masquées lorsqu’il n’y a qu’un seul couplet, conservé automatiquement. Elles sont
 cochées par défaut ; décocher les couplets à retirer. Les choix

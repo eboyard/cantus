@@ -5,10 +5,11 @@ from html import escape
 import json
 from pathlib import Path
 
-from scripts.song_selection import selected_song_parts, gospel_introduction, with_liturgical_introductions, reading_context, with_reading_introductions
+from scripts.song_selection import selected_song_parts, with_liturgical_introductions, reading_context
 from scripts.lyrics_format import formatted_lines, fragment_html
 from scripts.song_types import IMPLICIT_MOMENTS, MOMENTS, celebration_moments, read_song_type
 from scripts.aelf import psalm_source_key
+from scripts.liturgical_texts import text_key
 
 
 def create_song_sheet(
@@ -29,11 +30,9 @@ def create_song_sheet(
         raise ValueError("Choisissez les couplets pour chaque chant.")
     sections = []
     context = reading_context(songs, aelf_context)
-    gospel_intro = gospel_introduction([], context) if context else ""
     for position, (song_title, path) in enumerate(songs, start=1):
         parts = selected_song_parts(path, None if verses is None else verses[position - 1])
-        parts = with_reading_introductions(parts, moments[position - 1], context)
-        parts = with_liturgical_introductions(parts, moments[position - 1], gospel_intro, moments=moments)
+        parts = with_liturgical_introductions(parts, moments[position - 1], moments=moments)
         blocks = [part.text for part in parts]
         if not blocks:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole.")
@@ -49,6 +48,8 @@ def create_song_sheet(
         source = f' data-song-key="{escape(song_key, quote=True)}"' if song_key else ""
         if aelf_key:
             source += f' data-aelf-psalm="{escape(markdown, quote=True)}"'
+        if path.parent.name == "readings" and path.stem == text_key(markdown).split("/")[1]:
+            source = f' data-song-key="{text_key(markdown)}" data-reading-text="{escape(markdown, quote=True)}"'
         selected_verses = list(dict.fromkeys(part.identifier for part in parts if part.selectable))
         source += f' data-song-verses="{escape(json.dumps(selected_verses), quote=True)}"'
         source += f' data-song-moment="{escape(moments[position - 1], quote=True)}"'

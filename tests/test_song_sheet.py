@@ -111,9 +111,9 @@ class SongSheetTests(unittest.TestCase):
                     for slide in presentation.slides]
             self.assertEqual(text, ["Nous rappelons ta mort", "Notre Père", "", "Agnus Dei"])
             parts = selected_song_parts(anamnesis)
-            decorated = with_liturgical_introductions(parts, "Anamnèse", "")
-            self.assertEqual(with_liturgical_introductions(decorated, "Anamnèse", ""), decorated)
-            self.assertEqual(with_liturgical_introductions(parts, "Communion", ""), parts)
+            decorated = with_liturgical_introductions(parts, "Anamnèse")
+            self.assertEqual(with_liturgical_introductions(decorated, "Anamnèse"), decorated)
+            self.assertEqual(with_liturgical_introductions(parts, "Communion"), parts)
 
     def test_anamnesis_heading_is_implicit_on_phone_and_print(self):
         import pymupdf

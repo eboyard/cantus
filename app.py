@@ -17,7 +17,7 @@ import streamlit.components.v1 as components
 
 from scripts.markdown_to_pptx import build_slides, plain_text, read_slides, read_title, write_slides
 from scripts.song_sheet import create_song_sheet
-from scripts.song_selection import selected_song_parts, gospel_introduction, with_liturgical_introductions, reading_context, with_reading_introductions
+from scripts.song_selection import selected_song_parts, with_liturgical_introductions
 from scripts.word_song_sheet import create_word_song_sheet, DEFAULT_PLACE, MIME as WORD_MIME
 from scripts.github_pages import prepare_pages_export
 from scripts.github_publish import publish_sheet
@@ -28,6 +28,8 @@ from scripts.sheet_library import local_sheets, published_sheets, read_existing_
 from scripts.sheet_library import aelf_psalms_from_contents, aelf_context_from_contents, moments_from_contents
 from scripts.aelf import load_aelf_masses, mass_url, psalm_catalog, preferred_psalm_key
 from scripts.psautier import INDEX as PSAUTIER_INDEX, PSALM_REFERENCE, import_psalm, reference_label
+from scripts.liturgical_texts import reading_catalog, reading_documents
+from scripts.sheet_library import reading_texts_from_contents
 
 
 ROOT = Path(__file__).resolve().parent
@@ -52,16 +54,13 @@ def create_presentation(
     if verses is not None and len(verses) != len(songs):
         raise ValueError("Choisissez les couplets pour chaque chant.")
     sections = []
-    context = reading_context(songs, aelf_context)
-    gospel_intro = gospel_introduction([], context) if context else ""
     if moments is None:
         moments = [read_song_type(path) for _, path in songs]
     if len(moments) != len(songs):
         raise ValueError("Choisissez une rubrique pour chaque chant.")
     for position, (_, path) in enumerate(songs):
         parts = selected_song_parts(path, None if verses is None else verses[position])
-        parts = with_reading_introductions(parts, moments[position], context)
-        parts = with_liturgical_introductions(parts, moments[position], gospel_intro, moments=moments)
+        parts = with_liturgical_introductions(parts, moments[position], moments=moments)
         if not parts:
             raise ValueError(f"Le chant {path.name} ne contient aucune parole après sélection.")
         if sections:
@@ -177,6 +176,8 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
                 document = read_existing_sheet(choices[chosen], ROOT / "docs", github_setting("token"), repository)
                 aelf_documents = {**st.session_state.get("aelf_psalms", {}), **aelf_psalms_from_contents(document)}
                 imported_catalog = {**catalog, **psalm_catalog(aelf_documents, ROOT)}
+                readings = {**st.session_state.get("reading_texts", {}), **reading_texts_from_contents(document)}
+                imported_catalog.update(reading_catalog(readings, ROOT))
                 order = songs_from_contents(document, imported_catalog)
                 verses = verses_from_contents(document, order, imported_catalog)
                 moments = moments_from_contents(document, order, imported_catalog)
@@ -184,6 +185,7 @@ def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
                 context = aelf_context_from_contents(document)
                 catalog.update(imported_catalog)
                 st.session_state.aelf_psalms = aelf_documents
+                st.session_state.reading_texts = readings
                 st.session_state.selected_aelf_context = context
                 st.session_state.song_order = order
                 st.session_state.song_moments = moments
@@ -508,6 +510,7 @@ def show_preparation() -> None:
 
     catalog = song_catalog()
     catalog.update(psalm_catalog(st.session_state.get("aelf_psalms", {}), ROOT))
+    catalog.update(reading_catalog(st.session_state.get("reading_texts", {}), ROOT))
     if not catalog:
         st.error("Aucun chant n’a été trouvé dans le catalogue.")
         return
@@ -527,7 +530,8 @@ def show_preparation() -> None:
     celebration = st.session_state.celebration_title
     selected = st.selectbox(
         "Choisir un chant à ajouter",
-        options=sorted(catalog, key=lambda key: (catalog[key][0].casefold(), key)),
+        options=sorted((key for key in catalog if not key.startswith("reading/")),
+                       key=lambda key: (catalog[key][0].casefold(), key)),
         format_func=lambda key: catalog[key][0],
     )
     if st.button("Ajouter le chant"):
@@ -544,8 +548,10 @@ def show_preparation() -> None:
         index=None, placeholder="Psaumes et cantiques de Psautier.org",
         format_func=reference_label, key="psautier_choice",
     )
-    if st.button("Ajouter le psaume ou cantique", key="add_psautier",
-                 disabled=psautier_choice is None) and psautier_choice is not None:
+    add_psautier_column, psautier_link_column = st.columns(2)
+    psautier_link_column.link_button("Consulter Psautier.org", "https://psautier.org/")
+    if add_psautier_column.button("Ajouter le psaume ou cantique", key="add_psautier",
+                                 disabled=psautier_choice is None) and psautier_choice is not None:
         try:
             with st.spinner("Récupération du psaume ou cantique sur Psautier.org…"):
                 path = import_psalm(psautier_choice, ROOT / "chants")
@@ -560,20 +566,37 @@ def show_preparation() -> None:
             clear_moment_widgets()
             st.rerun()
 
-    st.subheader("Ordre des chants")
+    if aelf_context:
+        available_readings = reading_documents(aelf_context or "")
+        reading_options = reading_catalog(available_readings, ROOT)
+        if reading_options:
+            st.markdown("**Ajouter un texte de lecture**")
+            st.caption("Chaque bouton ajoute un intitulé à la fin de la liste. Déplacez-le ensuite à l’endroit souhaité.")
+            reading_columns = st.columns(len(reading_options))
+            for column, (reading_key, (title, _)) in zip(reading_columns, reading_options.items()):
+                if column.button(f"Ajouter : {title}", key=f"add_{title}"):
+                    st.session_state.reading_texts = {**st.session_state.get("reading_texts", {}),
+                                                      reading_key: available_readings[reading_key]}
+                    st.session_state.song_order.append(reading_key)
+                    st.session_state.song_moments.append("")
+                    st.session_state.song_verses.append(None)
+                    clear_moment_widgets()
+                    st.rerun()
+
+    st.subheader("Ordre des chants et des textes")
     song_order = st.session_state.song_order
     assigned_moments = st.session_state.song_moments
     verses = st.session_state.song_verses
     moments = list(assigned_moments)
     if not song_order:
-        st.info("Ajoutez un chant pour commencer.")
+        st.info("Ajoutez un chant ou un texte pour commencer.")
     else:
         st.caption("Le type du carnet est proposé pour chaque chant. Vous pouvez modifier tous les moments, y compris le premier et le dernier. Les moments suivent les chants lorsque vous les déplacez et sont conservés dans les feuilles publiées.")
         for position, key in enumerate(song_order):
             title_col, up_col, down_col, remove_col = st.columns([6, 1, 1, 1])
             title_col.write(f"{position + 1}. {catalog[key][0]}")
             moments[position] = title_col.selectbox(
-                f"Moment de la messe — chant {position + 1}", options=["", *MOMENTS],
+                f"Moment de la messe — {'texte' if key.startswith('reading/') else 'chant'} {position + 1}", options=["", *MOMENTS],
                 index=["", *MOMENTS].index(moments[position]),
                 key=f"sheet_moment_{position}",
                 format_func=lambda value: f"{MOMENTS.index(value) + 1}. {value}" if value else "Non renseigné",
@@ -624,23 +647,15 @@ def show_preparation() -> None:
                 st.rerun()
 
         with st.expander("Aperçu des paroles"):
-            try:
-                context = reading_context([catalog[key] for key in song_order], aelf_context)
-                gospel_intro = gospel_introduction([], context) if context else ""
-            except (OSError, ValueError) as error:
-                st.error(f"Impossible de lire l’introduction de l’Évangile : {error}")
-                gospel_intro = ""
-                context = ""
             for position, key in enumerate(song_order, start=1):
                 title, path = catalog[key]
                 try:
                     parts = selected_song_parts(path, verses[position - 1])
-                    parts = with_reading_introductions(parts, moments[position - 1], context)
                     for part in parts:
                         if part.kind == "lecture" and part.identifier == "L1":
                             st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
                     st.markdown(f"**{position}. {title}**")
-                    for part in with_liturgical_introductions(parts, moments[position - 1], gospel_intro, moments=moments):
+                    for part in with_liturgical_introductions(parts, moments[position - 1], moments=moments):
                         if part.kind == "lecture" and part.identifier == "L1":
                             continue
                         st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
