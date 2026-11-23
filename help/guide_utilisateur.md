@@ -29,12 +29,36 @@ liturgique comprise. La récupération est automatique au changement de date,
 sans bouton supplémentaire. Le titre reste modifiable.
 
 Si plusieurs messes ou psaumes sont proposés pour cette date, choisissez celui
-qui correspond à la célébration. Dépliez le titre du psaume pour lire son refrain
-et ses strophes, puis cliquez sur **Utiliser le psaume du jour**. Le psaume remplace
-celui déjà présent dans la liste et se place après le Gloria et avant l’Alléluia.
-Il est disponible pour le PowerPoint et les feuilles téléphone,
-imprimable et publiée. Les fichiers du carnet, y compris les psaumes avec des
-syllabes soulignées, ne sont pas modifiés.
+qui correspond à la célébration. Le psaume est présélectionné dans la liste
+**Choisir un psaume ou cantique à ajouter** de Psautier.org lorsque sa référence
+y figure. Cliquez sur **Ajouter le psaume ou cantique** pour l’insérer dans les
+chants, puis vérifiez son texte dans **Aperçu des paroles**.
+
+### Ajouter plusieurs psaumes ou cantiques
+
+Dans **Choisir un psaume ou cantique à ajouter**, recherchez une référence de
+Psautier.org, puis cliquez sur **Ajouter le psaume ou cantique**. La liste reprend
+les 217 pages du sélecteur du site : psaumes, cantiques de l’Ancien Testament (AT)
+et du Nouveau Testament (NT).
+
+Changer la date de la célébration ou la messe AELF présélectionne le psaume du
+jour dans cette liste lorsque sa référence y figure. Vous pouvez modifier ce
+choix avant de cliquer sur **Ajouter le psaume ou cantique**.
+
+Chaque ajout conserve les chants déjà choisis. Vous pouvez ajouter plusieurs
+psaumes ou cantiques, y compris plusieurs occurrences du même texte, puis les
+déplacer et choisir leurs strophes comme pour les chants. Leur moment proposé
+est **Psaume**, mais il reste modifiable.
+
+Le texte complet est récupéré seulement au premier ajout et enregistré dans
+`chants/psautier_<référence>.md`, sans écraser les versions de l’équipe. Le titre,
+les strophes, les soulignements, le gras et la source sont conservés. Les
+doxologies annexes et commentaires ne sont pas ajoutés. Ces fichiers rejoignent
+le carnet et servent aux exports téléphone, imprimable, Word et PowerPoint.
+Les ajouts suivants réutilisent le fichier local, y compris vos modifications.
+Leur conservation sur un autre serveur nécessite de transférer ces fichiers
+avec le carnet. L’import et les exports doivent être couverts par vos droits
+de reproduction des textes.
 
 Si un fichier Markdown du dossier `chants` porte le même numéro de psaume et
 contient les mêmes versets, cette version mise en page par l’équipe est utilisée

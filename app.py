@@ -27,6 +27,7 @@ from scripts.lyrics_format import lyrics_html
 from scripts.sheet_library import local_sheets, published_sheets, read_existing_sheet, songs_from_contents, verses_from_contents, title_from_contents
 from scripts.sheet_library import aelf_psalms_from_contents, aelf_context_from_contents, moments_from_contents
 from scripts.aelf import load_aelf_masses, mass_url, psalm_catalog, preferred_psalm_key
+from scripts.psautier import INDEX as PSAUTIER_INDEX, PSALM_REFERENCE, import_psalm, reference_label
 
 
 ROOT = Path(__file__).resolve().parent
@@ -441,6 +442,9 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
     def apply_choice():
         _, masses = st.session_state.aelf_loaded
         chosen = next(mass for mass in masses if mass.key == st.session_state.aelf_mass_choice)
+        reference = PSALM_REFERENCE.match(chosen.reference)
+        psautier_key = reference[1].lower() if reference else None
+        st.session_state.psautier_choice = psautier_key if psautier_key in PSAUTIER_INDEX else None
         st.session_state.selected_aelf_context = chosen.markdown
         st.session_state.celebration_title = chosen.title
         preferred_key = preferred_psalm_key(chosen, catalog)
@@ -496,41 +500,6 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
             st.selectbox("Messe et psaume proposés par l’AELF", list(options), key="aelf_mass_choice",
                          format_func=lambda key: f"{options[key].name} — {options[key].reference}",
                          on_change=apply_choice)
-            chosen = options[st.session_state.aelf_mass_choice]
-        else:
-            chosen = masses[0]
-        preferred_key = preferred_psalm_key(chosen, catalog)
-        with st.expander(catalog[preferred_key][0]):
-            st.caption(f"{chosen.name} — {chosen.reference}")
-            if preferred_key != chosen.key:
-                st.caption("Version du carnet mise en page par l’équipe.")
-            # Une seule occurrence de chaque partie dans cet aperçu.
-            seen = set()
-            parts = with_reading_introductions(
-                selected_song_parts(catalog[preferred_key][1]), "Psaume", chosen.markdown,
-            )
-            for part in parts:
-                if part.identifier not in seen:
-                    st.markdown(lyrics_html(part.text), unsafe_allow_html=True)
-                    seen.add(part.identifier)
-            st.link_button("Lire les textes sur AELF", chosen.url)
-        if st.button("Utiliser le psaume du jour", key="use_aelf_psalm"):
-            order = st.session_state.song_order
-            assigned = st.session_state.song_moments
-            verses = st.session_state.song_verses
-            position = next((i for i, moment in enumerate(assigned) if moment == "Psaume"), None)
-            if position is not None:
-                order.pop(position)
-                assigned.pop(position)
-                verses.pop(position)
-            position = moment_insertion_index(assigned, "Psaume")
-            order.insert(position, preferred_key)
-            assigned.insert(position, "Psaume")
-            verses.insert(position, None)
-            st.session_state.selected_aelf_context = chosen.markdown
-            st.session_state.selected_daily_psalm = preferred_key
-            clear_moment_widgets()
-            st.rerun()
     return day
 
 
@@ -569,6 +538,27 @@ def show_preparation() -> None:
         st.session_state.song_verses.insert(position, None)
         clear_moment_widgets()
         st.rerun()
+
+    psautier_choice = st.selectbox(
+        "Choisir un psaume ou cantique à ajouter", options=list(PSAUTIER_INDEX),
+        index=None, placeholder="Psaumes et cantiques de Psautier.org",
+        format_func=reference_label, key="psautier_choice",
+    )
+    if st.button("Ajouter le psaume ou cantique", key="add_psautier",
+                 disabled=psautier_choice is None) and psautier_choice is not None:
+        try:
+            with st.spinner("Récupération du psaume ou cantique sur Psautier.org…"):
+                path = import_psalm(psautier_choice, ROOT / "chants")
+            key = path.relative_to(ROOT).as_posix()
+        except (OSError, ValueError, UnicodeError) as error:
+            st.error(f"Impossible d’ajouter le psaume ou cantique : {error}")
+        else:
+            position = moment_insertion_index(st.session_state.song_moments, "Psaume")
+            st.session_state.song_order.insert(position, key)
+            st.session_state.song_moments.insert(position, "Psaume")
+            st.session_state.song_verses.insert(position, None)
+            clear_moment_widgets()
+            st.rerun()
 
     st.subheader("Ordre des chants")
     song_order = st.session_state.song_order

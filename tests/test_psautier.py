@@ -1,4 +1,5 @@
-from datetime import date
+from dataclasses import replace
+from datetime import date, timedelta
 from io import BytesIO
 import json
 from pathlib import Path
@@ -7,11 +8,13 @@ import unittest
 from unittest.mock import patch
 from urllib.error import URLError
 
+from streamlit.testing.v1 import AppTest
+
 from scripts.aelf import load_aelf_masses, parse_aelf_response, preferred_psalm_key, psalm_catalog
 from scripts.lyrics_format import formatted_lines
-from scripts.markdown_to_pptx import build_song_parts, plain_text
-from scripts.psautier import INDEX, _download, format_stanza, format_stanzas
-from scripts.sheet_library import aelf_psalms_from_contents
+from scripts.markdown_to_pptx import build_song_parts, plain_text, read_title
+from scripts.psautier import INDEX, _download, format_stanza, format_stanzas, import_psalm, parse_index, parse_psalm
+from scripts.sheet_library import aelf_psalms_from_contents, songs_from_contents
 from scripts.song_sheet import create_song_sheet
 
 
@@ -24,6 +27,136 @@ def fixture(number):
 
 
 class PsautierTests(unittest.TestCase):
+    def test_ui_date_and_mass_preselect_psautier_and_preserve_manual_choice(self):
+        payload = json.loads((FIXTURES / "aelf_2026_11_15.json").read_text(encoding="utf-8"))
+        mass, = parse_aelf_response(payload, DAY)
+        payload["messes"].append(json.loads(json.dumps(payload["messes"][0])))
+        for reading in payload["messes"][1]["lectures"]:
+            if reading.get("type") == "psaume":
+                reading["ref"] = "Ps 79 (80), 2ac.3bc"
+        variants = parse_aelf_response(payload, DAY)
+        root = Path(__file__).resolve().parents[1]
+        catalog = {"entry": ("Entrée", root / "chants/habiter_le_seuil_de_ta_maison_seigneur.md")}
+        with TemporaryDirectory() as directory, patch("app.ROOT", Path(directory)), \
+                patch("app.song_catalog", side_effect=lambda: dict(catalog)), \
+                patch("app.load_aelf_masses", return_value=variants) as fetch, \
+                patch("app.import_psalm") as download:
+            app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
+            app.session_state["celebration_date"] = DAY - timedelta(days=1)
+            app.run()
+            self.assertIsNone(app.selectbox(key="psautier_choice").value)
+            fetch.assert_not_called()
+            app.date_input(key="celebration_date").set_value(DAY).run()
+            self.assertFalse(app.exception)
+            self.assertEqual(app.selectbox(key="psautier_choice").value, "127")
+            app.selectbox(key="psautier_choice").select("at40").run()
+            app.run()
+            self.assertEqual(app.selectbox(key="psautier_choice").value, "at40")
+            app.selectbox(key="aelf_mass_choice").select(variants[1].key).run()
+            self.assertEqual(app.selectbox(key="psautier_choice").value, "79")
+            fetch.side_effect = ValueError("AELF indisponible")
+            app.date_input(key="celebration_date").set_value(DAY + timedelta(days=1)).run()
+            self.assertEqual(app.selectbox(key="psautier_choice").value, "79")
+            fetch.side_effect = None
+            fetch.return_value = [replace(mass, reference="Is 12, 2-6")]
+            app.date_input(key="celebration_date").set_value(DAY).run()
+            self.assertFalse(app.exception)
+            self.assertIsNone(app.selectbox(key="psautier_choice").value)
+            self.assertTrue(app.button(key="add_psautier").disabled)
+            self.assertEqual(app.session_state["song_order"], [])
+            download.assert_not_called()
+
+    def test_index_includes_split_psalms_and_canticles_and_rejects_external_pages(self):
+        document = ('<select id="navigationHaut"><option value="ignored"></select>'
+                    '<select id="navigationBas">'
+                    '<option value="Psaume_151_s_Psaume_autographe.html">psaume 151 s</option>'
+                    '<option value="Cantique_AT9b_Les_justes.html">cantique AT 9b</option>'
+                    '<option value="Cantique_NT0_Les_Beatitudes.html">cantique NT 0</option></select>')
+        self.assertEqual(list(parse_index(document)), ["151_s", "at9b", "nt0"])
+        for invalid in (document.replace("Psaume_151_s_", "https://example.org/Psaume_151_s_"),
+                        document.replace("Psaume_151_s_", "../Psaume_151_s_"), "<select></select>"):
+            with self.assertRaises(ValueError):
+                parse_index(invalid)
+
+    def test_complete_import_preserves_stanzas_styles_and_source_without_commentary(self):
+        document = ('<h1>Cantique</h1><h2>Un titre</h2><table>'
+                    '<tr><td></td><td>1</td><td><b>Mon <u>Dieu</u></b> ! *</td></tr>'
+                    '<tr><td></td><td></td><td>Une autre ligne.</td></tr>'
+                    '<tr><td></td><td></td><td>&nbsp;</td></tr>'
+                    '<tr><td></td><td>2</td><td>Écoute <u>encore</u>.</td></tr></table>'
+                    '<h2>Doxologie</h2><table><tr><td></td><td></td><td>À exclure.</td></tr></table>'
+                    '<div class="copyright">Copyright exemple.<br>Tous droits réservés.</div>')
+        markdown = parse_psalm(document, "at40")
+        parts = build_song_parts(markdown)
+        self.assertEqual(len(parts), 2)
+        fragments = [fragment for line in formatted_lines(parts[0].text) for fragment in line]
+        self.assertTrue(any(fragment.text == "Dieu" and fragment.bold and fragment.underline
+                            for fragment in fragments))
+        self.assertEqual(plain_text(parts[0].text), "Mon Dieu ! *\nUne autre ligne.")
+        self.assertIn("Écoute <u>encore</u>.", parts[1].text)
+        self.assertIn("<!-- titre: Cantique AT 40 — Un titre -->", markdown)
+        self.assertIn("<!-- type: Psaume -->", markdown)
+        self.assertIn(INDEX["at40"], markdown)
+        self.assertIn("Copyright exemple.", markdown)
+        self.assertNotIn("À exclure", markdown)
+        for invalid in ("", "<h1>Titre</h1><h2>Texte</h2><table></table>"):
+            with self.assertRaises(ValueError):
+                parse_psalm(invalid, "at40")
+
+    def test_import_persists_and_reuses_local_edits_without_overwriting_other_psalms(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            existing = root / "psaume_127.md"
+            existing.write_text("Version de l’équipe", encoding="utf-8")
+            with patch("scripts.psautier._download", return_value=fixture(127)) as download:
+                path = import_psalm("127", root)
+                path.write_text(path.read_text(encoding="utf-8") + "\nAjout manuel.\n", encoding="utf-8")
+                self.assertEqual(import_psalm("127", root), path)
+                download.assert_called_once_with(INDEX["127"])
+            self.assertIn("Ajout manuel.", path.read_text(encoding="utf-8"))
+            self.assertEqual(existing.read_text(encoding="utf-8"), "Version de l’équipe")
+            with patch("scripts.psautier._download", side_effect=URLError("offline")):
+                with self.assertRaises(URLError):
+                    import_psalm("at40", root)
+            self.assertFalse((root / "psautier_at40.md").exists())
+            with self.assertRaises(ValueError):
+                import_psalm("../outside", root)
+
+    def test_ui_adds_multiple_psalms_and_canticles_without_replacing_and_exports_them(self):
+        canticle = ('<h1>Cantique</h1><h2>Un cantique</h2><table>'
+                    '<tr><td></td><td>1</td><td>À toi, <u>louange</u>.</td></tr></table>')
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            songs = root / "chants"
+            songs.mkdir()
+            existing = songs / "psaume_62.md"
+            existing.write_text("<!-- titre: Psaume 62 -->\nParoles existantes.", encoding="utf-8")
+            with patch("app.ROOT", root), patch("app.SONGS_DIR", songs), \
+                    patch("scripts.psautier._download", side_effect=[fixture(127), canticle]) as download:
+                app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
+                app.session_state["song_order"] = ["chants/psaume_62.md"]
+                app.run()
+                for key in ("127", "at40", "127"):
+                    app.selectbox(key="psautier_choice").select(key).run()
+                    app.button(key="add_psautier").click().run()
+                    self.assertFalse(app.exception)
+                expected = ["chants/psaume_62.md", "chants/psautier_127.md",
+                            "chants/psautier_at40.md", "chants/psautier_127.md"]
+                self.assertEqual(app.session_state["song_order"], expected)
+                self.assertEqual(app.session_state["song_moments"], ["Psaume"] * 4)
+                self.assertEqual(download.call_count, 2)
+                next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
+                document = app.session_state["generated_song_sheet"][1].decode()
+                self.assertIn("<u>louange</u>", document)
+                catalog = {key: (read_title(root / key), root / key) for key in expected}
+                self.assertEqual(songs_from_contents(document, catalog), expected)
+                before = list(app.session_state["song_order"])
+                download.side_effect = URLError("offline")
+                app.selectbox(key="psautier_choice").select("nt0").run()
+                app.button(key="add_psautier").click().run()
+                self.assertEqual(app.session_state["song_order"], before)
+                self.assertTrue(any("Impossible d’ajouter" in error.value for error in app.error))
+
     def test_november_29_unprefixed_reference_and_omitted_half_verses(self):
         payload = json.loads((FIXTURES / "aelf_2026_11_29.json").read_text(encoding="utf-8"))
         original, = parse_aelf_response(payload, date(2026, 11, 29))

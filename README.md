@@ -105,11 +105,23 @@ Pour générer le diaporama d'une messe à partir de son index :
 ### carnet de chants
 
 Dans la préparation, l'ajout d'un chant typé l'insère selon l'ordre des moments
-liturgiques. Le psaume du jour est placé après le Gloria et avant l'Alléluia,
-y compris lorsqu'il remplace un psaume déjà sélectionné. Les titres du carnet
+liturgiques. Un psaume ajouté est placé après le Gloria et avant l'Alléluia.
+Les titres du carnet
 au format « Messe de … - Gloria » ou « Messe de … - Alléluia » sont reconnus.
 La version du psaume trouvée dans le carnet conserve ses paroles et sa mise en
 forme ; les titres AELF des lectures l'encadrent dans l'aperçu et les exports.
+
+Le sélecteur **Choisir un psaume ou cantique à ajouter** reprend les 217 références
+de la page HTML Psautier.org. Chaque ajout conserve les autres chants et permet
+plusieurs psaumes ou cantiques, avec le même réordonnancement et le même choix
+de strophes que les chants. Sous réserve des droits de reproduction, le premier
+ajout importe le texte complet avec ses soulignements et son gras dans
+`chants/psautier_<référence>.md` ; les suivants réutilisent ce fichier local sans
+l’écraser. La source et les mentions de droits sont conservées en métadonnées.
+Les doxologies annexes et commentaires ne sont pas importés.
+Le changement de date ou de messe AELF présélectionne aussi le psaume du jour
+dans ce sélecteur si sa référence y figure ; le choix reste modifiable avant ajout.
+Pour déployer ces ajouts ailleurs, transférer aussi les fichiers du carnet.
 
 À la récupération sur AELF, les psaumes bénéficient des soulignements, du gras
 éventuel et des retours à la ligne de psautier.org. L’index des pages est fourni

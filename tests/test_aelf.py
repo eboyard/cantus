@@ -26,7 +26,7 @@ def response():
 
 
 class AelfTests(unittest.TestCase):
-    def test_team_psalm_has_reading_titles_in_preview_and_is_inserted_between_gloria_and_alleluia(self):
+    def test_team_psalm_keeps_reading_titles_in_shared_preview_and_liturgical_order(self):
         payload = response()
         before, after = "Lecture du livre des Proverbes", "Lecture de la lettre de saint Paul"
         payload["messes"][0]["lectures"] = [
@@ -55,20 +55,19 @@ class AelfTests(unittest.TestCase):
             self.assertEqual(app.session_state["song_moments"], ["Gloire à Dieu", "Psaume", "Acclamation de l’Évangile"])
             app.session_state["song_verses"] = [[], None, None]
             app.date_input(key="celebration_date").set_value(DAY).run()
-            preview = next(item for item in app.expander if item.label == catalog[keys[1]][0])
+            preview = next(item for item in app.expander if item.label == "Aperçu des paroles")
             text = "\n".join(item.value for item in preview.markdown)
             self.assertIn(before, text)
             self.assertIn(after, text)
             self.assertLess(text.index(before), text.index("Heu<u>reux"))
             self.assertLess(text.index("Heu<u>reux"), text.index(after))
-            app.button(key="use_aelf_psalm").click().run()
+            self.assertFalse(any(button.key == "use_aelf_psalm" for button in app.button))
+            self.assertFalse(any(item.label == catalog[keys[1]][0] for item in app.expander))
             self.assertEqual(app.session_state["song_order"], keys)
             self.assertEqual(app.session_state["song_verses"], [[], [], []])
-            # Un psaume déjà présent mais mal placé est replacé sans perdre les autres choix.
+            # Le déplacement manuel reste disponible après récupération des textes.
             app.button(key="down-1").click().run()
             self.assertEqual(app.session_state["song_order"], [keys[0], keys[2], keys[1]])
-            app.button(key="use_aelf_psalm").click().run()
-            self.assertEqual(app.session_state["song_order"], keys)
             self.assertEqual(app.session_state["song_verses"], [[], [], []])
         self.assertEqual(catalog[keys[1]][1].read_bytes(), original)
 
@@ -95,7 +94,7 @@ class AelfTests(unittest.TestCase):
                 self.assertIn(f'<h2 id="titre-1">{expected}</h2>', html)
                 self.assertNotIn("&lt;!--", html.split("</h2>", 1)[1])
 
-    def test_daily_psalm_22_uses_team_file_in_preview_and_exports(self):
+    def test_manually_added_psalm_22_uses_team_file_in_preview_and_exports(self):
         payload = json.loads(FIXTURE.with_name("aelf_2026_11_22.json").read_text(encoding="utf-8"))
         mass, = parse_aelf_response(payload, date(2026, 11, 22))
         root = Path(__file__).resolve().parents[1]
@@ -111,9 +110,9 @@ class AelfTests(unittest.TestCase):
             app.session_state["celebration_date"] = mass.day - timedelta(days=1)
             app.run()
             app.date_input(key="celebration_date").set_value(mass.day).run()
-            self.assertTrue(any(item.label == title for item in app.expander))
-            self.assertTrue(any("Version du carnet" in item.value for item in app.caption))
-            app.button(key="use_aelf_psalm").click().run()
+            self.assertEqual(app.selectbox(key="psautier_choice").value, "22")
+            next(box for box in app.selectbox if box.label == "Choisir un chant à ajouter").select(key).run()
+            next(button for button in app.button if button.label == "Ajouter le chant").click().run()
             self.assertFalse(app.exception)
             self.assertEqual(app.session_state["song_order"], [key])
             next(b for b in app.button if b.label == "Créer la feuille de chants").click().run()
@@ -127,7 +126,7 @@ class AelfTests(unittest.TestCase):
                 self.assertIn("je ne manque de rien.", html)
         self.assertEqual(path.read_text(encoding="utf-8"), original)
 
-    def test_daily_psalm_prefers_matching_team_markdown_and_updates_with_mass(self):
+    def test_legacy_daily_psalm_prefers_matching_team_markdown_and_updates_with_mass(self):
         mass, = parse_aelf_response(response(), DAY)
         payload = response()
         payload["messes"][0]["lectures"][0]["contenu"] = "<p>Autres versets du même psaume.</p>"
@@ -142,10 +141,12 @@ class AelfTests(unittest.TestCase):
                 patch("app.song_catalog", side_effect=lambda: dict(catalog)), \
                 patch("app.load_aelf_masses", return_value=[mass]) as fetch:
             app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
+            # Une ancienne préparation peut encore contenir un psaume AELF suivi.
+            app.session_state["song_order"] = [key]
+            app.session_state["selected_daily_psalm"] = key
             app.session_state["celebration_date"] = DAY - timedelta(days=1)
             app.run()
             app.date_input(key="celebration_date").set_value(DAY).run()
-            app.button(key="use_aelf_psalm").click().run()
             self.assertFalse(app.exception)
             self.assertEqual(app.session_state["song_order"], [key])
             self.assertEqual(app.session_state["selected_aelf_context"], mass.markdown)
@@ -200,7 +201,7 @@ class AelfTests(unittest.TestCase):
             app.session_state["celebration_date"] = DAY - timedelta(days=1)
             app.run()
             app.date_input(key="celebration_date").set_value(DAY).run()
-            # Garde le psaume du carnet : aucun clic sur « Utiliser le psaume du jour ».
+            # La récupération conserve le psaume du carnet déjà choisi.
             self.assertEqual(app.session_state["song_order"], list(catalog))
             next(b for b in app.button if b.label == "Créer la feuille de chants").click().run()
             next(b for b in app.button if b.label == "Préparer pour GitHub Pages").click().run()
@@ -409,7 +410,7 @@ class AelfTests(unittest.TestCase):
             self.assertEqual(title_from_contents(html), mass.title)
             self.assertEqual(create_song_sheet(mass.title, [restored[mass.key]], verses=[["C1", "C3"]]).decode(), html)
 
-    def test_ui_date_import_adds_psalm_exports_and_preserves_work_on_failure(self):
+    def test_ui_date_import_keeps_legacy_psalm_exports_and_preserves_work_on_failure(self):
         mass, = parse_aelf_response(response(), DAY)
         root = Path(__file__).resolve().parents[1]
         catalog = {
@@ -430,7 +431,10 @@ class AelfTests(unittest.TestCase):
             self.assertFalse(app.exception)
             self.assertEqual(app.text_input(key="celebration_title").value, mass.title)
             self.assertEqual(app.session_state["song_order"], ["entry", "old", "exit"])
-            app.button(key="use_aelf_psalm").click().run()
+            # Simule une préparation enregistrée avec l'ancien import AELF.
+            app.session_state["song_order"] = ["entry", mass.key, "exit"]
+            app.session_state["song_verses"] = [None, None, None]
+            app.run()
             self.assertFalse(app.exception)
             self.assertEqual(app.session_state["song_order"], ["entry", mass.key, "exit"])
             app.checkbox(key="sheet_verses_1_C2").uncheck().run()
@@ -476,11 +480,12 @@ class AelfTests(unittest.TestCase):
                 patch("app.song_catalog", side_effect=lambda: dict(catalog)), \
                 patch("app.load_aelf_masses", return_value=variants) as fetch:
             app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
-            app.session_state["song_order"] = list(catalog)
+            # Les anciennes préparations AELF continuent à suivre la messe choisie.
+            app.session_state["aelf_psalms"] = {variants[0].key: variants[0].markdown}
+            app.session_state["song_order"] = ["entry", "gloria", variants[0].key, "exit"]
             app.session_state["celebration_date"] = DAY - timedelta(days=1)
             app.run()
             app.date_input(key="celebration_date").set_value(DAY).run()
-            app.button(key="use_aelf_psalm").click().run()
             self.assertEqual(app.session_state["song_order"], ["entry", "gloria", variants[0].key, "exit"])
             app.selectbox(key="aelf_mass_choice").select(variants[1].key).run()
             self.assertEqual(app.session_state["song_order"][2], variants[1].key)
@@ -490,7 +495,6 @@ class AelfTests(unittest.TestCase):
             app.run()  # Le sélecteur de variantes a disparu : le choix unique reste utilisable.
             self.assertFalse(app.exception)
             self.assertEqual(app.session_state["song_order"], ["entry", "gloria", next_mass.key, "exit"])
-            app.button(key="use_aelf_psalm").click().run()
             self.assertEqual(len(app.session_state["song_order"]), 4)
 
 
