@@ -1,4 +1,4 @@
-<!-- titre: Louez Dieu, tous les peuples (Alléluia irlandais) -->
+<!-- titre: Alléluia irlandais -->
 
 <!-- ordre: C1 R -->
 
