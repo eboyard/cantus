@@ -1,4 +1,4 @@
-<!-- titre: Laissez-vous consumer -->
+<!-- titre: --> Laissez-vous consumer
 
 <!-- refrain -->
 Laissez-vous consumer par le feu de l'amour de mon cœur.
