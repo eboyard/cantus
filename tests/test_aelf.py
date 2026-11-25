@@ -373,6 +373,7 @@ class AelfTests(unittest.TestCase):
         payload = response()
         other = deepcopy(payload["messes"][0])
         other["nom"] = "Messe de la veille"
+        other["lectures"][0]["type"] = "cantique"
         other["lectures"][0]["ref"] = "Is 12, 2-3"
         payload["messes"].append(other)
         masses = parse_aelf_response(payload, DAY)
@@ -380,6 +381,46 @@ class AelfTests(unittest.TestCase):
         self.assertEqual(masses[1].name, "Messe de la veille")
         self.assertNotEqual(masses[0].key, masses[1].key)
         self.assertIn("Is 12", masses[1].psalm_title)
+        self.assertTrue(masses[1].psalm_title.startswith("Cantique (Is 12"))
+
+    def test_december_13_canticle_loads_and_can_be_published(self):
+        fixture = FIXTURE.with_name("aelf_2026_12_13.json")
+        with patch("scripts.aelf.urlopen", return_value=BytesIO(fixture.read_bytes())), \
+                patch("scripts.aelf.format_stanzas", side_effect=lambda ref, stanzas: (stanzas, None)):
+            mass, = load_aelf_masses(date(2026, 12, 13))
+        self.assertEqual(mass.title, "3ème Dimanche de l'Avent, de Gaudete (semaine III du Psautier) — Année B")
+        self.assertTrue(mass.psalm_title.startswith("Cantique (Lc 1"))
+        self.assertIn("Mon âme exulte en mon Dieu.", mass.psalm_title)
+        with TemporaryDirectory() as directory:
+            catalog = psalm_catalog({mass.key: mass.markdown}, Path(directory))
+            document = create_song_sheet(mass.title, [catalog[mass.key]]).decode()
+            self.assertIn("Mon âme exalte le Seigneur", document)
+            self.assertEqual(aelf_psalms_from_contents(document), {mass.key: mass.markdown})
+
+    def test_ui_without_psalm_recovers_title_and_keeps_songs(self):
+        old, = parse_aelf_response(response(), DAY)
+        payload = response()
+        payload["messes"][0]["lectures"] = [{"type": "evangile", "intro_lue": "Évangile du jour"}]
+        missing, = parse_aelf_response(payload, DAY)
+        self.assertEqual(missing.markdown, "")
+        with TemporaryDirectory() as directory, patch("app.ROOT", Path(directory)), \
+                patch("app.load_aelf_masses", return_value=[missing]):
+            app = AppTest.from_string("from app import show_aelf_import\nshow_aelf_import({})", default_timeout=20)
+            app.session_state["celebration_date"] = DAY - timedelta(days=1)
+            app.session_state["song_order"] = [old.key]
+            app.session_state["song_verses"] = [["C1"]]
+            app.session_state["song_moments"] = ["Psaume"]
+            app.session_state["selected_aelf_context"] = old.markdown
+            app.run()
+            app.date_input(key="celebration_date").set_value(DAY).run()
+            self.assertFalse(app.exception)
+            self.assertFalse(app.error)
+            self.assertEqual(app.text_input(key="celebration_title").value, missing.title)
+            self.assertEqual(app.session_state["song_order"], [old.key])
+            self.assertEqual(app.session_state["song_verses"], [["C1"]])
+            self.assertIsNone(app.session_state["selected_aelf_context"])
+            self.assertEqual(app.session_state["aelf_psalms"], {})
+            self.assertIn("Aucun psaume ni cantique", app.info[0].value)
 
     def test_api_get_and_readable_failures(self):
         formatting = patch("scripts.aelf.format_stanzas", side_effect=lambda ref, stanzas: (stanzas, None))
@@ -405,8 +446,9 @@ class AelfTests(unittest.TestCase):
                 parse_aelf_response(payload, DAY)
         payload = response()
         payload["messes"] = []
-        with self.assertRaisesRegex(ValueError, "Aucun psaume"):
-            parse_aelf_response(payload, DAY)
+        mass, = parse_aelf_response(payload, DAY)
+        self.assertEqual(mass.title, parse_aelf_response(response(), DAY)[0].title)
+        self.assertEqual(mass.markdown, "")
 
     def test_published_psalm_can_be_reopened_without_catalog_or_network(self):
         mass, = parse_aelf_response(response(), DAY)

@@ -447,13 +447,13 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
         reference = PSALM_REFERENCE.match(chosen.reference)
         psautier_key = reference[1].lower() if reference else None
         st.session_state.psautier_choice = psautier_key if psautier_key in PSAUTIER_INDEX else None
-        st.session_state.selected_aelf_context = chosen.markdown
+        st.session_state.selected_aelf_context = chosen.markdown or None
         st.session_state.celebration_title = chosen.title
         preferred_key = preferred_psalm_key(chosen, catalog)
         previous_key = st.session_state.get("selected_daily_psalm")
         # Un psaume déjà importé suit la nouvelle date ou la nouvelle messe choisie.
         for position, key in enumerate(st.session_state.song_order):
-            if key.startswith("aelf/") or key == previous_key:
+            if chosen.markdown and (key.startswith("aelf/") or key == previous_key):
                 if key != preferred_key:
                     st.session_state.song_order[position] = preferred_key
                     st.session_state.song_verses[position] = None
@@ -469,7 +469,7 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
             with st.spinner("Récupération du nom de la messe et du psaume sur AELF…"):
                 masses = load_aelf_masses(day)
                 documents = {**st.session_state.get("aelf_psalms", {}),
-                             **{mass.key: mass.markdown for mass in masses}}
+                             **{mass.key: mass.markdown for mass in masses if mass.markdown}}
                 additions = psalm_catalog(documents, ROOT)
             catalog.update(additions)
             st.session_state.aelf_psalms = documents
@@ -500,8 +500,11 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
         if len(masses) > 1:
             options = {mass.key: mass for mass in masses}
             st.selectbox("Messe et psaume proposés par l’AELF", list(options), key="aelf_mass_choice",
-                         format_func=lambda key: f"{options[key].name} — {options[key].reference}",
+                         format_func=lambda key: f"{options[key].name} — {options[key].reference or 'Sans psaume ni cantique'}",
                          on_change=apply_choice)
+        chosen = next(mass for mass in masses if mass.key == st.session_state.aelf_mass_choice)
+        if not chosen.markdown:
+            st.info("Le nom de la célébration a été récupéré. Aucun psaume ni cantique n’est proposé par l’AELF ; les chants choisis ont été conservés.")
     return day
 
 
