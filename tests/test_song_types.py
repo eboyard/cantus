@@ -12,6 +12,12 @@ from scripts.song_types import MOMENTS, celebration_moments, moment_insertion_in
 
 
 class SongTypesTests(unittest.TestCase):
+    def test_cantique_type_is_inserted_between_psalm_and_acclamation(self):
+        markdown = set_song_type("<!-- titre: Magnificat -->\nParoles", "Cantique")
+        self.assertEqual(song_type(markdown), "Cantique")
+        self.assertEqual(moment_insertion_index(["Psaume", "Acclamation de l’Évangile"], "Cantique"), 1)
+        self.assertEqual(moment_insertion_index(["Cantique"], "Psaume"), 0)
+
     def test_notre_pere_and_agnus_have_distinct_types_in_liturgical_order(self):
         self.assertEqual(MOMENTS[MOMENTS.index("Anamnèse"):MOMENTS.index("Communion") + 1],
                          ("Anamnèse", "Notre Père", "Agneau de Dieu", "Communion"))
@@ -25,8 +31,8 @@ class SongTypesTests(unittest.TestCase):
 
     def test_mass_prefixed_titles_are_typed_without_overriding_explicit_type(self):
         for title, moment in (("Messe de Saint Augustin - Gloria", MOMENTS[2]),
-                              ("Messe de St Augustin - Alléluia", MOMENTS[4]),
-                              ("Messe de la Grâce — Sanctus", MOMENTS[7])):
+                              ("Messe de St Augustin - Alléluia", "Acclamation de l’Évangile"),
+                              ("Messe de la Grâce — Sanctus", "Sanctus")):
             with self.subTest(title=title):
                 markdown = f"<!-- titre: {title} -->\nParoles"
                 self.assertEqual(song_type(markdown), moment)
@@ -88,10 +94,10 @@ class SongTypesTests(unittest.TestCase):
     def test_known_types_and_ambiguous_titles(self):
         for title, moment in (("Gloria (Messe)", MOMENTS[2]),
                               ("Jésus, Verbe de Dieu (Kyrie)", MOMENTS[1]),
-                              ("Sanctus", MOMENTS[7]), ("Anamnèse", MOMENTS[8]),
+                              ("Sanctus", "Sanctus"), ("Anamnèse", "Anamnèse"),
                               ("Agnus Dei", 'Agneau de Dieu'), ("Psaume 62", MOMENTS[3]),
-                              ("Alléluia (Messe de la grâce)", MOMENTS[4]),
-                              ("Écoute-nous (Prière universelle)", MOMENTS[5]),
+                              ("Alléluia (Messe de la grâce)", "Acclamation de l’Évangile"),
+                              ("Écoute-nous (Prière universelle)", "Prières universelles"),
                               ("Psaume de la création", ""), ("Chante Alléluia au Seigneur", ""),
                               ("Je veux chanter ton amour", "")):
             with self.subTest(title=title):
@@ -113,14 +119,14 @@ class SongTypesTests(unittest.TestCase):
             pdf, _ = create_print_song_sheet("Messe", [("Titre", path)] * 3,
                                            moments=[MOMENTS[0], MOMENTS[0], 'Envoi'])
             forced_pdf, _ = create_print_song_sheet("Messe", [("Titre", path)] * 3,
-                                                  moments=[MOMENTS[7]] * 3)
+                                                  moments=["Sanctus"] * 3)
             with pymupdf.open(stream=default_pdf, filetype="pdf") as doc:
                 lines = doc[0].get_text().splitlines()
                 for moment in (MOMENTS[0], MOMENTS[2], MOMENTS[-1]):
                     self.assertNotIn(moment, lines)
             with pymupdf.open(stream=forced_pdf, filetype="pdf") as doc:
                 lines = doc[0].get_text().splitlines()
-                for moment in (MOMENTS[0], MOMENTS[7], MOMENTS[-1]):
+                for moment in (MOMENTS[0], "Sanctus", MOMENTS[-1]):
                     self.assertNotIn(moment, lines)
             with pymupdf.open(stream=pdf, filetype="pdf") as doc:
                 text = "".join(page.get_text() for page in doc)
@@ -141,16 +147,18 @@ class SongTypesTests(unittest.TestCase):
         self.assertFalse(app.selectbox(key="sheet_moment_3").disabled)
         self.assertEqual(app.selectbox(key="sheet_moment_0").value, MOMENTS[1])
         self.assertEqual(app.selectbox(key="sheet_moment_3").value, MOMENTS[1])
+        options = app.selectbox(key="sheet_moment_2").options
+        self.assertEqual(options[options.index("4. Psaume") + 1], "5. Cantique")
         app.selectbox(key="sheet_moment_1").select('Communion').run()
-        app.selectbox(key="sheet_moment_2").select(MOMENTS[6]).run()
+        app.selectbox(key="sheet_moment_2").select("Cantique").run()
         next(b for b in app.button if b.key == "up-1").click().run()
         self.assertFalse(app.exception)
         self.assertEqual(app.selectbox(key="sheet_moment_0").value, 'Communion')
         self.assertEqual(app.selectbox(key="sheet_moment_1").value, MOMENTS[1])
-        self.assertEqual(app.selectbox(key="sheet_moment_2").value, MOMENTS[6])
+        self.assertEqual(app.selectbox(key="sheet_moment_2").value, "Cantique")
         next(b for b in app.button if b.key == "down-2").click().run()
         self.assertEqual(app.selectbox(key="sheet_moment_2").value, MOMENTS[1])
-        self.assertEqual(app.selectbox(key="sheet_moment_3").value, MOMENTS[6])
+        self.assertEqual(app.selectbox(key="sheet_moment_3").value, "Cantique")
         next(b for b in app.button if b.label == "Créer la version à imprimer").click().run()
         self.assertTrue(app.get("download_button"))
         app.selectbox(key="sheet_moment_1").select("").run()
@@ -158,10 +166,10 @@ class SongTypesTests(unittest.TestCase):
         next(b for b in app.button if b.key == "remove-0").click().run()
         self.assertFalse(app.exception)
         self.assertEqual(app.selectbox(key="sheet_moment_0").value, "")
-        self.assertEqual(app.selectbox(key="sheet_moment_2").value, MOMENTS[6])
+        self.assertEqual(app.selectbox(key="sheet_moment_2").value, "Cantique")
         next(b for b in app.button if b.label == "Ajouter le chant").click().run()
         self.assertFalse(app.exception)
-        self.assertEqual(app.selectbox(key="sheet_moment_2").value, MOMENTS[6])
+        self.assertEqual(app.selectbox(key="sheet_moment_2").value, "Cantique")
         self.assertFalse(app.selectbox(key="sheet_moment_2").disabled)
         self.assertEqual(app.selectbox(key="sheet_moment_3").value, "")
 

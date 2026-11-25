@@ -48,7 +48,9 @@ choix avant de cliquer sur **Ajouter le psaume ou cantique**.
 Chaque ajout conserve les chants déjà choisis. Vous pouvez ajouter plusieurs
 psaumes ou cantiques, y compris plusieurs occurrences du même texte, puis les
 déplacer et choisir leurs strophes comme pour les chants. Leur moment proposé
-est **Psaume**, mais il reste modifiable.
+est **Psaume**, mais il reste modifiable. Pour un cantique, comme le Magnificat,
+vous pouvez choisir **Cantique**, proposé juste après **Psaume** dans la liste
+des moments.
 
 Le texte complet est récupéré seulement au premier ajout et enregistré dans
 `chants/psautier_<référence>.md`, sans écraser les versions de l’équipe. Le titre,
