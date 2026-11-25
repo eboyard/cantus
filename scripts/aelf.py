@@ -94,8 +94,12 @@ def parse_aelf_response(payload: dict, day: date, *, format_psalms: bool = False
     for mass in masses:
         if not isinstance(mass, dict) or not isinstance(mass.get("lectures"), list):
             raise ValueError("Les lectures reçues de l’AELF sont invalides.")
+        mass_name = mass.get("nom") or "Messe du jour"
+        if not isinstance(mass_name, str):
+            raise ValueError("Le nom de la messe reçu de l’AELF est invalide.")
+        count_before = len(result)
         for reading_position, reading in enumerate(mass["lectures"]):
-            if not isinstance(reading, dict) or reading.get("type") != "psaume":
+            if not isinstance(reading, dict) or reading.get("type") not in {"psaume", "cantique"}:
                 continue
             reference = reading.get("ref")
             refrain = " ".join(html_paragraphs(reading.get("refrain_psalmique", "")))
@@ -104,8 +108,9 @@ def parse_aelf_response(payload: dict, day: date, *, format_psalms: bool = False
                 raise ValueError("La référence, le refrain ou le texte du psaume AELF est incomplet.")
             reference = " ".join(reference.split())
             short = PSALM_REFERENCE.match(reference)
-            name = f"Psaume ({reference})"
-            if short:
+            is_canticle = reading["type"] == "cantique"
+            name = f"{'Cantique' if is_canticle else 'Psaume'} ({reference})"
+            if short and not is_canticle:
                 name = f"Psaume {short[1]}" + (f" ({short[2]})" if short[2] else "")
             psalm_title = f"{name} — {' '.join(refrain.split())}"
             index = len(result) + 1
@@ -143,12 +148,11 @@ def parse_aelf_response(payload: dict, day: date, *, format_psalms: bool = False
                         + f"<!-- ordre: {order} -->\n\n" + "\n\n---\n\n".join(blocks) + "\n")
             if not build_slides(markdown):
                 raise ValueError("Le texte du psaume AELF est vide.")
-            mass_name = mass.get("nom") or "Messe du jour"
-            if not isinstance(mass_name, str):
-                raise ValueError("Le nom de la messe reçu de l’AELF est invalide.")
             result.append(AelfMass(day, title, mass_name, psalm_title, reference, markdown, key))
+        if len(result) == count_before:
+            result.append(AelfMass(day, title, mass_name, "", "", "", f"aelf/{day.isoformat()}/{len(result) + 1}"))
     if not result:
-        raise ValueError("Aucun psaume n’est proposé par l’AELF pour cette date.")
+        result.append(AelfMass(day, title, "Messe du jour", "", "", "", f"aelf/{day.isoformat()}/1"))
     return result
 
 
