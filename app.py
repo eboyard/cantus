@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import hmac
 import logging
+import secrets
 from datetime import date, datetime
 from pathlib import Path
 import re
@@ -17,7 +18,7 @@ import streamlit.components.v1 as components
 
 from scripts.markdown_to_pptx import build_slides, plain_text, read_slides, read_title, write_slides
 from scripts.song_sheet import create_song_sheet
-from scripts.song_selection import selected_song_parts, with_liturgical_introductions
+from scripts.song_selection import selected_song_parts, with_liturgical_introductions, reading_context
 from scripts.word_song_sheet import create_word_song_sheet, DEFAULT_PLACE, MIME as WORD_MIME
 from scripts.github_pages import prepare_pages_export
 from scripts.github_publish import publish_sheet
@@ -30,6 +31,7 @@ from scripts.aelf import load_aelf_masses, mass_url, psalm_catalog, preferred_ps
 from scripts.psautier import INDEX as PSAUTIER_INDEX, PSALM_REFERENCE, import_psalm, reference_label
 from scripts.liturgical_texts import reading_catalog, reading_documents
 from scripts.sheet_library import reading_texts_from_contents
+from scripts.preparation_store import FIELDS as PREPARATION_FIELDS, encode_preparation, decode_preparation, load_preparation, save_preparation
 
 
 ROOT = Path(__file__).resolve().parent
@@ -126,14 +128,19 @@ def show_github_pages(
         st.info("Pour activer la publication directe, configurez le jeton GitHub et le code de publication dans les secrets Streamlit (voir README).")
     publication_code = st.text_input("Code de publication", type="password", key="pages_publish_password")
     if st.button("Publier sur GitHub Pages", type="primary", disabled=not token or not password):
+        st.session_state.pop("pages_publication", None)
         try:
             if not hmac.compare_digest(publication_code.encode("utf-8"), password.encode("utf-8")):
                 raise ValueError("Le code de publication est incorrect.")
             with st.spinner("Envoi de la feuille sur GitHub…"):
                 commit_url = publish_sheet(export, token, repository=repository, branch=branch, replace=replace)
             st.session_state.pages_publication = (export_signature, repository, branch, commit_url)
-        except ValueError as error:
-            st.error(str(error))
+        except (ValueError, OSError) as error:
+            message = str(error) if isinstance(error, ValueError) else "GitHub est injoignable. Vérifiez la version en ligne avant de réessayer."
+            st.error(message + " Votre préparation est conservée ; vous pouvez réessayer sans refaire la sélection.")
+        except Exception:
+            logging.getLogger(__name__).exception("Échec inattendu de la publication")
+            st.error("La publication a échoué. Votre préparation est conservée. Vérifiez la version en ligne avant de réessayer.")
     publication = st.session_state.get("pages_publication")
     if publication and publication[:3] == (export_signature, repository, branch):
         st.success("La feuille a été envoyée sur GitHub. Elle sera accessible après le déploiement GitHub Pages.")
@@ -150,68 +157,85 @@ def show_github_pages(
 
 def show_existing_sheets(catalog: dict[str, tuple[str, Path]]) -> None:
     with st.expander("Repartir d’une feuille existante"):
-        st.caption("Choisissez une feuille : ses chants remplaceront la liste actuelle, dans le même ordre, avec les couplets mémorisés lors de la publication.")
-        repository = github_setting("repository", "eboyard/cantus")
-        branch = github_setting("branch", "main")
-        source_signature = (repository, branch)
-        choice_column, refresh_column = st.columns([8, 1], vertical_alignment="bottom")
-        if refresh_column.button("↻", key="refresh_existing_sheets", help="Actualiser les feuilles depuis GitHub"):
-            try:
-                with st.spinner("Recherche des feuilles publiées…"):
-                    sheets = published_sheets(github_setting("token"), repository, branch)
-                st.session_state.existing_remote_sheets = (source_signature, sheets)
-                st.session_state.existing_sheet_choice = None
-                st.session_state.pop("sheet_import_status", None)
-            except ValueError as error:
-                st.error(str(error))
-        remote = st.session_state.get("existing_remote_sheets")
-        sheets = remote[1] if remote and remote[0] == source_signature else local_sheets(ROOT / "docs")
-        choices = {sheet.path: sheet for sheet in sheets}
-
-        def import_sheet():
-            chosen = st.session_state.existing_sheet_choice
-            if chosen is None:
-                return
-            try:
-                document = read_existing_sheet(choices[chosen], ROOT / "docs", github_setting("token"), repository)
-                aelf_documents = {**st.session_state.get("aelf_psalms", {}), **aelf_psalms_from_contents(document)}
-                imported_catalog = {**catalog, **psalm_catalog(aelf_documents, ROOT)}
-                readings = {**st.session_state.get("reading_texts", {}), **reading_texts_from_contents(document)}
-                imported_catalog.update(reading_catalog(readings, ROOT))
-                order = songs_from_contents(document, imported_catalog)
-                verses = verses_from_contents(document, order, imported_catalog)
-                moments = moments_from_contents(document, order, imported_catalog)
-                title = title_from_contents(document)
-                context = aelf_context_from_contents(document)
-                catalog.update(imported_catalog)
-                st.session_state.aelf_psalms = aelf_documents
-                st.session_state.reading_texts = readings
-                st.session_state.selected_aelf_context = context
-                st.session_state.song_order = order
-                st.session_state.song_moments = moments
-                st.session_state.song_verses = verses
-                st.session_state.pop("selected_daily_psalm", None)
-                if title is not None:
-                    st.session_state.celebration_title = title
-                clear_moment_widgets()
-                for key in ("generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
-                    st.session_state.pop(key, None)
-                st.session_state.sheet_import_status = (True, f"{len(order)} chant(s) chargés. Vous pouvez modifier cette liste pour préparer la nouvelle feuille.")
-            except (OSError, ValueError) as error:
-                st.session_state.sheet_import_status = (False, str(error))
-
-        choice_column.selectbox(
-            "Choisir une feuille de chants existante", options=list(choices),
-            format_func=lambda path: choices[path].label, index=None,
-            placeholder="Choisir une feuille", key="existing_sheet_choice", on_change=import_sheet,
+        source = st.radio(
+            "D’où souhaitez-vous repartir ?",
+            ["Une feuille publiée", "Un fichier JSON sauvegardé"],
+            key="existing_sheet_source", horizontal=True,
+            on_change=lambda: st.session_state.pop("sheet_import_status", None),
         )
-        if not sheets:
-            st.info("Aucune feuille disponible. Actualisez depuis GitHub pour rechercher les feuilles publiées.")
-        if not remote or remote[0] != source_signature:
-            st.caption("Les feuilles de cette copie du projet sont proposées. Actualisez depuis GitHub pour récupérer les dernières publications.")
+        if source == "Une feuille publiée":
+            show_published_sheet_picker(catalog)
+        else:
+            st.caption("Chargez le fichier .cantus.json téléchargé lors d’une précédente préparation. Son contenu remplacera la préparation actuelle (titre, date, chants et couplets).")
+            st.file_uploader(
+                "Charger un fichier JSON sauvegardé", type=["json"],
+                key="preparation_upload", on_change=restore_preparation_backup,
+            )
         status = st.session_state.get("sheet_import_status")
         if status:
             (st.success if status[0] else st.error)(status[1])
+
+
+def show_published_sheet_picker(catalog: dict[str, tuple[str, Path]]) -> None:
+    st.caption("Choisissez une feuille : ses chants remplaceront la liste actuelle, dans le même ordre, avec les couplets mémorisés lors de la publication.")
+    repository = github_setting("repository", "eboyard/cantus")
+    branch = github_setting("branch", "main")
+    source_signature = (repository, branch)
+    choice_column, refresh_column = st.columns([8, 1], vertical_alignment="bottom")
+    if refresh_column.button("↻", key="refresh_existing_sheets", help="Actualiser les feuilles depuis GitHub"):
+        try:
+            with st.spinner("Recherche des feuilles publiées…"):
+                sheets = published_sheets(github_setting("token"), repository, branch)
+            st.session_state.existing_remote_sheets = (source_signature, sheets)
+            st.session_state.existing_sheet_choice = None
+            st.session_state.pop("sheet_import_status", None)
+        except ValueError as error:
+            st.error(str(error))
+    remote = st.session_state.get("existing_remote_sheets")
+    sheets = remote[1] if remote and remote[0] == source_signature else local_sheets(ROOT / "docs")
+    choices = {sheet.path: sheet for sheet in sheets}
+
+    def import_sheet():
+        chosen = st.session_state.existing_sheet_choice
+        if chosen is None:
+            return
+        try:
+            document = read_existing_sheet(choices[chosen], ROOT / "docs", github_setting("token"), repository)
+            aelf_documents = {**st.session_state.get("aelf_psalms", {}), **aelf_psalms_from_contents(document)}
+            imported_catalog = {**catalog, **psalm_catalog(aelf_documents, ROOT)}
+            readings = {**st.session_state.get("reading_texts", {}), **reading_texts_from_contents(document)}
+            imported_catalog.update(reading_catalog(readings, ROOT))
+            order = songs_from_contents(document, imported_catalog)
+            verses = verses_from_contents(document, order, imported_catalog)
+            moments = moments_from_contents(document, order, imported_catalog)
+            title = title_from_contents(document)
+            context = aelf_context_from_contents(document)
+            catalog.update(imported_catalog)
+            st.session_state.aelf_psalms = aelf_documents
+            st.session_state.reading_texts = readings
+            st.session_state.selected_aelf_context = context
+            st.session_state.song_order = order
+            st.session_state.song_moments = moments
+            st.session_state.song_verses = verses
+            st.session_state.pop("selected_daily_psalm", None)
+            if title is not None:
+                st.session_state.celebration_title = title
+            clear_moment_widgets()
+            for key in ("generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
+                st.session_state.pop(key, None)
+            st.session_state.sheet_import_status = (True, f"{len(order)} chant(s) chargés. Vous pouvez modifier cette liste pour préparer la nouvelle feuille.")
+        except (OSError, ValueError) as error:
+            st.session_state.sheet_import_status = (False, str(error))
+
+    choice_column.selectbox(
+        "Choisir une feuille de chants existante", options=list(choices),
+        format_func=lambda path: choices[path].label, index=None,
+        placeholder="Choisir une feuille", key="existing_sheet_choice", on_change=import_sheet,
+    )
+    if not sheets:
+        st.info("Aucune feuille disponible. Actualisez depuis GitHub pour rechercher les feuilles publiées.")
+    if not remote or remote[0] != source_signature:
+        st.caption("Les feuilles de cette copie du projet sont proposées. Actualisez depuis GitHub pour récupérer les dernières publications.")
 
 
 def show_song_editor(selected: str, path: Path, title: str) -> bool:
@@ -508,7 +532,118 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
     return day
 
 
+def preparation_directory() -> Path:
+    return Path(os.environ.get("CANTUS_DRAFT_DIR", str(ROOT / ".cantus-drafts")))
+
+
+def apply_preparation(data: dict) -> None:
+    # Les documents importés sont vérifiés avant toute modification de la sélection.
+    reading_context([], data.get("selected_aelf_context"))
+    catalog = song_catalog()
+    catalog.update(psalm_catalog(data.get("aelf_psalms", {}), ROOT))
+    catalog.update(reading_catalog(data.get("reading_texts", {}), ROOT))
+    for position, key in enumerate(data.get("song_order", [])):
+        if key not in catalog:
+            raise ValueError(f"Le chant ou le texte {key} manque dans le catalogue. La préparation actuelle est conservée.")
+        selected_song_parts(catalog[key][1], data["song_verses"][position])
+    for key in PREPARATION_FIELDS:
+        st.session_state.pop(key, None)
+    st.session_state.update(data)
+    clear_moment_widgets()
+    for key in ("aelf_loaded", "aelf_mass_choice", "aelf_import_error", "generated_presentation",
+                "generated_song_sheet", "generated_print_sheet", "pages_export", "pages_publication"):
+        st.session_state.pop(key, None)
+
+
+def initialize_preparation() -> None:
+    if st.session_state.get("preparation_initialized"):
+        return
+    identifier = st.query_params.get("preparation")
+    if identifier is None:
+        identifier = secrets.token_hex(32)
+        st.query_params["preparation"] = identifier
+    st.session_state.preparation_identifier = identifier
+    st.session_state.preparation_initialized = True
+    try:
+        data = load_preparation(preparation_directory(), identifier)
+        apply_preparation(data)
+        st.session_state.preparation_notice = "La préparation sauvegardée a été restaurée."
+    except FileNotFoundError:
+        st.session_state.preparation_notice = "Un nouveau brouillon sera sauvegardé automatiquement."
+    except (OSError, ValueError) as error:
+        # Ne jamais remplacer un brouillon illisible par une sélection vide.
+        st.session_state.preparation_save_blocked = True
+        st.session_state.preparation_notice = f"Impossible de reprendre ce brouillon : {error}"
+
+
+def checkpoint_preparation() -> bool:
+    if st.session_state.get("preparation_save_blocked"):
+        return False
+    try:
+        raw = encode_preparation(st.session_state)
+        if raw != st.session_state.get("preparation_saved_bytes"):
+            save_preparation(preparation_directory(), st.session_state.preparation_identifier, raw)
+            st.session_state.preparation_saved_bytes = raw
+        st.session_state.pop("preparation_save_error", None)
+        return True
+    except (OSError, ValueError):
+        st.session_state.preparation_save_error = True
+        return False
+
+
+def restore_preparation_backup() -> None:
+    uploaded = st.session_state.preparation_upload
+    if uploaded is None:
+        return
+    try:
+        data = decode_preparation(uploaded.getvalue())
+        apply_preparation(data)
+        # Une importation démarre un nouveau brouillon sans écraser l'ancien.
+        identifier = secrets.token_hex(32)
+        st.query_params["preparation"] = identifier
+        st.session_state.preparation_identifier = identifier
+        st.session_state.pop("preparation_save_blocked", None)
+        st.session_state.pop("preparation_saved_bytes", None)
+        st.session_state.preparation_notice = "Le fichier de préparation a été restauré."
+        st.session_state.sheet_import_status = (True, "Le fichier de préparation a été restauré. Vous pouvez modifier cette feuille.")
+    except (OSError, ValueError) as error:
+        st.session_state.sheet_import_status = (False, str(error))
+
+
+def show_preparation_backup() -> None:
+    saved = checkpoint_preparation()
+    if saved:
+        st.caption("Préparation sauvegardée automatiquement. Conservez l’adresse de cette page pour la reprendre après fermeture ou actualisation.")
+    else:
+        st.warning("La sauvegarde automatique est indisponible. Téléchargez une copie de secours avant de quitter la page.")
+    with st.expander("Sauvegarder la préparation"):
+        if notice := st.session_state.get("preparation_notice"):
+            st.info(notice)
+        st.write("Le lien de reprise est personnel : toute personne qui le possède peut ouvrir et modifier ce brouillon. Pour une copie indépendante du serveur, téléchargez le fichier de secours.")
+        st.download_button("Télécharger la préparation (.cantus.json)", encode_preparation(st.session_state),
+                           file_name="preparation.cantus.json", mime="application/json")
+
+
 def show_preparation() -> None:
+    initialize_preparation()
+    # Capturer aussi les champs situés après un bouton Monter/Descendre : le
+    # rerun interrompt la boucle avant qu'ils ne soient relus à l'écran.
+    for position, moment in enumerate(st.session_state.get("song_moments", [])):
+        st.session_state.song_moments[position] = st.session_state.get(f"sheet_moment_{position}", moment)
+    for position, verses in enumerate(st.session_state.get("song_verses", [])):
+        if verses is not None:
+            prefix = f"sheet_verses_{position}_"
+            choices = {key[len(prefix):]: st.session_state[key] for key in st.session_state if key.startswith(prefix)}
+            if choices:
+                st.session_state.song_verses[position] = [key for key, keep in choices.items() if keep]
+    try:
+        _show_preparation()
+    finally:
+        # Inclut les st.rerun() après ajout, déplacement et suppression.
+        checkpoint_preparation()
+
+
+def _show_preparation() -> None:
     st.title("Préparer les chants de la célébration")
 
     catalog = song_catalog()
@@ -649,6 +784,9 @@ def show_preparation() -> None:
                 clear_moment_widgets()
                 st.rerun()
 
+    show_preparation_backup()
+
+    if song_order:
         with st.expander("Aperçu des paroles"):
             for position, key in enumerate(song_order, start=1):
                 title, path = catalog[key]

@@ -9,6 +9,8 @@ from zipfile import ZipFile
 from lxml import etree
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import export_downloads
+
 from scripts.word_song_sheet import create_word_song_sheet, TEMPLATE, NS, W
 
 
@@ -152,15 +154,15 @@ class WordSongSheetTests(unittest.TestCase):
         self.assertTrue(data.startswith(b"PK"))
         self.assertNotIn("generated_song_sheet", app.session_state)
         self.assertNotIn("generated_presentation", app.session_state)
-        self.assertEqual(app.get("download_button")[0].proto.label, "Télécharger la version à imprimer (.docx)")
+        self.assertEqual(export_downloads(app)[0].proto.label, "Télécharger la version à imprimer (.docx)")
         app.text_input(key="word_place").set_value("Autre église").run()
-        self.assertFalse(app.get("download_button"))
+        self.assertFalse(export_downloads(app))
         next(button for button in app.button if button.label == "Créer la version à imprimer").click().run()
         self.assertIn("Autre église", " ".join(document(app.session_state["generated_print_sheet"][1]).xpath("//w:t/text()", namespaces=NS)))
         with patch("app.load_aelf_masses", side_effect=ValueError("AELF indisponible")):
             app.date_input(key="celebration_date").set_value(date(2026, 11, 29)).run()
         self.assertFalse(app.exception)
-        self.assertFalse(app.get("download_button"))
+        self.assertFalse(export_downloads(app))
 
 
 if __name__ == "__main__":

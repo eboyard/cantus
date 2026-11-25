@@ -21,6 +21,38 @@ revenir à l’onglet **Préparer la célébration** pour poursuivre votre prép
 Pour partager une feuille par lien ou QR code, créez d’abord la feuille pour
 téléphone, puis suivez la rubrique **Publier une feuille et partager son QR code**.
 
+## Sauvegarder et reprendre une préparation
+
+La préparation est sauvegardée automatiquement après chaque modification :
+chants et textes, ordre, moments liturgiques, couplets choisis, titre et date.
+Les textes AELF nécessaires sont également conservés. Une publication refusée
+ou interrompue ne vide pas cette préparation.
+
+Conservez l’adresse complète de la page (par exemple dans vos favoris) : elle
+contient votre lien de reprise. Rouvrez cette adresse pour retrouver le brouillon
+après une actualisation ou la fermeture de l’onglet. Ce lien est personnel :
+toute personne qui le possède peut reprendre et modifier le brouillon.
+Ouvrir Cantus sans ce lien commence une autre préparation.
+
+Dans **Sauvegarder la préparation**, cliquez sur
+**Télécharger la préparation (.cantus.json)** pour garder une copie sur votre
+ordinateur, indépendante du serveur. Pour la reprendre, ouvrez **Repartir d’une
+feuille existante**, choisissez **Un fichier JSON sauvegardé**, puis utilisez
+**Charger un fichier JSON sauvegardé**. L’import remplace la sélection
+en cours et crée un nouveau brouillon ; téléchargez d’abord la préparation actuelle
+si vous souhaitez aussi la conserver. Un fichier invalide ou un chant manquant
+est signalé sans remplacer votre sélection.
+
+Si la sauvegarde automatique est indisponible, un avertissement apparaît :
+téléchargez le fichier de secours avant de quitter la page. Les brouillons
+automatiques dépendent du stockage du serveur ; gardez une copie téléchargée
+pour retrouver votre travail même si ce stockage est réinitialisé.
+
+Après un échec de publication, vous pouvez réessayer avec la sélection en cours.
+En cas de coupure réseau, vérifiez d’abord la version en ligne : l’envoi peut avoir
+abouti malgré l’absence de confirmation. Après reprise d’un brouillon, recréez la
+feuille de chants puis préparez la publication ; vos choix sont déjà restaurés.
+
 ## Récupérer le nom de la messe et le psaume sur AELF
 
 Choisissez la **Date de la célébration**, en haut de la préparation : l’application
@@ -203,8 +235,8 @@ site dans une page séparée. Une connexion Internet est nécessaire.
 ## Repartir d’une feuille existante
 
 1. Ouvrez **Repartir d’une feuille existante**.
-2. Dans **Choisir une feuille de chants existante**, choisissez la paroisse et
-   la date souhaitées.
+2. Choisissez **Une feuille publiée**, puis la paroisse et la date souhaitées
+   dans **Choisir une feuille de chants existante**.
 3. La sélection remplace immédiatement la liste actuelle par les chants de la
    feuille, dans le même ordre, y compris les chants présents plusieurs fois.
    Les couplets mémorisés lors de la publication sont également cochés : par
@@ -212,6 +244,12 @@ site dans une page séparée. Une connexion Internet est nécessaire.
 4. Le nom de la célébration mémorisé dans la feuille est restauré automatiquement.
    Ajustez les chants et modifiez ce nom si nécessaire.
    Pour la publication, choisissez également sa nouvelle date.
+
+Pour reprendre un fichier enregistré sur votre ordinateur, choisissez plutôt
+**Un fichier JSON sauvegardé**, puis **Charger un fichier JSON sauvegardé**.
+Sélectionnez votre fichier `.cantus.json` : le titre, la date, les chants et textes,
+leur ordre, les moments et les couplets sont restaurés. Vous pouvez ensuite
+modifier la feuille. Un fichier invalide conserve la préparation actuelle.
 
 Les anciennes feuilles publiées sans mémorisation des couplets chargent tous
 les couplets par défaut. Sélectionnez les couplets souhaités puis republiez

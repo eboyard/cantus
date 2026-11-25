@@ -6,6 +6,8 @@ from unittest.mock import patch
 import pymupdf
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import export_downloads
+
 from scripts.print_song_sheet import create_print_song_sheet
 from scripts.song_types import IMPLICIT_MOMENTS, MOMENTS
 
@@ -163,17 +165,17 @@ class PrintSongSheetTests(unittest.TestCase):
         self.assertTrue(app.session_state["generated_print_sheet"][1].startswith(b"PK"))
         self.assertNotIn("generated_song_sheet", app.session_state)
         self.assertNotIn("generated_presentation", app.session_state)
-        self.assertEqual(app.get("download_button")[0].proto.label, "Télécharger la version à imprimer (.docx)")
+        self.assertEqual(export_downloads(app)[0].proto.label, "Télécharger la version à imprimer (.docx)")
         for size in (9, 10, 11):
             next(widget for widget in app.selectbox
                  if widget.label == "Taille du texte imprimé").select(size).run()
-            self.assertFalse(app.get("download_button"))
+            self.assertFalse(export_downloads(app))
             next(button for button in app.button if button.label == "Créer la version à imprimer").click().run()
             self.assertFalse(app.exception)
             self.assertFalse(app.error)
-            self.assertTrue(app.get("download_button"))
+            self.assertTrue(export_downloads(app))
         app.text_input[0].set_value("Autre messe").run()
-        self.assertFalse(app.get("download_button"))
+        self.assertFalse(export_downloads(app))
 
 
 if __name__ == "__main__":
