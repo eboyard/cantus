@@ -6,7 +6,7 @@ import unicodedata
 
 
 MOMENTS = (
-    "Chant d’entrée", "Préparation pénitentielle", "Gloire à Dieu", "Psaume",
+    "Chant d’entrée", "Préparation pénitentielle", "Gloire à Dieu", "Psaume", "Cantique",
     "Acclamation de l’Évangile", "Prières universelles", "Offertoire",
     "Sanctus", "Anamnèse", "Notre Père", "Agneau de Dieu", "Communion", "Envoi",
 )
@@ -63,10 +63,10 @@ def song_type(markdown: str) -> str:
         (r"\bkyrie\b|^(seigneur,? )?prends pitie\b", MOMENTS[1]),
         (r"^gloria\b|^gloire a dieu\b|^grande paix, gloire a dieu\b", MOMENTS[2]),
         (r"^psaume\s+\d|\(psaume\s+\d", MOMENTS[3]),
-        (r"^alleluia$|^alleluia \(messe|^alleluia \(missa", MOMENTS[4]),
-        (r"\bpriere[s]? universelle[s]?\b", MOMENTS[5]),
-        (r"^sanctus\b|^saint,? le seigneur\b|^saint, saint, saint", MOMENTS[7]),
-        (r"^anamnese\b", MOMENTS[8]),
+        (r"^alleluia$|^alleluia \(messe|^alleluia \(missa", "Acclamation de l’Évangile"),
+        (r"\bpriere[s]? universelle[s]?\b", "Prières universelles"),
+        (r"^sanctus\b|^saint,? le seigneur\b|^saint, saint, saint", "Sanctus"),
+        (r"^anamnese\b", "Anamnèse"),
         (r"^notre pere\b|^pater noster\b", "Notre Père"),
         (r"^agnus\b|^agneau de dieu\b", "Agneau de Dieu"),
     ):
