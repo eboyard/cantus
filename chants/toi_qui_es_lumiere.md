@@ -1,6 +1,6 @@
 <!-- type: Prières universelles -->
 <!-- titre: Toi qui es Lumière -->
-<!-- refrain: -->
+<!-- refrain -->
 Toi qui es lumière, Toi qui es l'amour,
 Mets dans nos ténèbres, ton Esprit d'amour.
 ---

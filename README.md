@@ -102,6 +102,39 @@ Pour générer le diaporama d'une messe à partir de son index :
 
 ## Application web
 
+### Sauvegarde des préparations
+
+Chaque préparation dispose d’un identifiant aléatoire dans le paramètre d’URL
+`preparation`. Les modifications sont sauvegardées indépendamment de la publication
+GitHub, y compris avant l’envoi et lors des relances Streamlit après déplacement.
+Les brouillons JSON conservent titre, date, chants/textes, ordre, moments, couplets
+et sources AELF. Les jetons et codes de publication sont exclus.
+
+Les fichiers `.cantus.json` sont encodés en UTF-8 et indentés sur plusieurs lignes.
+Le format version 2 regroupe les chants dans `preparation.songs`, un tableau ordonné
+d’objets contenant `path` (chemin relatif ou identifiant de texte AELF), `moment`
+et `verses` (liste des couplets sélectionnés). Les doublons sont conservés ;
+`verses: null` conserve tous les couplets et `verses: []` n’en sélectionne aucun.
+Les sauvegardes version 1 restent importables et sont réenregistrées en version 2.
+
+Le répertoire par défaut est `.cantus-drafts/` (ignoré par Git). Configurer
+`CANTUS_DRAFT_DIR` vers un volume persistant et accessible en écriture pour conserver
+les brouillons après redémarrage ou redéploiement. Avec plusieurs instances, elles
+doivent utiliser le même stockage. Un stockage éphémère, notamment selon l’hébergement
+Streamlit, ne garantit pas la conservation après remplacement du serveur.
+Les écritures utilisent un fichier temporaire synchronisé puis un remplacement
+atomique pour préserver le brouillon précédent en cas d’échec.
+
+Le lien est une clé d’accès au brouillon, sans compte utilisateur : ne pas le publier
+ni journaliser ses paramètres. Ne pas ouvrir le même brouillon simultanément dans
+plusieurs onglets pour le modifier. Un nouveau lien crée un brouillon distinct.
+Les fichiers ne sont pas publiés sur GitHub Pages. Prévoir la sauvegarde et la
+gestion de rétention de ce répertoire dans l’exploitation du serveur.
+
+L’interface propose aussi un export/import `.cantus.json`, indépendant du serveur.
+Une restauration valide tout le document et les chants avant de modifier la session.
+Un brouillon illisible n’est jamais écrasé automatiquement par une sélection vide.
+
 ### carnet de chants
 
 Dans la préparation, l'ajout d'un chant typé l'insère selon l'ordre des moments
@@ -255,8 +288,16 @@ Après un changement de couplets, recréer le PowerPoint pour télécharger la v
 
 ### Repartir d’une feuille existante
 
-Ouvrir **Repartir d’une feuille existante**, puis choisir une paroisse et une date
-dans **Choisir une feuille de chants existante**. La sélection remplace immédiatement
+Ouvrir **Repartir d’une feuille existante**, puis choisir la source :
+
+- **Une feuille publiée** : choisir une paroisse et une date dans
+  **Choisir une feuille de chants existante**.
+- **Un fichier JSON sauvegardé** : utiliser **Charger un fichier JSON sauvegardé**
+  pour reprendre une préparation `.cantus.json` téléchargée auparavant. Le titre,
+  la date, les chants, les moments et les couplets sont restaurés dans un nouveau
+  brouillon. Un fichier invalide laisse la préparation actuelle intacte.
+
+Pour une feuille publiée, la sélection remplace immédiatement
 la liste des chants par ceux de la feuille, dans le même ordre, y compris les chants
 présents plusieurs fois. Vous pouvez ensuite ajouter, retirer ou déplacer des chants
 et créer une nouvelle feuille HTML, un document Word ou un PowerPoint. Le nom de la nouvelle

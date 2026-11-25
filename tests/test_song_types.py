@@ -6,6 +6,8 @@ from unittest.mock import patch
 import pymupdf
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import export_downloads
+
 from scripts.markdown_to_pptx import build_slides
 from scripts.print_song_sheet import create_print_song_sheet
 from scripts.song_types import MOMENTS, celebration_moments, moment_insertion_index, set_song_type, song_type
@@ -160,9 +162,9 @@ class SongTypesTests(unittest.TestCase):
         self.assertEqual(app.selectbox(key="sheet_moment_2").value, MOMENTS[1])
         self.assertEqual(app.selectbox(key="sheet_moment_3").value, "Cantique")
         next(b for b in app.button if b.label == "Créer la version à imprimer").click().run()
-        self.assertTrue(app.get("download_button"))
+        self.assertTrue(export_downloads(app))
         app.selectbox(key="sheet_moment_1").select("").run()
-        self.assertFalse(app.get("download_button"))
+        self.assertFalse(export_downloads(app))
         next(b for b in app.button if b.key == "remove-0").click().run()
         self.assertFalse(app.exception)
         self.assertEqual(app.selectbox(key="sheet_moment_0").value, "")

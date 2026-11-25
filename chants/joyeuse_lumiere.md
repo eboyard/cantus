@@ -1,6 +1,7 @@
 <!-- type: Chant d’entrée -->
 <!-- titre: Joyeuse Lumière -->
-<!--refrain: -->
+
+<!--refrain-->
 Joyeuse Lumière, splendeur éternelle du Père,
 Saint et bienheureux Jésus Christ
 ---

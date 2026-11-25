@@ -7,6 +7,8 @@ from unittest.mock import patch
 
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import export_downloads
+
 from scripts.song_sheet import create_song_sheet
 
 
@@ -166,7 +168,7 @@ class SongSheetTests(unittest.TestCase):
                 self.assertIn(f'<p class="moment">{moment}</p>', html)
         app.selectbox(key="sheet_moment_1").select("Communion").run()
         self.assertFalse(app.exception)
-        self.assertEqual(len(app.get("download_button")), 0)
+        self.assertEqual(len(export_downloads(app)), 0)
         self.assertFalse(any(button.label == "Publier sur GitHub Pages" for button in app.button))
         next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
         next(button for button in app.button if button.label == "Préparer pour GitHub Pages").click().run()
@@ -230,10 +232,10 @@ class SongSheetTests(unittest.TestCase):
         self.assertEqual(len(app.exception), 0)
         self.assertEqual(len(app.error), 0)
         self.assertIn(b"<!doctype html>", app.session_state["generated_song_sheet"][1])
-        self.assertEqual(app.get("download_button")[0].proto.label, "Télécharger la feuille de chants (.html)")
+        self.assertEqual(export_downloads(app)[0].proto.label, "Télécharger la feuille de chants (.html)")
         self.assertNotIn("generated_presentation", app.session_state)
         app.text_input[0].set_value("Autre célébration").run()
-        self.assertEqual(len(app.get("download_button")), 0)
+        self.assertEqual(len(export_downloads(app)), 0)
 
     @patch("app.load_aelf_masses", side_effect=ValueError("Hors connexion pour ce test"))
     def test_download_contains_selected_date_and_is_hidden_when_date_changes(self, _fetch):
@@ -246,7 +248,7 @@ class SongSheetTests(unittest.TestCase):
         html = app.session_state["generated_song_sheet"][1].decode("utf-8")
         self.assertIn("15/11/2026</h1>", html)
         app.date_input(key="celebration_date").set_value(date(2026, 11, 22)).run()
-        self.assertEqual(len(app.get("download_button")), 0)
+        self.assertEqual(len(export_downloads(app)), 0)
         next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
         self.assertIn("22/11/2026</h1>", app.session_state["generated_song_sheet"][1].decode("utf-8"))
 
@@ -260,7 +262,7 @@ class SongSheetTests(unittest.TestCase):
             next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
         self.assertEqual(len(app.exception), 0)
         self.assertIn("Partie absente", app.error[0].value)
-        self.assertEqual(len(app.get("download_button")), 0)
+        self.assertEqual(len(export_downloads(app)), 0)
 
 
 if __name__ == "__main__":
