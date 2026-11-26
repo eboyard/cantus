@@ -1,5 +1,7 @@
 <!-- titre: Lumière de la joie -->
 
+<!-- ordre: C1 R C2 R -->
+
 <!-- refrain -->
 Hey ! Hey ! Hey !
 Fais briller sur moi la lumière de la joie, Seigneur !
