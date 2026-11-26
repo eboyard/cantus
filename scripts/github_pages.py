@@ -65,7 +65,7 @@ def create_parish_index(parish: str, dates: list[str], *, parish_url: str | None
 <button id="next-sheet" type="button" aria-label="Feuille suivante" title="Feuille suivante">
 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m10 6 6 6-6 6"/></svg></button>
 <button id="home-sheet" type="button" aria-label="Revenir à la feuille proposée" title="Revenir à la feuille proposée">
-<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/></svg></button>
+<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4m8-4v4M3 11h18m-13 4h2m4 0h2m-8 3h2"/></svg></button>
 </div></div>
 </nav>
 <p id="sheet-status" role="status" hidden></p>

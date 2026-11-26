@@ -353,7 +353,7 @@ affiche la feuille du jour ou la prochaine feuille publiée, selon la date local
 du navigateur. Sa date complète est indiquée au-dessus des paroles.
 Les icônes gauche et droite, placées à droite du choix de la date,
 permettent de consulter les autres feuilles et leur QR code.
-L’icône **Accueil**, à droite des chevrons, permet de revenir à la feuille du jour
+L’icône **Calendrier**, à droite des chevrons, permet de revenir à la feuille du jour
 ou à la prochaine feuille publiée (à la dernière publiée si toutes sont passées).
 Si toutes les célébrations sont passées, la dernière feuille est affichée avec
 un message précisant qu’aucune feuille à venir n’est publiée.
