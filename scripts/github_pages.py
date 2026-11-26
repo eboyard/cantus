@@ -40,8 +40,8 @@ def create_parish_index(parish: str, dates: list[str], *, parish_url: str | None
         qr = b64encode(_create_qr(f"{parish_url.rstrip('/')}/{iso}/")).decode("ascii")
         image_url = f"data:image/svg+xml;base64,{qr}"
         items.append(
-            f'<li data-date="{iso}"><a href="{iso}/">Feuille du '
-            f'<time datetime="{iso}">{label}</time></a>'
+            f'<li data-date="{iso}">'
+            f'<time datetime="{iso}">{label}</time>'
             f'<details><summary title="Afficher le QR code de la feuille du {label}">'
             '<svg class="qr-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
             '<path fill="currentColor" d="M2 2h8v8H2zm2 2v4h4V4zM14 2h8v8h-8zm2 2v4h4V4z'
@@ -56,10 +56,10 @@ def create_parish_index(parish: str, dates: list[str], *, parish_url: str | None
     links = "\n".join(items)
     title = escape(parish)
     listing = f'''<nav id="sheet-navigation" aria-label="Choisir une feuille de chants" hidden>
-<label for="sheet-date">Feuille de chants de la célébration du</label>
 <div class="date-navigation">
-<select id="sheet-date"></select>
+<select id="sheet-date" aria-label="Date de la célébration"></select>
 <div class="navigation-buttons">
+<div id="sheet-qr"></div>
 <button id="previous-sheet" type="button" aria-label="Feuille précédente" title="Feuille précédente">
 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m14 6-6 6 6 6"/></svg></button>
 <button id="next-sheet" type="button" aria-label="Feuille suivante" title="Feuille suivante">
@@ -79,11 +79,9 @@ def create_parish_index(parish: str, dates: list[str], *, parish_url: str | None
 <style>
 body {{ margin: 0; background: #faf9f6; color: #20283b; font: 1.125rem/1.65 system-ui, sans-serif; }}
 main {{ max-width: 42rem; margin: auto; padding: 1.25rem; overflow-wrap: anywhere; }}
-h1 {{ font-size: 2rem; line-height: 1.2; }}
 ul {{ list-style: none; padding: 0; }}
 a {{ color: #204a83; text-underline-offset: .2em; }}
 li {{ position: relative; padding: .2rem 3.25rem .2rem 0; }}
-li > a {{ display: inline-block; padding: .45rem 0; }}
 summary {{ position: absolute; top: .2rem; right: 0; display: flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; box-sizing: border-box; color: #204a83; cursor: pointer; border: 1px solid #d4d9e1; border-radius: .4rem; list-style: none; }}
 summary::-webkit-details-marker {{ display: none; }}
 summary:hover, details[open] > summary {{ background: #e9eef5; }}
@@ -102,15 +100,24 @@ button:focus-visible, select:focus-visible {{ outline: 3px solid #204a83; outlin
 #sheet-navigation {{ display: grid; gap: .6rem; }}
 .date-navigation {{ display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .5rem; }}
 #sheet-date {{ min-width: 0; width: 100%; box-sizing: border-box; }}
-.navigation-buttons {{ display: flex; gap: .25rem; }}
-.navigation-buttons button {{ display: inline-flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; padding: .5rem; border-color: transparent; background: transparent; }}
-.navigation-buttons button:hover:not(:disabled) {{ background: #e9eef5; }}
-.navigation-buttons svg {{ width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }}
+.navigation-buttons {{ position: relative; display: flex; gap: 0; }}
+.navigation-buttons button, .navigation-buttons summary {{ display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.75rem; padding: .375rem; border-color: transparent; background: transparent; }}
+.navigation-buttons button:hover:not(:disabled), .navigation-buttons summary:hover, .navigation-buttons details[open] > summary {{ background: #e9eef5; }}
+.navigation-buttons button svg {{ width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }}
 #sheet-status {{ font-weight: 600; margin-bottom: .25rem; }}
-#sheet-content {{ display: block; width: 100%; height: 75vh; border: 0; background: white; }}
-#sheets {{ border: 1px solid #d4d9e1; border-radius: .5rem; padding: .5rem .75rem; }}
+#sheet-content {{ display: block; margin-top: .75rem; width: 100%; height: 75vh; border: 0; background: white; }}
+#sheets {{ margin: .6rem 0; }}
+.navigation-buttons summary {{ position: static; border: 1px solid transparent; }}
+.navigation-buttons .qr-code {{ position: absolute; top: 100%; right: 0; z-index: 1; width: 280px; max-width: calc(100vw - 4rem); padding: .75rem; background: white; border: 1px solid #d4d9e1; border-radius: .5rem; box-shadow: 0 .25rem .75rem #20283b26; }}
+@media (max-width: 48rem) {{
+  main {{ display: flex; flex-direction: column; max-width: none; height: 100vh; height: 100dvh; padding: .5rem 0 0; box-sizing: border-box; }}
+  #sheet-navigation, #sheet-status {{ flex-shrink: 0; margin-left: .5rem; margin-right: .5rem; }}
+  #sheet-navigation {{ position: sticky; top: 0; z-index: 2; background: #faf9f6; }}
+  #sheet-content {{ flex: 1; min-height: 0; height: auto; }}
+  #sheets {{ margin-left: .5rem; margin-right: .5rem; }}
+}}
 </style></head>
-<body><main><h1>{title}</h1>
+<body><main>
 {listing}
 </main><script>{_PARISH_NAVIGATION}</script></body></html>
 '''.encode("utf-8")
@@ -126,6 +133,8 @@ _PARISH_NAVIGATION = r'''
   const select = document.getElementById('sheet-date');
   const status = document.getElementById('sheet-status');
   const frame = document.getElementById('sheet-content');
+  const qrSlot = document.getElementById('sheet-qr');
+  const qrDetails = sheets.map(sheet => sheet.querySelector('details'));
   // Compare calendar dates in the visitor's timezone, including the entire day.
   const now = new Date();
   const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'),
@@ -147,10 +156,8 @@ _PARISH_NAVIGATION = r'''
   let selected = recommended;
   function show(index) {
     selected = index;
-    sheets.forEach((sheet, i) => {
-      sheet.hidden = i !== selected;
-      if (i !== selected) sheet.querySelector('details').open = false;
-    });
+    qrDetails.forEach(details => { details.open = false; });
+    qrSlot.replaceChildren(qrDetails[selected]);
     const day = sheets[selected].dataset.date;
     select.value = day;
     previous.disabled = selected === 0;
@@ -159,12 +166,13 @@ _PARISH_NAVIGATION = r'''
     status.textContent = upcoming < 0 ? 'Aucune feuille à venir publiée pour le moment.' : '';
     status.hidden = upcoming >= 0;
     frame.title = 'Feuille de chants du ' + labels[selected];
-    frame.src = sheets[selected].querySelector('a').getAttribute('href');
+    frame.src = day + '/';
   }
   previous.addEventListener('click', () => { if (selected > 0) show(selected - 1); });
   next.addEventListener('click', () => { if (selected < sheets.length - 1) show(selected + 1); });
   home.addEventListener('click', () => show(recommended));
   select.addEventListener('change', () => show(sheets.findIndex(sheet => sheet.dataset.date === select.value)));
+  document.getElementById('sheets').hidden = true;
   show(recommended);
   document.getElementById('sheet-navigation').hidden = false;
   frame.hidden = false;

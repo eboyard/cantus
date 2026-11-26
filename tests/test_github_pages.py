@@ -21,8 +21,8 @@ class GitHubPagesTests(unittest.TestCase):
     def test_parish_index_escapes_name_sorts_dates_and_handles_empty_parish(self):
         html = create_parish_index('Saint <Pierre> & Paul', ["2026-10-18", "2026-10-25", "2026-10-18"]).decode()
         self.assertIn("Saint &lt;Pierre&gt; &amp; Paul", html)
-        self.assertEqual(html.count('href="2026-10-18/"'), 1)
-        self.assertLess(html.index('href="2026-10-25/"'), html.index('href="2026-10-18/"'))
+        self.assertEqual(html.count('data-date="2026-10-18"'), 1)
+        self.assertLess(html.index('data-date="2026-10-25"'), html.index('data-date="2026-10-18"'))
         self.assertIn("18/10/2026", html)
         self.assertIn("Aucune feuille", create_parish_index("Quincy-sous-Sénart", []).decode())
 
@@ -98,8 +98,8 @@ class GitHubPagesTests(unittest.TestCase):
             self.assertEqual(other_parish.read_bytes(), export.document)
             self.assertTrue((root / ".nojekyll").exists())
             index = (root / "sainte-therese-lyon/index.html").read_text(encoding="utf-8")
-            self.assertEqual(index.count('href="2026-10-18/"'), 1)
-            self.assertIn('href="2026-10-25/"', index)
+            self.assertEqual(index.count('data-date="2026-10-18"'), 1)
+            self.assertIn('data-date="2026-10-25"', index)
             self.assertNotIn("Saint-Pierre", index)
 
     def test_invalid_configuration_and_escaping_output_path_are_rejected(self):
