@@ -105,6 +105,61 @@ class PreparationRecoveryTests(unittest.TestCase):
             app.query_params["preparation"] = identifier
         return app
 
+    def test_renamed_psautier_path_is_migrated_in_existing_session_and_saved(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "chants").mkdir()
+            (root / "chants/psaume_100.md").write_text(SONG, encoding="utf-8")
+            with patch("app.ROOT", root), patch("app.SONGS_DIR", root / "chants"):
+                app = self.start()
+                app.session_state["preparation_initialized"] = True
+                app.session_state["preparation_identifier"] = "a" * 64
+                app.session_state["song_order"] = ["chants/psautier_100.md"]
+                app.session_state["song_moments"] = ["Psaume"]
+                app.session_state["song_verses"] = [["C2"]]
+                app.run()
+                self.assertFalse(app.exception)
+                self.assertEqual(app.session_state["song_order"], ["chants/psaume_100.md"])
+                self.assertEqual(app.session_state["song_moments"], ["Psaume"])
+                self.assertEqual(app.session_state["song_verses"], [["C2"]])
+                saved = load_preparation(root / ".cantus-drafts", "a" * 64)
+                self.assertEqual(saved["song_order"], ["chants/psaume_100.md"])
+
+    def test_renamed_psautier_path_is_migrated_when_loading_saved_draft(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "chants").mkdir()
+            (root / "chants/psaume_100.md").write_text(SONG, encoding="utf-8")
+            identifier = "b" * 64
+            save_preparation(root / ".cantus-drafts", identifier, encode_preparation({
+                "song_order": ["chants/psautier_100.md"],
+                "song_moments": ["Psaume"],
+                "song_verses": [["C2"]],
+            }))
+            with patch("app.ROOT", root), patch("app.SONGS_DIR", root / "chants"):
+                app = self.start(identifier).run()
+                self.assertFalse(app.exception)
+                self.assertEqual(app.session_state["song_order"], ["chants/psaume_100.md"])
+                self.assertEqual(load_preparation(root / ".cantus-drafts", identifier)["song_order"],
+                                 ["chants/psaume_100.md"])
+
+    def test_missing_song_path_shows_recovery_message_instead_of_crashing(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "chants").mkdir()
+            (root / "chants/a.md").write_text(SONG, encoding="utf-8")
+            with patch("app.ROOT", root), patch("app.SONGS_DIR", root / "chants"):
+                app = self.start()
+                app.session_state["preparation_initialized"] = True
+                app.session_state["preparation_identifier"] = "c" * 64
+                app.session_state["song_order"] = ["chants/missing.md"]
+                app.session_state["song_moments"] = ["Envoi"]
+                app.session_state["song_verses"] = [["C1"]]
+                app.run()
+                self.assertFalse(app.exception)
+                self.assertTrue(any("Chants absents du catalogue" in error.value for error in app.error))
+                self.assertEqual(app.session_state["song_order"], ["chants/missing.md"])
+
     def test_existing_sheet_sources_and_json_upload_callback(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)

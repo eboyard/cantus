@@ -106,10 +106,11 @@ class PsautierTests(unittest.TestCase):
     def test_import_persists_and_reuses_local_edits_without_overwriting_other_psalms(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)
-            existing = root / "psaume_127.md"
+            existing = root / "psaume_128.md"
             existing.write_text("Version de l’équipe", encoding="utf-8")
             with patch("scripts.psautier._download", return_value=fixture(127)) as download:
                 path = import_psalm("127", root)
+                self.assertEqual(path.name, "psaume_127.md")
                 path.write_text(path.read_text(encoding="utf-8") + "\nAjout manuel.\n", encoding="utf-8")
                 self.assertEqual(import_psalm("127", root), path)
                 download.assert_called_once_with(INDEX["127"])
@@ -118,9 +119,22 @@ class PsautierTests(unittest.TestCase):
             with patch("scripts.psautier._download", side_effect=URLError("offline")):
                 with self.assertRaises(URLError):
                     import_psalm("at40", root)
-            self.assertFalse((root / "psautier_at40.md").exists())
+            self.assertFalse((root / "psaume_at40.md").exists())
             with self.assertRaises(ValueError):
                 import_psalm("../outside", root)
+
+    def test_import_uses_psaume_filename_and_reuses_legacy_psautier_file(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch("scripts.psautier._download", return_value=fixture(127)) as download:
+                path = import_psalm("127", root)
+                self.assertEqual(path.name, "psaume_127.md")
+                legacy = root / "psautier_127.md"
+                legacy.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+                self.assertEqual(import_psalm("127", root), path)
+                path.unlink()
+                self.assertEqual(import_psalm("127", root), legacy)
+                download.assert_called_once_with(INDEX["127"])
 
     def test_ui_adds_multiple_psalms_and_canticles_without_replacing_and_exports_them(self):
         canticle = ('<h1>Cantique</h1><h2>Un cantique</h2><table>'
@@ -140,8 +154,8 @@ class PsautierTests(unittest.TestCase):
                     app.selectbox(key="psautier_choice").select(key).run()
                     app.button(key="add_psautier").click().run()
                     self.assertFalse(app.exception)
-                expected = ["chants/psaume_62.md", "chants/psautier_127.md",
-                            "chants/psautier_at40.md", "chants/psautier_127.md"]
+                expected = ["chants/psaume_62.md", "chants/psaume_127.md",
+                            "chants/psaume_at40.md", "chants/psaume_127.md"]
                 self.assertEqual(app.session_state["song_order"], expected)
                 self.assertEqual(app.session_state["song_moments"], ["Psaume"] * 4)
                 self.assertEqual(download.call_count, 2)

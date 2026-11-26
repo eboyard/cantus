@@ -536,12 +536,27 @@ def preparation_directory() -> Path:
     return Path(os.environ.get("CANTUS_DRAFT_DIR", str(ROOT / ".cantus-drafts")))
 
 
+def migrate_renamed_psalm_keys(data: dict, catalog: dict[str, tuple[str, Path]]) -> None:
+    def current_key(key):
+        if isinstance(key, str) and key.startswith("chants/psautier_") and key not in catalog:
+            replacement = key.replace("chants/psautier_", "chants/psaume_", 1)
+            if replacement in catalog:
+                return replacement
+        return key
+
+    if "song_order" in data:
+        data["song_order"] = [current_key(key) for key in data["song_order"]]
+    if data.get("selected_daily_psalm") is not None:
+        data["selected_daily_psalm"] = current_key(data["selected_daily_psalm"])
+
+
 def apply_preparation(data: dict) -> None:
     # Les documents importés sont vérifiés avant toute modification de la sélection.
     reading_context([], data.get("selected_aelf_context"))
     catalog = song_catalog()
     catalog.update(psalm_catalog(data.get("aelf_psalms", {}), ROOT))
     catalog.update(reading_catalog(data.get("reading_texts", {}), ROOT))
+    migrate_renamed_psalm_keys(data, catalog)
     for position, key in enumerate(data.get("song_order", [])):
         if key not in catalog:
             raise ValueError(f"Le chant ou le texte {key} manque dans le catalogue. La préparation actuelle est conservée.")
@@ -654,7 +669,13 @@ def _show_preparation() -> None:
         return
 
     st.session_state.setdefault("song_order", [])
+    migrate_renamed_psalm_keys(st.session_state, catalog)
     show_existing_sheets(catalog)
+    missing = [key for key in st.session_state.song_order if key not in catalog]
+    if missing:
+        st.error("Chants absents du catalogue : " + ", ".join(missing)
+                 + ". Restaurez les fichiers ou chargez une autre préparation.")
+        return
     if ("song_moments" not in st.session_state
             or len(st.session_state.song_moments) != len(st.session_state.song_order)):
         st.session_state.song_moments = celebration_moments([read_song_type(catalog[key][1]) for key in st.session_state.song_order])
