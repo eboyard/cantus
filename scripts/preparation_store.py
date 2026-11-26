@@ -22,16 +22,21 @@ def encode_preparation(state) -> bytes:
     data = {key: state[key] for key in FIELDS if key in state}
     if isinstance(data.get("celebration_date"), date):
         data["celebration_date"] = data["celebration_date"].isoformat()
-    # Valider les tableaux internes avant de les regrouper, sans tronquer une
-    # sélection incohérente avec zip.
-    decode_preparation(json.dumps({"version": 1, "preparation": data}, ensure_ascii=False).encode("utf-8"))
-    order = data.pop("song_order", [])
-    moments = data.pop("song_moments", [])
-    verses = data.pop("song_verses", [])
-    data["songs"] = [
-        {"path": key, "moment": moment, "verses": parts}
-        for key, moment, parts in zip(order, moments, verses)
-    ]
+    if "preparation_items" in state:
+        for field in ("song_order", "song_moments", "song_verses"):
+            data.pop(field, None)
+        data["songs"] = [item.record() for item in state["preparation_items"]]
+    else:
+        # Compatibilité avec les anciennes sessions et les anciens appelants.
+        # Valider avant zip pour ne jamais tronquer une sélection incohérente.
+        decode_preparation(json.dumps({"version": 1, "preparation": data}, ensure_ascii=False).encode("utf-8"))
+        order = data.pop("song_order", [])
+        moments = data.pop("song_moments", [])
+        verses = data.pop("song_verses", [])
+        data["songs"] = [
+            {"path": key, "moment": moment, "verses": parts}
+            for key, moment, parts in zip(order, moments, verses)
+        ]
     raw = (json.dumps({"version": 2, "preparation": data}, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     decode_preparation(raw)
     return raw

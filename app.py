@@ -31,6 +31,7 @@ from scripts.aelf import load_aelf_masses, mass_url, psalm_catalog, preferred_ps
 from scripts.psautier import INDEX as PSAUTIER_INDEX, PSALM_REFERENCE, import_psalm, reference_label
 from scripts.liturgical_texts import reading_catalog, reading_documents
 from scripts.sheet_library import reading_texts_from_contents
+from scripts.preparation_item import PreparationItem, items_from_columns, move_item, remove_item
 from scripts.preparation_store import FIELDS as PREPARATION_FIELDS, encode_preparation, decode_preparation, load_preparation, save_preparation
 
 
@@ -214,9 +215,7 @@ def show_published_sheet_picker(catalog: dict[str, tuple[str, Path]]) -> None:
             st.session_state.aelf_psalms = aelf_documents
             st.session_state.reading_texts = readings
             st.session_state.selected_aelf_context = context
-            st.session_state.song_order = order
-            st.session_state.song_moments = moments
-            st.session_state.song_verses = verses
+            set_preparation_items(items_from_columns(order, moments, verses, imported_catalog))
             st.session_state.pop("selected_daily_psalm", None)
             if title is not None:
                 st.session_state.celebration_title = title
@@ -457,6 +456,47 @@ def show_user_help() -> None:
     st.markdown(document if topic == "Toutes les rubriques" else topics[topic])
 
 
+def set_preparation_items(items: list[PreparationItem]) -> None:
+    st.session_state.preparation_items = items
+    for key in ("song_order", "song_moments", "song_verses"):
+        st.session_state.pop(key, None)
+
+
+def ensure_preparation_items(catalog) -> list[PreparationItem]:
+    if "preparation_items" not in st.session_state:
+        order = st.session_state.get("song_order", [])
+        moments = st.session_state.get("song_moments")
+        if moments is None:
+            moments = celebration_moments([read_song_type(catalog[key][1]) if key in catalog else "" for key in order])
+        verses = st.session_state.get("song_verses", [None for _ in order])
+        set_preparation_items(items_from_columns(order, moments, verses, catalog))
+        clear_moment_widgets()
+    items = st.session_state.preparation_items
+    for item in items:
+        if item.path in catalog:
+            item.title = catalog[item.path][0]
+    return items
+
+
+def sync_preparation_widgets() -> None:
+    # Les clés suivent l'occurrence, jamais sa position à l'écran. Capturer
+    # aussi les changements situés sous un bouton de déplacement cliqué.
+    for item in st.session_state.get("preparation_items", []):
+        moment_key = f"sheet_moment_{item.uid}"
+        if moment_key in st.session_state:
+            item.moment = st.session_state[moment_key]
+        prefix = f"sheet_verses_{item.uid}_"
+        choices = {key[len(prefix):]: st.session_state[key] for key in st.session_state if key.startswith(prefix)}
+        if choices:
+            item.verses = [identifier for identifier in sorted(choices, key=lambda value: int(value[1:])) if choices[identifier]]
+
+
+def clear_item_widgets(uid: str) -> None:
+    for key in list(st.session_state):
+        if key == f"sheet_moment_{uid}" or key.startswith(f"sheet_verses_{uid}_"):
+            del st.session_state[key]
+
+
 def clear_moment_widgets() -> None:
     for key in list(st.session_state):
         if key.startswith(("sheet_moment_", "sheet_verses_")):
@@ -476,12 +516,13 @@ def show_aelf_import(catalog: dict[str, tuple[str, Path]]) -> date:
         preferred_key = preferred_psalm_key(chosen, catalog)
         previous_key = st.session_state.get("selected_daily_psalm")
         # Un psaume déjà importé suit la nouvelle date ou la nouvelle messe choisie.
-        for position, key in enumerate(st.session_state.song_order):
-            if chosen.markdown and (key.startswith("aelf/") or key == previous_key):
-                if key != preferred_key:
-                    st.session_state.song_order[position] = preferred_key
-                    st.session_state.song_verses[position] = None
-                    st.session_state.song_moments[position] = "Psaume"
+        for item in ensure_preparation_items(catalog):
+            if chosen.markdown and (item.path.startswith("aelf/") or item.path == previous_key):
+                if item.path != preferred_key:
+                    item.path = preferred_key
+                    item.title = catalog[preferred_key][0]
+                    item.verses = None
+                    item.moment = "Psaume"
                 st.session_state.selected_daily_psalm = preferred_key
         for key in ("generated_song_sheet", "generated_print_sheet", "generated_presentation", "pages_export", "pages_publication"):
             st.session_state.pop(key, None)
@@ -546,6 +587,8 @@ def migrate_renamed_psalm_keys(data: dict, catalog: dict[str, tuple[str, Path]])
 
     if "song_order" in data:
         data["song_order"] = [current_key(key) for key in data["song_order"]]
+    for item in data.get("preparation_items", []):
+        item.path = current_key(item.path)
     if data.get("selected_daily_psalm") is not None:
         data["selected_daily_psalm"] = current_key(data["selected_daily_psalm"])
 
@@ -561,9 +604,11 @@ def apply_preparation(data: dict) -> None:
         if key not in catalog:
             raise ValueError(f"Le chant ou le texte {key} manque dans le catalogue. La préparation actuelle est conservée.")
         selected_song_parts(catalog[key][1], data["song_verses"][position])
+    items = items_from_columns(data.get("song_order", []), data.get("song_moments", []), data.get("song_verses", []), catalog)
     for key in PREPARATION_FIELDS:
         st.session_state.pop(key, None)
     st.session_state.update(data)
+    set_preparation_items(items)
     clear_moment_widgets()
     for key in ("aelf_loaded", "aelf_mass_choice", "aelf_import_error", "generated_presentation",
                 "generated_song_sheet", "generated_print_sheet", "pages_export", "pages_publication"):
@@ -641,16 +686,7 @@ def show_preparation_backup() -> None:
 
 def show_preparation() -> None:
     initialize_preparation()
-    # Capturer aussi les champs situés après un bouton Monter/Descendre : le
-    # rerun interrompt la boucle avant qu'ils ne soient relus à l'écran.
-    for position, moment in enumerate(st.session_state.get("song_moments", [])):
-        st.session_state.song_moments[position] = st.session_state.get(f"sheet_moment_{position}", moment)
-    for position, verses in enumerate(st.session_state.get("song_verses", [])):
-        if verses is not None:
-            prefix = f"sheet_verses_{position}_"
-            choices = {key[len(prefix):]: st.session_state[key] for key in st.session_state if key.startswith(prefix)}
-            if choices:
-                st.session_state.song_verses[position] = [key for key, keep in choices.items() if keep]
+    sync_preparation_widgets()
     try:
         _show_preparation()
     finally:
@@ -668,22 +704,18 @@ def _show_preparation() -> None:
         st.error("Aucun chant n’a été trouvé dans le catalogue.")
         return
 
-    st.session_state.setdefault("song_order", [])
     migrate_renamed_psalm_keys(st.session_state, catalog)
     show_existing_sheets(catalog)
-    missing = [key for key in st.session_state.song_order if key not in catalog]
+    try:
+        items = ensure_preparation_items(catalog)
+    except ValueError as error:
+        st.error(str(error))
+        return
+    missing = [item.path for item in items if item.path not in catalog]
     if missing:
         st.error("Chants absents du catalogue : " + ", ".join(missing)
                  + ". Restaurez les fichiers ou chargez une autre préparation.")
         return
-    if ("song_moments" not in st.session_state
-            or len(st.session_state.song_moments) != len(st.session_state.song_order)):
-        st.session_state.song_moments = celebration_moments([read_song_type(catalog[key][1]) for key in st.session_state.song_order])
-        clear_moment_widgets()
-    if ("song_verses" not in st.session_state
-            or len(st.session_state.song_verses) != len(st.session_state.song_order)):
-        st.session_state.song_verses = [None for _ in st.session_state.song_order]
-        clear_moment_widgets()
     day = show_aelf_import(catalog)
     aelf_context = st.session_state.get("selected_aelf_context")
     celebration = st.session_state.celebration_title
@@ -694,11 +726,9 @@ def _show_preparation() -> None:
         format_func=lambda key: catalog[key][0],
     )
     if st.button("Ajouter le chant"):
-        moment = read_song_type(catalog[selected][1]) or (MOMENTS[0] if not st.session_state.song_order else "")
-        position = moment_insertion_index(st.session_state.song_moments, moment)
-        st.session_state.song_order.insert(position, selected)
-        st.session_state.song_moments.insert(position, moment)
-        st.session_state.song_verses.insert(position, None)
+        moment = read_song_type(catalog[selected][1]) or (MOMENTS[0] if not items else "")
+        position = moment_insertion_index([item.moment for item in items], moment)
+        items.insert(position, PreparationItem(selected, catalog[selected][0], moment))
         clear_moment_widgets()
         st.rerun()
 
@@ -718,10 +748,8 @@ def _show_preparation() -> None:
         except (OSError, ValueError, UnicodeError) as error:
             st.error(f"Impossible d’ajouter le psaume ou cantique : {error}")
         else:
-            position = moment_insertion_index(st.session_state.song_moments, "Psaume")
-            st.session_state.song_order.insert(position, key)
-            st.session_state.song_moments.insert(position, "Psaume")
-            st.session_state.song_verses.insert(position, None)
+            position = moment_insertion_index([item.moment for item in items], "Psaume")
+            items.insert(position, PreparationItem(key, read_title(path), "Psaume"))
             clear_moment_widgets()
             st.rerun()
 
@@ -736,90 +764,80 @@ def _show_preparation() -> None:
                 if column.button(f"Ajouter : {title}", key=f"add_{title}"):
                     st.session_state.reading_texts = {**st.session_state.get("reading_texts", {}),
                                                       reading_key: available_readings[reading_key]}
-                    st.session_state.song_order.append(reading_key)
-                    st.session_state.song_moments.append(title)
-                    st.session_state.song_verses.append(None)
+                    items.append(PreparationItem(reading_key, title, title))
                     clear_moment_widgets()
                     st.rerun()
 
     st.subheader("Ordre des chants et des textes")
-    song_order = st.session_state.song_order
-    assigned_moments = st.session_state.song_moments
-    verses = st.session_state.song_verses
-    moments = list(assigned_moments)
-    if not song_order:
+    if not items:
         st.info("Ajoutez un chant ou un texte pour commencer.")
     else:
         st.caption("Le type du carnet est proposé pour chaque chant. Vous pouvez modifier tous les moments, y compris le premier et le dernier. Les moments suivent les chants lorsque vous les déplacez et sont conservés dans les feuilles publiées.")
-        for position, key in enumerate(song_order):
+        for position, item in enumerate(items):
+            key = item.path
             with st.container(border=True):
                 title_col, actions_col = st.columns([6, 2], gap="small")
                 up_col, down_col, remove_col = actions_col.columns(3, gap="small")
-                title_col.write(f"{position + 1}. {catalog[key][0]}")
-                moments[position] = title_col.selectbox(
-                    f"Moment de la messe — {'texte' if key.startswith('reading/') else 'chant'} {position + 1}", options=["", *MOMENTS],
-                    index=["", *MOMENTS].index(moments[position]),
-                    key=f"sheet_moment_{position}",
+                title_col.write(f"{position + 1}. {item.title}")
+                item.moment = title_col.selectbox(
+                    f"Moment de la messe — {item.title}", options=["", *MOMENTS],
+                    index=["", *MOMENTS].index(item.moment),
+                    key=f"sheet_moment_{item.uid}",
                     format_func=lambda value: f"{MOMENTS.index(value) + 1}. {value}" if value else "Non renseigné",
                 )
-                assigned_moments[position] = moments[position]
                 try:
                     parts = selected_song_parts(catalog[key][1])
                     psalm = read_song_type(catalog[key][1]) in {"Psaume", "Cantique"}
                     has_refrain = any(part.kind == "refrain" for part in parts)
                     couplets = {part.identifier: part.text for part in parts if part.selectable}
                     if not couplets or (len(couplets) == 1 and not psalm):
-                        verses[position] = list(couplets)
+                        item.verses = list(couplets)
                     else:
-                        selected_verses = list(couplets) if (verses[position] is None
-                            or (psalm and not has_refrain and not verses[position])) else [
-                            identifier for identifier in verses[position] if identifier in couplets
+                        selected_verses = list(couplets) if (item.verses is None
+                            or (psalm and not has_refrain and not item.verses)) else [
+                            identifier for identifier in item.verses if identifier in couplets
                         ]
                         title_col.caption("Versets à garder" if psalm else "Couplets à garder")
                         if psalm and not has_refrain:
                             title_col.caption("Gardez au moins une strophe, ou retirez le psaume de la célébration.")
-                        verses[position] = [
+                        item.verses = [
                             identifier for identifier, text in couplets.items()
                             if title_col.checkbox(
                                 f"{'Verset' if psalm else 'Couplet'} {identifier[1:]} — {plain_text(text).splitlines()[0]}",
                                 value=identifier in selected_verses,
-                                key=f"sheet_verses_{position}_{identifier}",
+                                key=f"sheet_verses_{item.uid}_{identifier}",
                                 disabled=psalm and not has_refrain and len(selected_verses) == 1 and identifier in selected_verses,
                                 help="Choix pour le PowerPoint et les feuilles téléphone, à publier et à imprimer. Les refrains et les ponts sont conservés.",
                             )
                         ]
-                        if psalm and not has_refrain and not verses[position]:
+                        if psalm and not has_refrain and not item.verses:
                             # Plusieurs clics peuvent arriver avant le prochain rendu.
                             # Ne pas enregistrer [] (ancien sens : psaume entier).
-                            verses[position] = selected_verses[-1:] or list(couplets)[-1:]
+                            item.verses = selected_verses[-1:] or list(couplets)[-1:]
                             clear_moment_widgets()
                             st.rerun()
                 except (OSError, ValueError) as error:
                     title_col.error(f"Impossible de lire les couplets ou les versets : {error}")
-                if up_col.button("**↑**", key=f"up-{position}", disabled=position == 0, help="Monter le chant ou le texte"):
-                    song_order[position - 1], song_order[position] = song_order[position], song_order[position - 1]
-                    assigned_moments[position - 1], assigned_moments[position] = assigned_moments[position], assigned_moments[position - 1]
-                    verses[position - 1], verses[position] = verses[position], verses[position - 1]
-                    clear_moment_widgets()
+                if up_col.button("**↑**", key=f"up-{item.uid}", disabled=position == 0, help="Monter le chant ou le texte"):
+                    move_item(items, item.uid, -1)
                     st.rerun()
                 if down_col.button(
                     "**↓**",
                     help="Descendre le chant ou le texte",
-                    key=f"down-{position}",
-                    disabled=position == len(song_order) - 1,
+                    key=f"down-{item.uid}",
+                    disabled=position == len(items) - 1,
                 ):
-                    song_order[position + 1], song_order[position] = song_order[position], song_order[position + 1]
-                    assigned_moments[position + 1], assigned_moments[position] = assigned_moments[position], assigned_moments[position + 1]
-                    verses[position + 1], verses[position] = verses[position], verses[position + 1]
-                    clear_moment_widgets()
+                    move_item(items, item.uid, 1)
                     st.rerun()
-                if remove_col.button("🗑️", key=f"remove-{position}", help="Retirer de la célébration"):
-                    song_order.pop(position)
-                    assigned_moments.pop(position)
-                    verses.pop(position)
-                    clear_moment_widgets()
+                if remove_col.button("🗑️", key=f"remove-{item.uid}", help="Retirer de la célébration"):
+                    remove_item(items, item.uid)
+                    clear_item_widgets(item.uid)
                     st.rerun()
 
+    # Vues temporaires uniquement pour les générateurs d'exports existants.
+    song_order = [item.path for item in items]
+    verses = [item.verses for item in items]
+    moments = [item.moment for item in items]
     show_preparation_backup()
 
     if song_order:

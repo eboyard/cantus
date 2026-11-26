@@ -6,7 +6,8 @@ from unittest.mock import patch
 import pymupdf
 from streamlit.testing.v1 import AppTest
 
-from ui_helpers import export_downloads
+
+from ui_helpers import export_downloads, set_preparation_value
 
 from scripts.print_song_sheet import create_print_song_sheet
 from scripts.song_types import IMPLICIT_MOMENTS, MOMENTS
@@ -85,7 +86,7 @@ class PrintSongSheetTests(unittest.TestCase):
         with patch("app.create_word_song_sheet", side_effect=TypeError("private internal detail")), \
                 patch("app.github_setting", return_value=""):
             app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
-            app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
+            set_preparation_value(app, "song_order", ["chants/kyrie_messe_de_st_augustin.md"])
             app.run()
             with self.assertLogs("app", level="ERROR"):
                 next(button for button in app.button if button.label == "Créer la version à imprimer").click().run()
@@ -155,7 +156,7 @@ class PrintSongSheetTests(unittest.TestCase):
 
     def test_print_download_is_independent_and_tracks_text_size_and_selection(self):
         app = AppTest.from_string("from app import main\nmain()")
-        app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
+        set_preparation_value(app, "song_order", ["chants/kyrie_messe_de_st_augustin.md"])
         app.run()
         self.assertEqual(next(widget for widget in app.selectbox
                               if widget.label == "Taille du texte imprimé").value, 12)

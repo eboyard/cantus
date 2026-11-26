@@ -10,6 +10,8 @@ from urllib.error import URLError
 
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import preparation_value, set_preparation_value
+
 from scripts.aelf import load_aelf_masses, parse_aelf_response, preferred_psalm_key, psalm_catalog
 from scripts.lyrics_format import formatted_lines
 from scripts.markdown_to_pptx import build_song_parts, plain_text, read_title
@@ -63,7 +65,7 @@ class PsautierTests(unittest.TestCase):
             self.assertFalse(app.exception)
             self.assertIsNone(app.selectbox(key="psautier_choice").value)
             self.assertTrue(app.button(key="add_psautier").disabled)
-            self.assertEqual(app.session_state["song_order"], [])
+            self.assertEqual(preparation_value(app, "song_order"), [])
             download.assert_not_called()
 
     def test_index_includes_split_psalms_and_canticles_and_rejects_external_pages(self):
@@ -148,7 +150,7 @@ class PsautierTests(unittest.TestCase):
             with patch("app.ROOT", root), patch("app.SONGS_DIR", songs), \
                     patch("scripts.psautier._download", side_effect=[fixture(127), canticle]) as download:
                 app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
-                app.session_state["song_order"] = ["chants/psaume_62.md"]
+                set_preparation_value(app, "song_order", ["chants/psaume_62.md"])
                 app.run()
                 for key in ("127", "at40", "127"):
                     app.selectbox(key="psautier_choice").select(key).run()
@@ -156,19 +158,19 @@ class PsautierTests(unittest.TestCase):
                     self.assertFalse(app.exception)
                 expected = ["chants/psaume_62.md", "chants/psaume_127.md",
                             "chants/psaume_at40.md", "chants/psaume_127.md"]
-                self.assertEqual(app.session_state["song_order"], expected)
-                self.assertEqual(app.session_state["song_moments"], ["Psaume"] * 4)
+                self.assertEqual(preparation_value(app, "song_order"), expected)
+                self.assertEqual(preparation_value(app, "song_moments"), ["Psaume"] * 4)
                 self.assertEqual(download.call_count, 2)
                 next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
                 document = app.session_state["generated_song_sheet"][1].decode()
                 self.assertIn("<u>louange</u>", document)
                 catalog = {key: (read_title(root / key), root / key) for key in expected}
                 self.assertEqual(songs_from_contents(document, catalog), expected)
-                before = list(app.session_state["song_order"])
+                before = list(preparation_value(app, "song_order"))
                 download.side_effect = URLError("offline")
                 app.selectbox(key="psautier_choice").select("nt0").run()
                 app.button(key="add_psautier").click().run()
-                self.assertEqual(app.session_state["song_order"], before)
+                self.assertEqual(preparation_value(app, "song_order"), before)
                 self.assertTrue(any("Impossible d’ajouter" in error.value for error in app.error))
 
     def test_november_29_unprefixed_reference_and_omitted_half_verses(self):

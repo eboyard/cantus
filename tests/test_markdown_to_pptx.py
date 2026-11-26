@@ -1,6 +1,8 @@
 import unittest
 from io import BytesIO
 
+from ui_helpers import set_preparation_value
+
 from scripts.markdown_to_pptx import BACKGROUND_COLOR, build_slides, build_song_parts, convert, read_slides, read_index_slides
 from pptx import Presentation
 from pathlib import Path
@@ -223,7 +225,7 @@ class IndexTests(unittest.TestCase):
 class WebAppTests(unittest.TestCase):
     def test_preview_error_does_not_interrupt_app(self):
         app = AppTest.from_string("from app import main\nmain()")
-        app.session_state["song_order"] = ["chants/c_est_par_ta_grâce.md"]
+        set_preparation_value(app, "song_order", ["chants/c_est_par_ta_grâce.md"])
         with patch("app.selected_song_parts", side_effect=[
             build_song_parts("Couplet"), ValueError("Partie C1 absente"),
         ]):

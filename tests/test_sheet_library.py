@@ -9,6 +9,8 @@ from urllib.error import HTTPError
 
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import item_widget_key, preparation_value, set_preparation_value
+
 from scripts.sheet_library import ExistingSheet, local_sheets, published_sheets, read_existing_sheet, songs_from_contents, verses_from_contents, title_from_contents
 from scripts.song_sheet import create_song_sheet
 
@@ -73,13 +75,13 @@ class SheetLibraryTests(unittest.TestCase):
                 app = AppTest.from_string("from app import main\nmain()", default_timeout=15).run()
                 app.selectbox(key="existing_sheet_choice").select("paroisse/2026-11-14/index.html").run()
                 self.assertFalse(app.exception)
-                self.assertEqual(app.session_state["song_verses"], [["C1", "C2", "C8"]])
+                self.assertEqual(preparation_value(app, "song_verses"), [["C1", "C2", "C8"]])
                 self.assertEqual(app.text_input(key="celebration_title").value, "Messe du 33e dimanche")
                 for i in range(1, 10):
-                    self.assertEqual(app.checkbox(key=f"sheet_verses_0_C{i}").value, i in (1, 2, 8))
+                    self.assertEqual(app.checkbox(key=item_widget_key(app, f"sheet_verses_0_C{i}")).value, i in (1, 2, 8))
                 # Une réexécution conserve également les choix restaurés.
                 app.run()
-                self.assertEqual(app.session_state["song_verses"], [["C1", "C2", "C8"]])
+                self.assertEqual(preparation_value(app, "song_verses"), [["C1", "C2", "C8"]])
                 next(b for b in app.button if b.label == "Créer la feuille de chants").click().run()
                 next(b for b in app.button if b.label == "Préparer pour GitHub Pages").click().run()
                 self.assertFalse(app.exception)
@@ -174,16 +176,16 @@ class SheetLibraryTests(unittest.TestCase):
             invalid.write_text(contents("Introuvable"), encoding="utf-8")
             with patch("app.ROOT", root), patch("app.song_catalog", return_value=catalog):
                 app = AppTest.from_string("from app import main\nmain()")
-                app.session_state["song_order"] = ["a"]
+                set_preparation_value(app, "song_order", ["a"])
                 app.run()
                 app.selectbox(key="existing_sheet_choice").select("paroisse/2026-10-18/index.html").run()
                 self.assertFalse(app.exception)
-                self.assertEqual(app.session_state["song_order"], ["b", "a", "b"])
+                self.assertEqual(preparation_value(app, "song_order"), ["b", "a", "b"])
                 next(button for button in app.button if button.label == "Ajouter le chant").click().run()
-                self.assertEqual(len(app.session_state["song_order"]), 4)
-                previous = list(app.session_state["song_order"])
+                self.assertEqual(len(preparation_value(app, "song_order")), 4)
+                previous = list(preparation_value(app, "song_order"))
                 app.selectbox(key="existing_sheet_choice").select("paroisse/2026-10-19/index.html").run()
-                self.assertEqual(app.session_state["song_order"], previous)
+                self.assertEqual(preparation_value(app, "song_order"), previous)
                 self.assertIn("Introuvable", app.error[0].value)
                 self.assertFalse(app.exception)
 
@@ -195,7 +197,7 @@ class SheetLibraryTests(unittest.TestCase):
             app.button(key="refresh_existing_sheets").click().run()
             app.selectbox(key="existing_sheet_choice").select(sheet.path).run()
             self.assertFalse(app.exception)
-            self.assertEqual(app.session_state["song_order"], ["chants/agnus_dei.md"])
+            self.assertEqual(preparation_value(app, "song_order"), ["chants/agnus_dei.md"])
 
 
 if __name__ == "__main__":

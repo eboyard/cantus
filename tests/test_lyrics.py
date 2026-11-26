@@ -1,3 +1,4 @@
+from ui_helpers import preparation_value, set_preparation_value
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -18,7 +19,7 @@ class LyricsTests(unittest.TestCase):
             catalog = {"b": ("Zèbre", song), "a": ("Chant", song)}
             with patch("app.song_catalog", return_value=catalog):
                 app = AppTest.from_string("from app import show_lyrics\nshow_lyrics()")
-                app.session_state["song_order"] = ["b", "b"]
+                set_preparation_value(app, "song_order", ["b", "b"])
                 app.run()
                 self.assertFalse(app.exception)
                 self.assertEqual(app.selectbox[0].options, ["Chant", "Zèbre"])
@@ -29,7 +30,7 @@ class LyricsTests(unittest.TestCase):
                     "Premier couplet", "**Refrain**  \nDeuxième ligne",
                     "Deuxième couplet", "**Refrain**  \nDeuxième ligne",
                 ])
-                self.assertEqual(app.session_state["song_order"], ["b", "b"])
+                self.assertEqual(preparation_value(app, "song_order"), ["b", "b"])
                 app.selectbox(key="lyrics_song").select("b").run()
                 self.assertEqual(app.subheader[0].value, "Zèbre")
 

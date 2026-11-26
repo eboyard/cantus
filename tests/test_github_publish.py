@@ -10,6 +10,8 @@ from urllib.error import HTTPError, URLError
 
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import set_preparation_value
+
 from scripts.github_pages import prepare_pages_export
 from scripts.github_publish import GitHubPublishError, publish_sheet
 
@@ -122,7 +124,7 @@ class GitHubPublishTests(unittest.TestCase):
             song.write_text("Paroles", encoding="utf-8")
             with patch("app.song_catalog", return_value={"chant": ("Chant", song)}), patch.dict("os.environ", {"GITHUB_TOKEN": "private-token", "SHEET_PUBLISH_PASSWORD": "organisateur"}), patch("app.publish_sheet", return_value="https://github.com/eboyard/cantus/commit/" + "a" * 40) as publish:
                 app = AppTest.from_string("from app import main\nmain()")
-                app.session_state["song_order"] = ["chant"]
+                set_preparation_value(app, "song_order", ["chant"])
                 app.run()
                 next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
                 app.selectbox(key="pages_parish").select("Boussy-saint-Antoine").run()

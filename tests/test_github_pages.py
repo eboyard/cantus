@@ -12,6 +12,8 @@ from xml.etree import ElementTree
 
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import set_preparation_value
+
 from scripts.github_pages import create_parish_index, prepare_pages_export, save_pages_export
 
 
@@ -117,7 +119,7 @@ class GitHubPagesTests(unittest.TestCase):
             source.write_text("**Gloire à Toi !**", encoding="utf-8")
             with patch("app.ROOT", root), patch("app.song_catalog", return_value={"chant": ("Un chant", source)}):
                 app = AppTest.from_string("from app import main\nmain()")
-                app.session_state["song_order"] = ["chant"]
+                set_preparation_value(app, "song_order", ["chant"])
                 app.session_state["celebration_date"] = date(2026, 10, 18)
                 app.run()
                 next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()

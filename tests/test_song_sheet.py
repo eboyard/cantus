@@ -7,7 +7,8 @@ from unittest.mock import patch
 
 from streamlit.testing.v1 import AppTest
 
-from ui_helpers import export_downloads
+
+from ui_helpers import export_downloads, item_widget_key, preparation_value, set_preparation_value
 
 from scripts.song_sheet import create_song_sheet
 from scripts.song_types import MOMENTS
@@ -51,9 +52,9 @@ class SongSheetTests(unittest.TestCase):
                     next(box for box in app.selectbox if box.label == "Choisir un chant à ajouter").select(key).run()
                     next(button for button in app.button if button.label == "Ajouter le chant").click().run()
                 self.assertFalse(app.exception)
-                self.assertEqual(app.session_state["song_order"], list(catalog))
-                self.assertEqual(app.session_state["song_moments"], ["Anamnèse", "Notre Père", "Agneau de Dieu"])
-                options = app.selectbox(key="sheet_moment_0").options
+                self.assertEqual(preparation_value(app, "song_order"), list(catalog))
+                self.assertEqual(preparation_value(app, "song_moments"), ["Anamnèse", "Notre Père", "Agneau de Dieu"])
+                options = app.selectbox(key=item_widget_key(app, "sheet_moment_0")).options
                 labels = [f"{MOMENTS.index(moment) + 1}. {moment}"
                           for moment in ("Anamnèse", "Notre Père", "Agneau de Dieu")]
                 self.assertLess(options.index(labels[0]), options.index(labels[1]))
@@ -158,10 +159,10 @@ class SongSheetTests(unittest.TestCase):
 
     def test_selected_moments_are_in_download_and_export_and_changes_invalidate_them(self):
         app = AppTest.from_string("from app import main\nmain()", default_timeout=20)
-        app.session_state["song_order"] = ["chants/agnus_dei.md"] * 3
-        app.session_state["song_moments"] = ["Chant d’entrée", "Offertoire", "Envoi"]
+        set_preparation_value(app, "song_order", ["chants/agnus_dei.md"] * 3)
+        set_preparation_value(app, "song_moments", ["Chant d’entrée", "Offertoire", "Envoi"])
         app.run()
-        app.selectbox(key="sheet_moment_1").select("Offertoire").run()
+        app.selectbox(key=item_widget_key(app, "sheet_moment_1")).select("Offertoire").run()
         next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
         downloaded = app.session_state["generated_song_sheet"][1].decode()
         next(button for button in app.button if button.label == "Préparer pour GitHub Pages").click().run()
@@ -169,7 +170,7 @@ class SongSheetTests(unittest.TestCase):
         for html in (downloaded, exported):
             for moment in ("Chant d’entrée", "Offertoire", "Envoi"):
                 self.assertIn(f'<p class="moment">{moment}</p>', html)
-        app.selectbox(key="sheet_moment_1").select("Communion").run()
+        app.selectbox(key=item_widget_key(app, "sheet_moment_1")).select("Communion").run()
         self.assertFalse(app.exception)
         self.assertEqual(len(export_downloads(app)), 0)
         self.assertFalse(any(button.label == "Publier sur GitHub Pages" for button in app.button))
@@ -229,7 +230,7 @@ class SongSheetTests(unittest.TestCase):
 
     def test_download_is_independent_and_hidden_after_selection_changes(self):
         app = AppTest.from_string("from app import main\nmain()")
-        app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
+        set_preparation_value(app, "song_order", ["chants/kyrie_messe_de_st_augustin.md"])
         app.run()
         next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
         self.assertEqual(len(app.exception), 0)
@@ -243,7 +244,7 @@ class SongSheetTests(unittest.TestCase):
     @patch("app.load_aelf_masses", side_effect=ValueError("Hors connexion pour ce test"))
     def test_download_contains_selected_date_and_is_hidden_when_date_changes(self, _fetch):
         app = AppTest.from_string("from app import main\nmain()")
-        app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
+        set_preparation_value(app, "song_order", ["chants/kyrie_messe_de_st_augustin.md"])
         app.run()
         app.date_input(key="celebration_date").set_value(date(2026, 11, 15)).run()
         next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
@@ -256,10 +257,12 @@ class SongSheetTests(unittest.TestCase):
         self.assertIn("22/11/2026</h1>", app.session_state["generated_song_sheet"][1].decode("utf-8"))
 
     def test_empty_selection_and_generation_error(self):
-        app = AppTest.from_string("from app import main\nmain()")
+        app = AppTest.from_string("from app import main\nmain()", default_timeout=20)
         app.run()
         self.assertTrue(next(button for button in app.button if button.label == "Créer la feuille de chants").disabled)
-        app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
+        set_preparation_value(app, "song_order", ["chants/kyrie_messe_de_st_augustin.md"])
+        set_preparation_value(app, "song_moments", ["Préparation pénitentielle"])
+        set_preparation_value(app, "song_verses", [None])
         app.run()
         with patch("app.create_song_sheet", side_effect=ValueError("Partie absente")):
             next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()

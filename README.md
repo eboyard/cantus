@@ -102,6 +102,25 @@ Pour générer le diaporama d'une messe à partir de son index :
 
 ## Application web
 
+### Éléments de la préparation
+
+L’état de la préparation contient une seule liste `preparation_items` d’objets
+`PreparationItem` : chemin du chant ou du texte, titre, moment liturgique,
+couplets/versets sélectionnés et identifiant d’occurrence. Déplacer ou retirer
+un élément agit sur cet objet entier. Deux occurrences du même chant disposent
+d’identifiants distincts et peuvent conserver des moments et des couplets différents.
+
+Les clés des champs et des boutons Streamlit utilisent cet identifiant, jamais
+la position dans la feuille. Un déplacement conserve ainsi l’association avec
+les valeurs déjà présentes dans le navigateur. Les champs sont synchronisés avant
+les opérations sur la liste, y compris pour un changement situé plus bas dans la page.
+
+Les anciennes sessions à trois listes sont converties une fois, puis ces listes
+sont supprimées de la session. Les sauvegardes JSON versions 1 et 2 restent lisibles ;
+la version 2 conserve son format d’objets `path`, `moment`, `verses`.
+Les identifiants d’interface sont recréés à la réouverture. Les générateurs d’exports
+reçoivent des vues temporaires dérivées de la liste d’objets après l’édition.
+
 ### Sauvegarde des préparations
 
 Chaque préparation dispose d’un identifiant aléatoire dans le paramètre d’URL

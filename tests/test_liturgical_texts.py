@@ -11,6 +11,8 @@ from lxml import etree
 
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import item_widget_key, preparation_value, set_preparation_value
+
 from scripts.aelf import parse_aelf_response
 from scripts.liturgical_texts import reading_catalog, reading_documents
 from scripts.sheet_library import reading_texts_from_contents, songs_from_contents
@@ -48,22 +50,22 @@ class LiturgicalTextTests(unittest.TestCase):
             root = Path(directory)
             app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
             app.session_state["celebration_date"] = day - timedelta(days=1)
-            app.session_state["song_order"] = ["entry"]
+            set_preparation_value(app, "song_order", ["entry"])
             app.run()
             app.date_input(key="celebration_date").set_value(day).run()
-            self.assertEqual(app.session_state["song_order"], ["entry"])
+            self.assertEqual(preparation_value(app, "song_order"), ["entry"])
             keys = list(reading_documents(mass.markdown))
             for count, title in enumerate(("Première lecture", "Deuxième lecture", "Évangile"), 1):
                 app.button(key=f"add_{title}").click().run()
                 self.assertFalse(app.exception)
-                self.assertEqual(app.session_state["song_order"], ["entry", *keys[:count]])
-                self.assertEqual(app.session_state["song_moments"][-1], title)
+                self.assertEqual(preparation_value(app, "song_order"), ["entry", *keys[:count]])
+                self.assertEqual(preparation_value(app, "song_moments")[-1], title)
             for position in (3, 2, 1):
-                app.button(key=f"up-{position}").click().run()
-            app.button(key="down-0").click().run()
-            app.button(key="remove-2").click().run()
+                app.button(key=item_widget_key(app, f"up-{position}")).click().run()
+            app.button(key=item_widget_key(app, "down-0")).click().run()
+            app.button(key=item_widget_key(app, "remove-2")).click().run()
             expected = ["entry", keys[2], keys[1]]
-            self.assertEqual(app.session_state["song_order"], expected)
+            self.assertEqual(preparation_value(app, "song_order"), expected)
             next(button for button in app.button if button.label == "Créer la feuille de chants").click().run()
             self.assertFalse(app.exception)
             html = app.session_state["generated_song_sheet"][1].decode()
@@ -72,7 +74,7 @@ class LiturgicalTextTests(unittest.TestCase):
             self.assertNotIn('<p class="moment">Évangile</p>', html)
             full_catalog = {**catalog, **reading_catalog(app.session_state["reading_texts"], root)}
             word = create_word_song_sheet("Messe", [full_catalog[key] for key in expected],
-                                           moments=list(app.session_state["song_moments"]))
+                                           moments=list(preparation_value(app, "song_moments")))
             with ZipFile(BytesIO(word)) as package:
                 document = etree.fromstring(package.read("word/document.xml"))
             headings = ["".join(paragraph.xpath(".//w:t/text()", namespaces=NS))
@@ -87,10 +89,10 @@ class LiturgicalTextTests(unittest.TestCase):
             reopened = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20).run()
             reopened.selectbox(key="existing_sheet_choice").select("paroisse/2026-11-15/index.html").run()
             self.assertFalse(reopened.exception)
-            self.assertEqual(reopened.session_state["song_order"], expected)
-            self.assertEqual(reopened.session_state["song_moments"][1:], ["Évangile", "Deuxième lecture"])
-            reopened.button(key="remove-1").click().run()
-            self.assertEqual(reopened.session_state["song_order"], ["entry", keys[1]])
+            self.assertEqual(preparation_value(reopened, "song_order"), expected)
+            self.assertEqual(preparation_value(reopened, "song_moments")[1:], ["Évangile", "Deuxième lecture"])
+            reopened.button(key=item_widget_key(reopened, "remove-1")).click().run()
+            self.assertEqual(preparation_value(reopened, "song_order"), ["entry", keys[1]])
 
     def test_invalid_saved_text_is_rejected(self):
         with TemporaryDirectory() as directory:

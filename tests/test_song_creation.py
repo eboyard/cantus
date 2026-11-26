@@ -8,6 +8,8 @@ from urllib.error import HTTPError
 
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import preparation_value, set_preparation_value
+
 from scripts.song_editor import create_song, new_song_path, parse_song
 from scripts.song_types import MOMENTS, song_type
 
@@ -57,7 +59,7 @@ class SongCreationTests(unittest.TestCase):
         stack.enter_context(patch("app.github_setting", side_effect=lambda name, default="": settings.get(name, default)))
         create = stack.enter_context(patch("app.create_song", return_value="https://github.com/owner/repo/commit/" + "b" * 40))
         app = AppTest.from_string("from app import show_lyrics\nshow_lyrics()").run()
-        app.session_state["song_order"] = ["chants/existing.md"]
+        set_preparation_value(app, "song_order", ["chants/existing.md"])
         return root, create, app
 
     @staticmethod
@@ -81,7 +83,7 @@ class SongCreationTests(unittest.TestCase):
             self.assertEqual(parse_song(document).title, "Écoute mon âme")
             self.assertEqual(song_type(document), MOMENTS[0])
             self.assertEqual(app.selectbox[0].value, "chants/ecoute_mon_ame.md")
-            self.assertEqual(app.session_state["song_order"], ["chants/existing.md"])
+            self.assertEqual(preparation_value(app, "song_order"), ["chants/existing.md"])
             self.assertTrue(app.success)
 
     def test_errors_keep_draft_and_do_not_create_local_file(self):

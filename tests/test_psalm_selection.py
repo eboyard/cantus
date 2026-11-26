@@ -11,6 +11,8 @@ from lxml import etree
 from pptx import Presentation
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import item_widget_key, preparation_value, set_preparation_value
+
 from scripts.aelf import parse_aelf_response
 from scripts.preparation_store import encode_preparation, decode_preparation, load_preparation
 from scripts.psautier import parse_psalm
@@ -112,16 +114,16 @@ class PsalmSelectionTests(unittest.TestCase):
             with patch("app.ROOT", root), patch("app.SONGS_DIR", root / "chants"):
                 script = "from app import show_preparation\nshow_preparation()"
                 app = AppTest.from_string(script, default_timeout=20)
-                app.session_state["song_order"] = ["chants/psaume.md"] * 2
-                app.session_state["song_moments"] = ["Psaume"] * 2
-                app.session_state["song_verses"] = [[], None]
+                set_preparation_value(app, "song_order", ["chants/psaume.md"] * 2)
+                set_preparation_value(app, "song_moments", ["Psaume"] * 2)
+                set_preparation_value(app, "song_verses", [[], None])
                 app.run()
                 self.assertFalse(app.exception)
                 self.assertEqual(sum(item.value == "Versets à garder" for item in app.caption), 2)
-                app.checkbox(key="sheet_verses_0_C2").uncheck().run()
-                app.checkbox(key="sheet_verses_1_C1").uncheck().run()
-                app.button(key="down-0").click().run()
-                self.assertEqual(app.session_state["song_verses"], [["C2", "C3"], ["C1", "C3"]])
+                app.checkbox(key=item_widget_key(app, "sheet_verses_0_C2")).uncheck().run()
+                app.checkbox(key=item_widget_key(app, "sheet_verses_1_C1")).uncheck().run()
+                app.button(key=item_widget_key(app, "down-0")).click().run()
+                self.assertEqual(preparation_value(app, "song_verses"), [["C2", "C3"], ["C1", "C3"]])
                 identifier = app.session_state["preparation_identifier"]
                 saved = load_preparation(root / ".cantus-drafts", identifier)
                 self.assertEqual(decode_preparation(encode_preparation(saved))["song_verses"], saved["song_verses"])
@@ -129,16 +131,16 @@ class PsalmSelectionTests(unittest.TestCase):
                 restored.query_params["preparation"] = identifier
                 restored.run()
                 self.assertFalse(restored.exception)
-                self.assertEqual(restored.session_state["song_verses"], saved["song_verses"])
-                restored.checkbox(key="sheet_verses_0_C3").uncheck().run()
-                self.assertTrue(restored.checkbox(key="sheet_verses_0_C2").disabled)
-                self.assertFalse(restored.checkbox(key="sheet_verses_0_C1").disabled)
-                restored.checkbox(key="sheet_verses_0_C1").check().run()
+                self.assertEqual(preparation_value(restored, "song_verses"), saved["song_verses"])
+                restored.checkbox(key=item_widget_key(restored, "sheet_verses_0_C3")).uncheck().run()
+                self.assertTrue(restored.checkbox(key=item_widget_key(restored, "sheet_verses_0_C2")).disabled)
+                self.assertFalse(restored.checkbox(key=item_widget_key(restored, "sheet_verses_0_C1")).disabled)
+                restored.checkbox(key=item_widget_key(restored, "sheet_verses_0_C1")).check().run()
                 for identifier in ("C1", "C2", "C3"):
-                    restored.checkbox(key=f"sheet_verses_0_{identifier}").uncheck()
+                    restored.checkbox(key=item_widget_key(restored, f"sheet_verses_0_{identifier}")).uncheck()
                 restored.run()
                 self.assertFalse(restored.exception)
-                self.assertTrue(restored.session_state["song_verses"][0])
+                self.assertTrue(preparation_value(restored, "song_verses")[0])
                 self.assertEqual(path.read_text(encoding="utf-8"), PSALM)
 
     def test_ui_allows_keeping_only_refrain_even_with_one_verse(self):
@@ -150,13 +152,13 @@ class PsalmSelectionTests(unittest.TestCase):
                             "<!-- couplet: C1 -->\nVerset retiré", encoding="utf-8")
             with patch("app.ROOT", root), patch("app.SONGS_DIR", root / "chants"):
                 app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
-                app.session_state["song_order"] = ["chants/psaume.md"]
+                set_preparation_value(app, "song_order", ["chants/psaume.md"])
                 app.run()
-                checkbox = app.checkbox(key="sheet_verses_0_C1")
+                checkbox = app.checkbox(key=item_widget_key(app, "sheet_verses_0_C1"))
                 self.assertFalse(checkbox.disabled)
                 checkbox.uncheck().run()
                 self.assertFalse(app.exception)
-                self.assertEqual(app.session_state["song_verses"], [[]])
+                self.assertEqual(preparation_value(app, "song_verses"), [[]])
                 preview = next(item for item in app.expander if item.label == "Aperçu des paroles")
                 text = " ".join(item.value for item in preview.markdown)
                 self.assertIn("Refrain gardé", text)

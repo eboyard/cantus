@@ -9,7 +9,8 @@ from zipfile import ZipFile
 from lxml import etree
 from streamlit.testing.v1 import AppTest
 
-from ui_helpers import export_downloads
+
+from ui_helpers import export_downloads, set_preparation_value
 
 from scripts.word_song_sheet import create_word_song_sheet, TEMPLATE, NS, W
 
@@ -147,7 +148,7 @@ class WordSongSheetTests(unittest.TestCase):
 
     def test_word_download_changes_with_date_and_place_and_remains_independent(self):
         app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
-        app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
+        set_preparation_value(app, "song_order", ["chants/kyrie_messe_de_st_augustin.md"])
         app.run()
         next(button for button in app.button if button.label == "Créer la version à imprimer").click().run()
         self.assertFalse(app.exception)
