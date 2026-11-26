@@ -716,7 +716,7 @@ def _show_preparation() -> None:
                     st.session_state.reading_texts = {**st.session_state.get("reading_texts", {}),
                                                       reading_key: available_readings[reading_key]}
                     st.session_state.song_order.append(reading_key)
-                    st.session_state.song_moments.append("")
+                    st.session_state.song_moments.append(title)
                     st.session_state.song_verses.append(None)
                     clear_moment_widgets()
                     st.rerun()

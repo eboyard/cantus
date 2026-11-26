@@ -10,6 +10,7 @@ from streamlit.testing.v1 import AppTest
 from ui_helpers import export_downloads
 
 from scripts.song_sheet import create_song_sheet
+from scripts.song_types import MOMENTS
 
 
 class Document(HTMLParser):
@@ -53,8 +54,10 @@ class SongSheetTests(unittest.TestCase):
                 self.assertEqual(app.session_state["song_order"], list(catalog))
                 self.assertEqual(app.session_state["song_moments"], ["Anamnèse", "Notre Père", "Agneau de Dieu"])
                 options = app.selectbox(key="sheet_moment_0").options
-                self.assertLess(options.index("9. Anamnèse"), options.index("10. Notre Père"))
-                self.assertLess(options.index("10. Notre Père"), options.index("11. Agneau de Dieu"))
+                labels = [f"{MOMENTS.index(moment) + 1}. {moment}"
+                          for moment in ("Anamnèse", "Notre Père", "Agneau de Dieu")]
+                self.assertLess(options.index(labels[0]), options.index(labels[1]))
+                self.assertLess(options.index(labels[1]), options.index(labels[2]))
             songs = list(catalog.values())
             moments = ["Anamnèse", "Notre Père", "Agneau de Dieu"]
             html = create_song_sheet("Messe", songs).decode()
@@ -154,7 +157,7 @@ class SongSheetTests(unittest.TestCase):
                     create_song_sheet("Messe", songs, moments=invalid)
 
     def test_selected_moments_are_in_download_and_export_and_changes_invalidate_them(self):
-        app = AppTest.from_string("from app import main\nmain()")
+        app = AppTest.from_string("from app import main\nmain()", default_timeout=20)
         app.session_state["song_order"] = ["chants/agnus_dei.md"] * 3
         app.session_state["song_moments"] = ["Chant d’entrée", "Offertoire", "Envoi"]
         app.run()

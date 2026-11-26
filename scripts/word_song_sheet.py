@@ -237,8 +237,8 @@ def create_word_song_sheet(
             blocks.extend(_paragraph(part.text, "CantusLecture", keep_next=True) for part in parts
                           if part.kind == "lecture" and part.identifier == "L1")
             moment = moments[position]
-            heading = _paragraph(moment + " :" if moment else song_title, "CantusRubrique")
-            if moment:
+            heading = _paragraph(moment + " :" if moment and moment != song_title else song_title, "CantusRubrique")
+            if moment and moment != song_title:
                 run = _element("r")
                 props = _element("rPr")
                 props.extend([_element("b", val=0), _element("u", val="none"), _element("i")])

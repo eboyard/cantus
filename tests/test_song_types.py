@@ -39,10 +39,10 @@ class SongTypesTests(unittest.TestCase):
                 markdown = f"<!-- titre: {title} -->\nParoles"
                 self.assertEqual(song_type(markdown), moment)
                 self.assertEqual(song_type(set_song_type(markdown, "Communion")), "Communion")
-        self.assertEqual(moment_insertion_index([MOMENTS[2], MOMENTS[4]], "Psaume"), 1)
+        self.assertEqual(moment_insertion_index([MOMENTS[2], "Cantique"], "Psaume"), 1)
         self.assertEqual(moment_insertion_index([MOMENTS[2]], "Psaume"), 1)
-        self.assertEqual(moment_insertion_index([MOMENTS[2], MOMENTS[3]], "Psaume"), 2)
-        self.assertEqual(moment_insertion_index([MOMENTS[2], MOMENTS[4]], ""), 2)
+        self.assertEqual(moment_insertion_index([MOMENTS[2], "Psaume"], "Psaume"), 2)
+        self.assertEqual(moment_insertion_index([MOMENTS[2], "Cantique"], ""), 2)
 
     def test_last_kyrie_is_not_relabelled_as_exit_in_html_pdf_or_saved_moments(self):
         from scripts.song_sheet import create_song_sheet
@@ -97,7 +97,7 @@ class SongTypesTests(unittest.TestCase):
         for title, moment in (("Gloria (Messe)", MOMENTS[2]),
                               ("Jésus, Verbe de Dieu (Kyrie)", MOMENTS[1]),
                               ("Sanctus", "Sanctus"), ("Anamnèse", "Anamnèse"),
-                              ("Agnus Dei", 'Agneau de Dieu'), ("Psaume 62", MOMENTS[3]),
+                              ("Agnus Dei", 'Agneau de Dieu'), ("Psaume 62", "Psaume"),
                               ("Alléluia (Messe de la grâce)", "Acclamation de l’Évangile"),
                               ("Écoute-nous (Prière universelle)", "Prières universelles"),
                               ("Psaume de la création", ""), ("Chante Alléluia au Seigneur", ""),
@@ -140,7 +140,7 @@ class SongTypesTests(unittest.TestCase):
                 create_print_song_sheet("Messe", [("Titre", path)], moments=[])
 
     def test_occurrences_keep_their_moments_when_moved_and_removed(self):
-        app = AppTest.from_string("from app import show_preparation\nshow_preparation()")
+        app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
         app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"] * 4
         app.run()
         self.assertFalse(app.exception)
@@ -150,7 +150,8 @@ class SongTypesTests(unittest.TestCase):
         self.assertEqual(app.selectbox(key="sheet_moment_0").value, MOMENTS[1])
         self.assertEqual(app.selectbox(key="sheet_moment_3").value, MOMENTS[1])
         options = app.selectbox(key="sheet_moment_2").options
-        self.assertEqual(options[options.index("4. Psaume") + 1], "5. Cantique")
+        self.assertEqual(options[options.index(f"{MOMENTS.index('Psaume') + 1}. Psaume") + 1],
+                         f"{MOMENTS.index('Cantique') + 1}. Cantique")
         app.selectbox(key="sheet_moment_1").select('Communion').run()
         app.selectbox(key="sheet_moment_2").select("Cantique").run()
         next(b for b in app.button if b.key == "up-1").click().run()

@@ -26,7 +26,7 @@ def reading_documents(context: str) -> dict[str, str]:
             raise ValueError("L’intitulé de la lecture doit être du texte.")
         value = " ".join(value.split())
         if value:
-            markdown = f"<!-- titre: {title} -->\n<!-- type: -->\n\n**{value}**\n"
+            markdown = f"<!-- titre: {title} -->\n<!-- type: {title} -->\n\n**{value}**\n"
             result[text_key(markdown)] = markdown
     return result
 

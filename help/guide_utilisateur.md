@@ -120,6 +120,9 @@ Après avoir choisi la date et, si nécessaire, la messe AELF, utilisez les bout
 Chaque clic ajoute uniquement l’intitulé correspondant (« Lecture du livre… »,
 « Évangile de Jésus Christ… »), en gras, à la fin de la liste.
 Un bouton est proposé seulement si cet intitulé est fourni par l’AELF.
+Le champ **Moment de la messe** est renseigné automatiquement avec **Première lecture**,
+**Deuxième lecture** ou **Évangile**. Ces choix sont aussi disponibles dans la liste
+des moments et restent modifiables. Ils sont conservés lors de la sauvegarde et de la publication.
 
 Dans **Ordre des chants et des textes**, utilisez **Monter**, **Descendre** ou
 **Retirer** pour placer ou supprimer chaque intitulé indépendamment, comme un
