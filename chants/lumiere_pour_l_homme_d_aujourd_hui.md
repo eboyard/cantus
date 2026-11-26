@@ -1,7 +1,6 @@
 
 <!-- titre: Lumière pour l'homme aujourd'hui -->
-<!-- auteur: Didier Rimaud -->
-<!-- compositeur: Jo Akepsimas -->
+
 <!-- ordre: C1 C2 C3 -->
 
 ---
