@@ -732,7 +732,8 @@ def _show_preparation() -> None:
         st.caption("Le type du carnet est proposé pour chaque chant. Vous pouvez modifier tous les moments, y compris le premier et le dernier. Les moments suivent les chants lorsque vous les déplacez et sont conservés dans les feuilles publiées.")
         for position, key in enumerate(song_order):
             with st.container(border=True):
-                title_col, up_col, down_col, remove_col = st.columns([6, 1, 1, 1])
+                title_col, actions_col = st.columns([6, 2], gap="small")
+                up_col, down_col, remove_col = actions_col.columns(3, gap="small")
                 title_col.write(f"{position + 1}. {catalog[key][0]}")
                 moments[position] = title_col.selectbox(
                     f"Moment de la messe — {'texte' if key.startswith('reading/') else 'chant'} {position + 1}", options=["", *MOMENTS],
@@ -774,14 +775,15 @@ def _show_preparation() -> None:
                             st.rerun()
                 except (OSError, ValueError) as error:
                     title_col.error(f"Impossible de lire les couplets ou les versets : {error}")
-                if up_col.button("Monter", key=f"up-{position}", disabled=position == 0):
+                if up_col.button("**↑**", key=f"up-{position}", disabled=position == 0, help="Monter le chant ou le texte"):
                     song_order[position - 1], song_order[position] = song_order[position], song_order[position - 1]
                     assigned_moments[position - 1], assigned_moments[position] = assigned_moments[position], assigned_moments[position - 1]
                     verses[position - 1], verses[position] = verses[position], verses[position - 1]
                     clear_moment_widgets()
                     st.rerun()
                 if down_col.button(
-                    "Descendre",
+                    "**↓**",
+                    help="Descendre le chant ou le texte",
                     key=f"down-{position}",
                     disabled=position == len(song_order) - 1,
                 ):
@@ -790,7 +792,7 @@ def _show_preparation() -> None:
                     verses[position + 1], verses[position] = verses[position], verses[position + 1]
                     clear_moment_widgets()
                     st.rerun()
-                if remove_col.button("Retirer", key=f"remove-{position}"):
+                if remove_col.button("🗑️", key=f"remove-{position}", help="Retirer de la célébration"):
                     song_order.pop(position)
                     assigned_moments.pop(position)
                     verses.pop(position)
