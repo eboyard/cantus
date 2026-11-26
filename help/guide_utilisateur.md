@@ -352,7 +352,8 @@ Le bouton **Toutes les feuilles de la paroisse**, proposé après publication,
 affiche la feuille du jour ou la prochaine feuille publiée, selon la date locale
 du navigateur. Sa date complète est indiquée au-dessus des paroles.
 Les icônes gauche et droite, placées à droite du choix de la date,
-permettent de consulter les autres feuilles et leur QR code.
+permettent de consulter les autres feuilles. L’icône QR code, à gauche du chevron
+précédent, affiche le QR code de la feuille sélectionnée et permet de le télécharger.
 L’icône **Calendrier**, à droite des chevrons, permet de revenir à la feuille du jour
 ou à la prochaine feuille publiée (à la dernière publiée si toutes sont passées).
 Si toutes les célébrations sont passées, la dernière feuille est affichée avec

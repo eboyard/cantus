@@ -17,13 +17,14 @@ const input = JSON.parse(fs.readFileSync(0, 'utf8'));
 function element() {
   return {hidden: true, disabled: false, children: [], listeners: {},
     appendChild(child) { this.children.push(child); },
+    replaceChildren(...children) { this.children = children; },
     addEventListener(event, handler) { this.listeners[event] = handler; }};
 }
 const ids = Object.fromEntries(['previous-sheet', 'next-sheet', 'home-sheet', 'sheet-date',
-  'sheet-status', 'sheet-content', 'sheet-navigation']
+  'sheet-status', 'sheet-content', 'sheet-navigation', 'sheet-qr', 'sheets']
   .map(id => [id, element()]));
 const sheets = input.days.map(day => ({...element(), dataset: {date: day},
-  details: {open: false}, querySelector(selector) {
+  details: {open: false, day}, querySelector(selector) {
     return selector === 'details' ? this.details : {getAttribute() { return day + '/'; }};
   }}));
 class BrowserDate extends Date {
@@ -40,7 +41,7 @@ function snapshot() {
     status: ids['sheet-status'].textContent, statusHidden: ids['sheet-status'].hidden,
     previousDisabled: ids['previous-sheet'].disabled, nextDisabled: ids['next-sheet'].disabled,
     homeDisabled: ids['home-sheet'].disabled, frameHidden: ids['sheet-content'].hidden,
-    visible: sheets.filter(sheet => !sheet.hidden).map(sheet => sheet.dataset.date),
+    listHidden: ids.sheets.hidden, qrDay: ids['sheet-qr'].children[0]?.day,
     options: ids['sheet-date'].children.map(option => option.value)});
 }
 snapshot();
@@ -82,7 +83,8 @@ class ParishNavigationTests(unittest.TestCase):
         self.assertEqual(states[0]['status'], '')
         self.assertTrue(states[0]['statusHidden'])
         self.assertIn('samedi 28 novembre 2026', states[0]['title'])
-        self.assertEqual(states[0]['visible'], ['2026-11-28'])
+        self.assertTrue(states[0]['listHidden'])
+        self.assertEqual([state['qrDay'] + '/' for state in states], [state['src'] for state in states])
         self.assertFalse(states[0]['frameHidden'])
         self.assertEqual(states[0]['options'], ['2026-11-22', '2026-11-28', '2026-12-13'])
         self.assertTrue(states[1]['nextDisabled'])
