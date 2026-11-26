@@ -349,7 +349,15 @@ Le responsable peut suivre **pages build and deployment** dans l’onglet
 **Actions** du dépôt GitHub.
 
 Le bouton **Toutes les feuilles de la paroisse**, proposé après publication,
-ouvre la liste des célébrations, de la plus récente à la plus ancienne.
+affiche la feuille du jour ou la prochaine feuille publiée, selon la date locale
+du navigateur. Sa date complète est indiquée au-dessus des paroles.
+Les icônes gauche et droite, placées à droite du choix de la date,
+permettent de consulter les autres feuilles et leur QR code.
+L’icône **Accueil**, à droite des chevrons, permet de revenir à la feuille du jour
+ou à la prochaine feuille publiée (à la dernière publiée si toutes sont passées).
+Si toutes les célébrations sont passées, la dernière feuille est affichée avec
+un message précisant qu’aucune feuille à venir n’est publiée.
+Sans JavaScript, la liste des feuilles et leurs QR codes reste accessible.
 Les participants n’ont pas besoin du code de publication pour lire les feuilles.
 
 Une même paroisse et une même date correspondent à la même adresse.
