@@ -20,15 +20,17 @@ def document(data):
 
 
 class WordSongSheetTests(unittest.TestCase):
-    def test_single_block_psalm_22_has_text_in_both_columns(self):
+    def test_psalm_22_stanzas_have_complete_text_across_both_columns(self):
         path = Path(__file__).resolve().parents[1] / "chants/psaume_22_23.md"
         root = document(create_word_song_sheet("Messe", [("Psaume 22 23", path)], moments=["Psaume"]))
-        cells = root.xpath("//w:body/w:tbl[last()]/w:tr/w:tc", namespaces=NS)
-        self.assertEqual(len(cells), 2)
-        left, right = [" ".join(c.xpath(".//w:t/text()", namespaces=NS)) for c in cells]
+        tables = root.xpath("//w:body/w:tbl", namespaces=NS)[-3:]
+        cells = [cell for table in tables for cell in table.xpath("./w:tr/w:tc", namespaces=NS)]
+        self.assertEqual(len(cells), 6)
+        left, right = [" ".join(" ".join(c.xpath(".//w:t/text()", namespaces=NS)) for c in column)
+                       for column in (cells[::2], cells[1::2])]
         self.assertIn("Le Seigneur est mon berger", left)
-        self.assertIn("pour la durée de mes jours.", right)
-        self.assertNotIn("pour la durée de mes jours.", left)
+        self.assertIn("Il me mène vers les eaux tranquilles", right)
+        self.assertIn("pour la durée de mes jours.", left)
 
     def test_single_block_columns_preserve_formatting_across_split(self):
         with TemporaryDirectory() as folder:

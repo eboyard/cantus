@@ -63,11 +63,11 @@ class AelfTests(unittest.TestCase):
             self.assertFalse(any(button.key == "use_aelf_psalm" for button in app.button))
             self.assertFalse(any(item.label == catalog[keys[1]][0] for item in app.expander))
             self.assertEqual(app.session_state["song_order"], keys)
-            self.assertEqual(app.session_state["song_verses"], [[], [], []])
+            self.assertEqual(app.session_state["song_verses"], [[], ["C1", "C2", "C3"], []])
             # Le déplacement manuel reste disponible après récupération des textes.
             app.button(key="down-1").click().run()
             self.assertEqual(app.session_state["song_order"], [keys[0], keys[2], keys[1]])
-            self.assertEqual(app.session_state["song_verses"], [[], [], []])
+            self.assertEqual(app.session_state["song_verses"], [[], [], ["C1", "C2", "C3"]])
         self.assertEqual(catalog[keys[1]][1].read_bytes(), original)
 
     def test_multiline_refrain_has_a_readable_title_and_legacy_cache_is_rendered(self):

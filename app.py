@@ -742,25 +742,37 @@ def _show_preparation() -> None:
             assigned_moments[position] = moments[position]
             try:
                 parts = selected_song_parts(catalog[key][1])
+                psalm = read_song_type(catalog[key][1]) in {"Psaume", "Cantique"}
+                has_refrain = any(part.kind == "refrain" for part in parts)
                 couplets = {part.identifier: part.text for part in parts if part.selectable}
-                if len(couplets) <= 1:
+                if not couplets or (len(couplets) == 1 and not psalm):
                     verses[position] = list(couplets)
                 else:
-                    selected_verses = list(couplets) if verses[position] is None else [
+                    selected_verses = list(couplets) if (verses[position] is None
+                        or (psalm and not has_refrain and not verses[position])) else [
                         identifier for identifier in verses[position] if identifier in couplets
                     ]
-                    title_col.caption("Couplets à garder")
+                    title_col.caption("Versets à garder" if psalm else "Couplets à garder")
+                    if psalm and not has_refrain:
+                        title_col.caption("Gardez au moins une strophe, ou retirez le psaume de la célébration.")
                     verses[position] = [
                         identifier for identifier, text in couplets.items()
                         if title_col.checkbox(
-                            f"Couplet {identifier[1:]} — {plain_text(text).splitlines()[0]}",
+                            f"{'Verset' if psalm else 'Couplet'} {identifier[1:]} — {plain_text(text).splitlines()[0]}",
                             value=identifier in selected_verses,
                             key=f"sheet_verses_{position}_{identifier}",
+                            disabled=psalm and not has_refrain and len(selected_verses) == 1 and identifier in selected_verses,
                             help="Choix pour le PowerPoint et les feuilles téléphone, à publier et à imprimer. Les refrains et les ponts sont conservés.",
                         )
                     ]
+                    if psalm and not has_refrain and not verses[position]:
+                        # Plusieurs clics peuvent arriver avant le prochain rendu.
+                        # Ne pas enregistrer [] (ancien sens : psaume entier).
+                        verses[position] = selected_verses[-1:] or list(couplets)[-1:]
+                        clear_moment_widgets()
+                        st.rerun()
             except (OSError, ValueError) as error:
-                title_col.error(f"Impossible de lire les couplets : {error}")
+                title_col.error(f"Impossible de lire les couplets ou les versets : {error}")
             if up_col.button("Monter", key=f"up-{position}", disabled=position == 0):
                 song_order[position - 1], song_order[position] = song_order[position], song_order[position - 1]
                 assigned_moments[position - 1], assigned_moments[position] = assigned_moments[position], assigned_moments[position - 1]
