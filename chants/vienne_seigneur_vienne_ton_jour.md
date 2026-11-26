@@ -11,4 +11,4 @@ Vienne, Seigneur, vienne ton jour, que notre nuit connaisse ton amour !
 1- A ta lumière, Seigneur, il est temps de s´éveiller.
 Ton salut est proche, ton salut est proche.
 Viens guérir nos yeux voilés, nous verrons d´humbles lueurs,
-Promesses d’aurore, promesses d’aurore. R/
+Promesses d’aurore, promesses d’aurore.
