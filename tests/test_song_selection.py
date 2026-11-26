@@ -8,6 +8,8 @@ import pymupdf
 from pptx import Presentation
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import item_widget_key, preparation_value, set_preparation_value
+
 from scripts.song_selection import selected_song_parts
 from scripts.song_sheet import create_song_sheet
 from scripts.print_song_sheet import create_print_song_sheet
@@ -32,12 +34,12 @@ class SongSelectionTests(unittest.TestCase):
             catalog = {"a": ("Zulu", song), "m": ("beta", song), "z": ("Alpha", song)}
             with patch("app.ROOT", root), patch("app.song_catalog", return_value=catalog):
                 app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=15)
-                app.session_state["song_order"] = ["a", "z"]
+                set_preparation_value(app, "song_order", ["a", "z"])
                 app.run()
                 self.assertFalse(app.exception)
                 picker = next(box for box in app.selectbox if box.label == "Choisir un chant à ajouter")
                 self.assertEqual(picker.options, ["Alpha", "beta", "Zulu"])
-                self.assertEqual(app.session_state["song_order"], ["a", "z"])
+                self.assertEqual(preparation_value(app, "song_order"), ["a", "z"])
 
     def test_filter_preserves_order_bridge_and_refrains_without_changing_source(self):
         with TemporaryDirectory() as directory:
@@ -68,11 +70,11 @@ class SongSelectionTests(unittest.TestCase):
             self.assertIn(part.text.splitlines()[-1].strip(), html)
         with patch("app.song_catalog", return_value={"gloria": ("Gloria", song)}):
             app = AppTest.from_string("from app import main\nmain()", default_timeout=15)
-            app.session_state["song_order"] = ["gloria"]
+            set_preparation_value(app, "song_order", ["gloria"])
             app.run()
             self.assertFalse(app.exception)
             self.assertFalse(any(box.key.startswith("sheet_verses_") for box in app.checkbox))
-            self.assertEqual(app.session_state["song_verses"], [[]])
+            self.assertEqual(preparation_value(app, "song_verses"), [[]])
 
     def test_mixed_tagged_and_untagged_paragraphs(self):
         with TemporaryDirectory() as directory:
@@ -109,19 +111,19 @@ class SongSelectionTests(unittest.TestCase):
             song.write_text(SONG, encoding="utf-8")
             with patch("app.ROOT", root), patch("app.song_catalog", return_value={"a": ("Chant", song)}):
                 app = AppTest.from_string("from app import main\nmain()", default_timeout=15)
-                app.session_state["song_order"] = ["a", "a"]
+                set_preparation_value(app, "song_order", ["a", "a"])
                 app.run()
-                self.assertTrue(all(app.checkbox(key=f"sheet_verses_{position}_{identifier}").value
+                self.assertTrue(all(app.checkbox(key=item_widget_key(app, f"sheet_verses_{position}_{identifier}")).value
                                     for position in (0, 1) for identifier in ("C1", "C2", "C3")))
-                app.checkbox(key="sheet_verses_0_C2").uncheck()
-                app.checkbox(key="sheet_verses_0_C3").uncheck().run()
-                app.checkbox(key="sheet_verses_1_C1").uncheck()
-                app.checkbox(key="sheet_verses_1_C2").uncheck().run()
-                app.button(key="down-0").click().run()
-                self.assertEqual(app.session_state["song_verses"], [["C3"], ["C1"]])
-                self.assertTrue(app.checkbox(key="sheet_verses_0_C3").value)
-                self.assertFalse(app.checkbox(key="sheet_verses_0_C1").value)
-                self.assertTrue(app.checkbox(key="sheet_verses_1_C1").value)
+                app.checkbox(key=item_widget_key(app, "sheet_verses_0_C2")).uncheck()
+                app.checkbox(key=item_widget_key(app, "sheet_verses_0_C3")).uncheck().run()
+                app.checkbox(key=item_widget_key(app, "sheet_verses_1_C1")).uncheck()
+                app.checkbox(key=item_widget_key(app, "sheet_verses_1_C2")).uncheck().run()
+                app.button(key=item_widget_key(app, "down-0")).click().run()
+                self.assertEqual(preparation_value(app, "song_verses"), [["C3"], ["C1"]])
+                self.assertTrue(app.checkbox(key=item_widget_key(app, "sheet_verses_0_C3")).value)
+                self.assertFalse(app.checkbox(key=item_widget_key(app, "sheet_verses_0_C1")).value)
+                self.assertTrue(app.checkbox(key=item_widget_key(app, "sheet_verses_1_C1")).value)
                 next(b for b in app.button if b.label == "Créer le PowerPoint").click().run()
                 data, count = app.session_state["generated_presentation"][1:]
                 presentation = Presentation(BytesIO(data))
@@ -143,11 +145,11 @@ class SongSelectionTests(unittest.TestCase):
                 next(b for b in app.button if b.label == "Créer la version à imprimer").click().run()
                 self.assertFalse(app.exception)
                 self.assertFalse(app.error)
-                app.checkbox(key="sheet_verses_0_C3").uncheck()
-                app.checkbox(key="sheet_verses_0_C1").check()
-                app.checkbox(key="sheet_verses_0_C2").check().run()
+                app.checkbox(key=item_widget_key(app, "sheet_verses_0_C3")).uncheck()
+                app.checkbox(key=item_widget_key(app, "sheet_verses_0_C1")).check()
+                app.checkbox(key=item_widget_key(app, "sheet_verses_0_C2")).check().run()
                 self.assertEqual([button.label for button in app.get("download_button")],
-                                 ["Télécharger la préparation (.cantus.json)"])
+                                 ["Télécharger la préparation (.json)"])
                 next(b for b in app.button if b.label == "Créer le PowerPoint").click().run()
                 updated = Presentation(BytesIO(app.session_state["generated_presentation"][1]))
                 updated_text = "\n".join(shape.text for slide in updated.slides
@@ -155,10 +157,10 @@ class SongSelectionTests(unittest.TestCase):
                 self.assertIn("Deuxième couplet", updated_text)
                 self.assertNotIn("Troisième couplet", updated_text)
                 self.assertFalse(any(b.label == "Publier sur GitHub Pages" for b in app.button))
-                app.button(key="remove-0").click().run()
-                self.assertEqual(app.session_state["song_verses"], [["C1"]])
-                self.assertTrue(app.checkbox(key="sheet_verses_0_C1").value)
-                self.assertFalse(app.checkbox(key="sheet_verses_0_C2").value)
+                app.button(key=item_widget_key(app, "remove-0")).click().run()
+                self.assertEqual(preparation_value(app, "song_verses"), [["C1"]])
+                self.assertTrue(app.checkbox(key=item_widget_key(app, "sheet_verses_0_C1")).value)
+                self.assertFalse(app.checkbox(key=item_widget_key(app, "sheet_verses_0_C2")).value)
                 self.assertEqual(song.read_text(encoding="utf-8"), SONG)
 
 

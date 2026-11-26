@@ -182,11 +182,12 @@ def parse_psalm(document: str, key: str) -> str:
 def import_psalm(key: str, directory: Path) -> Path:
     if key not in INDEX:
         raise ValueError("Référence Psautier.org inconnue.")
-    path = directory / f"psautier_{key}.md"
-    if path.exists():
-        if not build_slides(path.read_text(encoding="utf-8-sig")):
-            raise ValueError("Le psaume ou cantique déjà importé ne contient aucune parole.")
-        return path
+    path = directory / f"psaume_{key}.md"
+    for existing in (path, directory / f"psautier_{key}.md"):
+        if existing.exists():
+            if not build_slides(existing.read_text(encoding="utf-8-sig")):
+                raise ValueError("Le psaume ou cantique déjà importé ne contient aucune parole.")
+            return existing
     markdown = parse_psalm(_download(INDEX[key]), key)
     directory.mkdir(parents=True, exist_ok=True)
     with path.open("x", encoding="utf-8") as output:

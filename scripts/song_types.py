@@ -6,13 +6,14 @@ import unicodedata
 
 
 MOMENTS = (
-    "Chant d’entrée", "Préparation pénitentielle", "Gloire à Dieu", "Psaume", "Cantique",
-    "Acclamation de l’Évangile", "Prières universelles", "Offertoire",
+    "Chant d’entrée", "Préparation pénitentielle", "Gloire à Dieu", "Première lecture", "Psaume", "Cantique",
+    "Deuxième lecture", "Acclamation de l’Évangile", "Évangile", "Prières universelles", "Offertoire",
     "Sanctus", "Anamnèse", "Notre Père", "Agneau de Dieu", "Communion", "Envoi",
 )
 
 IMPLICIT_MOMENTS = frozenset({
     "Gloire à Dieu", "Psaume", "Acclamation de l’Évangile", "Sanctus", "Anamnèse", "Notre Père", "Agneau de Dieu",
+    "Première lecture", "Deuxième lecture", "Évangile",
 })
 
 
@@ -49,20 +50,26 @@ def _normalize(text: str) -> str:
 
 def song_type(markdown: str) -> str:
     """Privilégie le type déclaré ; ne déduit que les titres sans ambiguïté."""
+    title_marker = re.search(r"<!--\s*titre\s*:\s*(.*?)-->", markdown, re.IGNORECASE)
+    title = _normalize(title_marker.group(1).strip()) if title_marker else ""
+    reading_types = {_normalize(moment): moment for moment in ("Première lecture", "Deuxième lecture", "Évangile")}
     marker = TYPE_TAG.search(markdown)
     if marker:
         value = _normalize(marker.group(1).strip())
+        # Les anciens textes AELF avaient un type explicitement vide.
+        if not value and title in reading_types:
+            return reading_types[title]
         aliases = {"gloria": MOMENTS[2], "kyrie": MOMENTS[1], "agnus": "Agneau de Dieu", "agnus dei": "Agneau de Dieu"}
         return next((moment for moment in MOMENTS if _normalize(moment) == value), aliases.get(value, ""))
-    title_marker = re.search(r"<!--\s*titre\s*:\s*(.*?)-->", markdown, re.IGNORECASE)
-    title = _normalize(title_marker.group(1).strip()) if title_marker else ""
+    if title in reading_types:
+        return reading_types[title]
     # Le carnet nomme aussi les ordinaires « Messe de … - Gloria ».
     if re.match(r"^(messe|missa)\b", title):
         title = re.split(r"\s+[-–—]\s+", title)[-1]
     for pattern, moment in (
         (r"\bkyrie\b|^(seigneur,? )?prends pitie\b", MOMENTS[1]),
         (r"^gloria\b|^gloire a dieu\b|^grande paix, gloire a dieu\b", MOMENTS[2]),
-        (r"^psaume\s+\d|\(psaume\s+\d", MOMENTS[3]),
+        (r"^psaume\s+\d|\(psaume\s+\d", "Psaume"),
         (r"^alleluia$|^alleluia \(messe|^alleluia \(missa", "Acclamation de l’Évangile"),
         (r"\bpriere[s]? universelle[s]?\b", "Prières universelles"),
         (r"^sanctus\b|^saint,? le seigneur\b|^saint, saint, saint", "Sanctus"),

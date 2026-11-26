@@ -9,7 +9,8 @@ from zipfile import ZipFile
 from lxml import etree
 from streamlit.testing.v1 import AppTest
 
-from ui_helpers import export_downloads
+
+from ui_helpers import export_downloads, set_preparation_value
 
 from scripts.word_song_sheet import create_word_song_sheet, TEMPLATE, NS, W
 
@@ -20,15 +21,17 @@ def document(data):
 
 
 class WordSongSheetTests(unittest.TestCase):
-    def test_single_block_psalm_22_has_text_in_both_columns(self):
+    def test_psalm_22_stanzas_have_complete_text_across_both_columns(self):
         path = Path(__file__).resolve().parents[1] / "chants/psaume_22_23.md"
         root = document(create_word_song_sheet("Messe", [("Psaume 22 23", path)], moments=["Psaume"]))
-        cells = root.xpath("//w:body/w:tbl[last()]/w:tr/w:tc", namespaces=NS)
-        self.assertEqual(len(cells), 2)
-        left, right = [" ".join(c.xpath(".//w:t/text()", namespaces=NS)) for c in cells]
+        tables = root.xpath("//w:body/w:tbl", namespaces=NS)[-3:]
+        cells = [cell for table in tables for cell in table.xpath("./w:tr/w:tc", namespaces=NS)]
+        self.assertEqual(len(cells), 6)
+        left, right = [" ".join(" ".join(c.xpath(".//w:t/text()", namespaces=NS)) for c in column)
+                       for column in (cells[::2], cells[1::2])]
         self.assertIn("Le Seigneur est mon berger", left)
-        self.assertIn("pour la durée de mes jours.", right)
-        self.assertNotIn("pour la durée de mes jours.", left)
+        self.assertIn("Il me mène vers les eaux tranquilles", right)
+        self.assertIn("pour la durée de mes jours.", left)
 
     def test_single_block_columns_preserve_formatting_across_split(self):
         with TemporaryDirectory() as folder:
@@ -145,7 +148,7 @@ class WordSongSheetTests(unittest.TestCase):
 
     def test_word_download_changes_with_date_and_place_and_remains_independent(self):
         app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
-        app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"]
+        set_preparation_value(app, "song_order", ["chants/kyrie_messe_de_st_augustin.md"])
         app.run()
         next(button for button in app.button if button.label == "Créer la version à imprimer").click().run()
         self.assertFalse(app.exception)

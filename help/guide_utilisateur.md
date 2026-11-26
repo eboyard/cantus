@@ -21,6 +21,25 @@ revenir à l’onglet **Préparer la célébration** pour poursuivre votre prép
 Pour partager une feuille par lien ou QR code, créez d’abord la feuille pour
 téléphone, puis suivez la rubrique **Publier une feuille et partager son QR code**.
 
+## Choisir les versets d’un psaume
+
+Après avoir ajouté un psaume du carnet, du psautier ou de l’AELF à la célébration,
+utilisez **Versets à garder** sous son titre pour décocher les parties à omettre.
+Chaque case correspond à une strophe, qui peut regrouper plusieurs versets bibliques.
+Les strophes sont repérées par `---` ou, dans les anciens psaumes sans balises,
+par les lignes vides. Les cantiques de type **Cantique** offrent le même choix.
+
+Le refrain identifié reste présent. Vous pouvez conserver seulement le refrain,
+même si le psaume n’a qu’une seule strophe. Sans refrain, gardez au moins une
+strophe ou utilisez **Retirer** pour enlever le psaume de la célébration.
+
+Les choix suivent chaque occurrence du psaume lors des déplacements et sont
+conservés dans la sauvegarde, le fichier `.cantus.json` et les feuilles publiées.
+Ils s’appliquent à l’aperçu, au PowerPoint, au Word et aux feuilles pour téléphone.
+Le gras et le soulignement des strophes conservées restent présents. Régénérez
+les exports après un changement. Les paroles du carnet restent disponibles en entier.
+Les anciens brouillons qui n’avaient aucun verset sélectionnable reprennent le psaume entier.
+
 ## Sauvegarder et reprendre une préparation
 
 La préparation est sauvegardée automatiquement après chaque modification :
@@ -35,8 +54,8 @@ toute personne qui le possède peut reprendre et modifier le brouillon.
 Ouvrir Cantus sans ce lien commence une autre préparation.
 
 Dans **Sauvegarder la préparation**, cliquez sur
-**Télécharger la préparation (.cantus.json)** pour garder une copie sur votre
-ordinateur, indépendante du serveur. Pour la reprendre, ouvrez **Repartir d’une
+**Télécharger la préparation (.json)** pour garder une copie sur votre
+ordinateur, indépendante du serveur. Le nom du fichier contient la date de la messe, par exemple `preparation_cantus_2026_11_29.json`. Pour la reprendre, ouvrez **Repartir d’une
 feuille existante**, choisissez **Un fichier JSON sauvegardé**, puis utilisez
 **Charger un fichier JSON sauvegardé**. L’import remplace la sélection
 en cours et crée un nouveau brouillon ; téléchargez d’abord la préparation actuelle
@@ -101,6 +120,9 @@ Après avoir choisi la date et, si nécessaire, la messe AELF, utilisez les bout
 Chaque clic ajoute uniquement l’intitulé correspondant (« Lecture du livre… »,
 « Évangile de Jésus Christ… »), en gras, à la fin de la liste.
 Un bouton est proposé seulement si cet intitulé est fourni par l’AELF.
+Le champ **Moment de la messe** est renseigné automatiquement avec **Première lecture**,
+**Deuxième lecture** ou **Évangile**. Ces choix sont aussi disponibles dans la liste
+des moments et restent modifiables. Ils sont conservés lors de la sauvegarde et de la publication.
 
 Dans **Ordre des chants et des textes**, utilisez **Monter**, **Descendre** ou
 **Retirer** pour placer ou supprimer chaque intitulé indépendamment, comme un
@@ -144,7 +166,8 @@ déplacent uniquement l’occurrence choisie ; **Retirer** la supprime de la lis
 
 Sous chaque chant, la liste **Couplets à garder** propose une case à cocher pour
 chaque couplet. Décochez les couplets que vous ne souhaitez pas chanter.
-Seuls les paragraphes précédés d’un tag `<!-- couplet: C1 -->` (ou C2, C3…)
+Pour les chants autres que les psaumes et cantiques, seuls les paragraphes
+précédés d’un tag `<!-- couplet: C1 -->` (ou C2, C3…)
 sont proposés. Les paragraphes sans ce tag restent toujours inclus, même
 s’ils sont séparés par `---`, comme dans le Gloria de la messe de saint Augustin.
 Lorsqu’un chant n’a qu’un seul couplet, la liste est masquée et ce couplet est

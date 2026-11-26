@@ -102,6 +102,25 @@ Pour générer le diaporama d'une messe à partir de son index :
 
 ## Application web
 
+### Éléments de la préparation
+
+L’état de la préparation contient une seule liste `preparation_items` d’objets
+`PreparationItem` : chemin du chant ou du texte, titre, moment liturgique,
+couplets/versets sélectionnés et identifiant d’occurrence. Déplacer ou retirer
+un élément agit sur cet objet entier. Deux occurrences du même chant disposent
+d’identifiants distincts et peuvent conserver des moments et des couplets différents.
+
+Les clés des champs et des boutons Streamlit utilisent cet identifiant, jamais
+la position dans la feuille. Un déplacement conserve ainsi l’association avec
+les valeurs déjà présentes dans le navigateur. Les champs sont synchronisés avant
+les opérations sur la liste, y compris pour un changement situé plus bas dans la page.
+
+Les anciennes sessions à trois listes sont converties une fois, puis ces listes
+sont supprimées de la session. Les sauvegardes JSON versions 1 et 2 restent lisibles ;
+la version 2 conserve son format d’objets `path`, `moment`, `verses`.
+Les identifiants d’interface sont recréés à la réouverture. Les générateurs d’exports
+reçoivent des vues temporaires dérivées de la liste d’objets après l’édition.
+
 ### Sauvegarde des préparations
 
 Chaque préparation dispose d’un identifiant aléatoire dans le paramètre d’URL
@@ -115,6 +134,8 @@ Le format version 2 regroupe les chants dans `preparation.songs`, un tableau ord
 d’objets contenant `path` (chemin relatif ou identifiant de texte AELF), `moment`
 et `verses` (liste des couplets sélectionnés). Les doublons sont conservés ;
 `verses: null` conserve tous les couplets et `verses: []` n’en sélectionne aucun.
+Par compatibilité, pour les anciens psaumes sans balises de parties, `[]`
+conserve le texte entier : ces fichiers n’avaient aucun couplet sélectionnable.
 Les sauvegardes version 1 restent importables et sont réenregistrées en version 2.
 
 Le répertoire par défaut est `.cantus-drafts/` (ignoré par Git). Configurer
@@ -285,6 +306,23 @@ sont conservés. Les numéros des couplets du document Word restent ceux du carn
 Après un changement, recréer la feuille et préparer à nouveau sa publication.
 Le PowerPoint contient uniquement les couplets cochés, avec les refrains et les ponts.
 Après un changement de couplets, recréer le PowerPoint pour télécharger la version à jour.
+
+### Choisir les versets d’un psaume
+
+La préparation affiche **Versets à garder** pour les types `Psaume` et `Cantique`,
+y compris pour les anciens psaumes du carnet et les imports Psautier.org.
+`selected_song_parts` rend leurs strophes sélectionnables sans réécrire les fichiers.
+Sans balises de parties ni directive d’ordre, les strophes sont séparées par `---`
+ou des lignes vides ; leurs identifiants `C1`, `C2`, etc. restent stables après filtrage.
+Une directive d’ordre explicite conserve ses identifiants et ses répétitions.
+Les psaumes AELF déjà balisés gardent leur découpage et leur refrain.
+
+La sélection est partagée par l’aperçu, les exports et la reprise des feuilles.
+Le refrain seul peut être conservé, même avec une unique strophe. Sans refrain,
+l’interface garde au moins une strophe. Les anciens brouillons qui enregistraient
+`[]` pour un psaume entièrement sans balises retrouvent le texte complet ; la prochaine
+sauvegarde mémorise explicitement les strophes cochées. Les autres chants conservent
+leur règle : seuls les couplets balisés sont sélectionnables.
 
 ### Repartir d’une feuille existante
 

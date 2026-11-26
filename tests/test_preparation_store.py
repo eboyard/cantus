@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import item_widget_key, preparation_value, set_preparation_value
+
 from scripts.github_publish import GitHubPublishError
 from scripts.preparation_store import decode_preparation, encode_preparation, load_preparation, save_preparation
 from scripts.aelf import parse_aelf_response
@@ -105,6 +107,61 @@ class PreparationRecoveryTests(unittest.TestCase):
             app.query_params["preparation"] = identifier
         return app
 
+    def test_renamed_psautier_path_is_migrated_in_existing_session_and_saved(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "chants").mkdir()
+            (root / "chants/psaume_100.md").write_text(SONG, encoding="utf-8")
+            with patch("app.ROOT", root), patch("app.SONGS_DIR", root / "chants"):
+                app = self.start()
+                app.session_state["preparation_initialized"] = True
+                app.session_state["preparation_identifier"] = "a" * 64
+                set_preparation_value(app, "song_order", ["chants/psautier_100.md"])
+                set_preparation_value(app, "song_moments", ["Psaume"])
+                set_preparation_value(app, "song_verses", [["C2"]])
+                app.run()
+                self.assertFalse(app.exception)
+                self.assertEqual(preparation_value(app, "song_order"), ["chants/psaume_100.md"])
+                self.assertEqual(preparation_value(app, "song_moments"), ["Psaume"])
+                self.assertEqual(preparation_value(app, "song_verses"), [["C2"]])
+                saved = load_preparation(root / ".cantus-drafts", "a" * 64)
+                self.assertEqual(saved["song_order"], ["chants/psaume_100.md"])
+
+    def test_renamed_psautier_path_is_migrated_when_loading_saved_draft(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "chants").mkdir()
+            (root / "chants/psaume_100.md").write_text(SONG, encoding="utf-8")
+            identifier = "b" * 64
+            save_preparation(root / ".cantus-drafts", identifier, encode_preparation({
+                "song_order": ["chants/psautier_100.md"],
+                "song_moments": ["Psaume"],
+                "song_verses": [["C2"]],
+            }))
+            with patch("app.ROOT", root), patch("app.SONGS_DIR", root / "chants"):
+                app = self.start(identifier).run()
+                self.assertFalse(app.exception)
+                self.assertEqual(preparation_value(app, "song_order"), ["chants/psaume_100.md"])
+                self.assertEqual(load_preparation(root / ".cantus-drafts", identifier)["song_order"],
+                                 ["chants/psaume_100.md"])
+
+    def test_missing_song_path_shows_recovery_message_instead_of_crashing(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "chants").mkdir()
+            (root / "chants/a.md").write_text(SONG, encoding="utf-8")
+            with patch("app.ROOT", root), patch("app.SONGS_DIR", root / "chants"):
+                app = self.start()
+                app.session_state["preparation_initialized"] = True
+                app.session_state["preparation_identifier"] = "c" * 64
+                set_preparation_value(app, "song_order", ["chants/missing.md"])
+                set_preparation_value(app, "song_moments", ["Envoi"])
+                set_preparation_value(app, "song_verses", [["C1"]])
+                app.run()
+                self.assertFalse(app.exception)
+                self.assertTrue(any("Chants absents du catalogue" in error.value for error in app.error))
+                self.assertEqual(preparation_value(app, "song_order"), ["chants/missing.md"])
+
     def test_existing_sheet_sources_and_json_upload_callback(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -145,7 +202,7 @@ class PreparationRecoveryTests(unittest.TestCase):
                 restored_identifier = app.session_state["preparation_identifier"]
                 self.assertNotEqual(restored_identifier, identifier)
                 for key, value in imported.items():
-                    self.assertEqual(app.session_state[key], value)
+                    self.assertEqual(preparation_value(app, key), value)
                     self.assertEqual(load_preparation(root / ".cantus-drafts", restored_identifier)[key], value)
                 for invalid in (b"broken", encode_preparation({**imported, "song_order": ["missing", "chants/a.md"]})):
                     app.session_state["candidate"] = invalid
@@ -154,11 +211,11 @@ class PreparationRecoveryTests(unittest.TestCase):
                     self.assertTrue(app.error)
                     self.assertEqual(app.session_state["preparation_identifier"], restored_identifier)
                     for key, value in imported.items():
-                        self.assertEqual(app.session_state[key], value)
+                        self.assertEqual(preparation_value(app, key), value)
                 app.radio(key="existing_sheet_source").set_value("Une feuille publiée").run()
                 self.assertFalse(app.exception)
                 self.assertFalse(app.error)
-                self.assertEqual(app.session_state["song_order"], imported["song_order"])
+                self.assertEqual(preparation_value(app, "song_order"), imported["song_order"])
                 self.assertEqual(len(app.get("file_uploader")), 0)
                 network.assert_not_called()
 
@@ -173,18 +230,18 @@ class PreparationRecoveryTests(unittest.TestCase):
                     patch("app.github_setting", side_effect=lambda key, default="": settings.get(key, default)), \
                     patch("app.publish_sheet") as publish:
                 app = self.start()
-                app.session_state["song_order"] = ["chants/a.md", "chants/b.md", "chants/a.md"]
-                app.session_state["song_moments"] = ["Chant d’entrée", "Communion", "Envoi"]
-                app.session_state["song_verses"] = [["C1", "C3"], [], ["C2"]]
+                set_preparation_value(app, "song_order", ["chants/a.md", "chants/b.md", "chants/a.md"])
+                set_preparation_value(app, "song_moments", ["Chant d’entrée", "Communion", "Envoi"])
+                set_preparation_value(app, "song_verses", [["C1", "C3"], [], ["C2"]])
                 app.run()
                 self.assertFalse(app.exception)
                 app.text_input(key="celebration_title").set_value("Préparation de Gilles").run()
                 # Changer une rubrique plus bas et déplacer la première occurrence.
-                app.selectbox(key="sheet_moment_2").select("Offertoire")
-                app.checkbox(key="sheet_verses_2_C3").check()
-                app.button(key="down-0").click().run()
+                app.selectbox(key=item_widget_key(app, "sheet_moment_2")).select("Offertoire")
+                app.checkbox(key=item_widget_key(app, "sheet_verses_2_C3")).check()
+                app.button(key=item_widget_key(app, "down-0")).click().run()
                 self.assertFalse(app.exception)
-                expected = {key: deepcopy(app.session_state[key]) for key in
+                expected = {key: deepcopy(preparation_value(app, key)) for key in
                             ("song_order", "song_moments", "song_verses", "celebration_title", "celebration_date")}
                 self.assertEqual(expected["song_order"], ["chants/b.md", "chants/a.md", "chants/a.md"])
                 self.assertEqual(expected["song_moments"], ["Communion", "Chant d’entrée", "Offertoire"])
@@ -199,7 +256,7 @@ class PreparationRecoveryTests(unittest.TestCase):
                     self.click(app, "Publier sur GitHub Pages")
                     self.assertTrue(any("préparation est conservée" in item.value for item in app.error))
                     for key, value in expected.items():
-                        self.assertEqual(app.session_state[key], value)
+                        self.assertEqual(preparation_value(app, key), value)
                 identifier = app.session_state["preparation_identifier"]
                 disk = load_preparation(root / ".cantus-drafts", identifier)
                 for key, value in expected.items():
@@ -207,7 +264,7 @@ class PreparationRecoveryTests(unittest.TestCase):
                 reopened = self.start(identifier).run()
                 self.assertFalse(reopened.exception)
                 for key, value in expected.items():
-                    self.assertEqual(reopened.session_state[key], value)
+                    self.assertEqual(preparation_value(reopened, key), value)
                 self.assertNotIn("pages_publish_password", disk)
                 publish.side_effect = None
                 publish.return_value = "https://github.com/owner/repo/commit/test"
@@ -220,7 +277,7 @@ class PreparationRecoveryTests(unittest.TestCase):
                 # Un visiteur sans lien de reprise reçoit un brouillon distinct.
                 other = self.start().run()
                 self.assertFalse(other.exception)
-                self.assertEqual(other.session_state["song_order"], [])
+                self.assertEqual(preparation_value(other, "song_order"), [])
                 self.assertNotEqual(other.query_params["preparation"], app.query_params["preparation"])
 
     def test_corrupt_draft_is_never_replaced_with_empty_state(self):
@@ -262,7 +319,7 @@ class PreparationRecoveryTests(unittest.TestCase):
                     patch("app.load_aelf_masses") as network:
                 restored = self.start(identifier).run()
                 self.assertFalse(restored.exception)
-                self.assertEqual(restored.session_state["song_order"], order)
+                self.assertEqual(preparation_value(restored, "song_order"), order)
                 self.assertEqual(restored.session_state["aelf_psalms"], original["aelf_psalms"])
                 self.assertEqual(restored.session_state["reading_texts"], readings)
                 self.assertEqual(restored.session_state["selected_aelf_context"], mass.markdown)
@@ -278,14 +335,14 @@ class PreparationRecoveryTests(unittest.TestCase):
             with patch("app.ROOT", root), patch("app.SONGS_DIR", root / "chants"), \
                     patch("app.save_preparation", side_effect=OSError("disk full")):
                 app = self.start()
-                app.session_state["song_order"] = ["chants/a.md"]
-                app.session_state["song_moments"] = ["Communion"]
-                app.session_state["song_verses"] = [["C1", "C3"]]
+                set_preparation_value(app, "song_order", ["chants/a.md"])
+                set_preparation_value(app, "song_moments", ["Communion"])
+                set_preparation_value(app, "song_verses", [["C1", "C3"]])
                 app.run()
                 self.assertFalse(app.exception)
                 self.assertTrue(app.warning)
-                self.assertEqual(app.session_state["song_verses"], [["C1", "C3"]])
-                self.assertTrue(any(button.label == "Télécharger la préparation (.cantus.json)"
+                self.assertEqual(preparation_value(app, "song_verses"), [["C1", "C3"]])
+                self.assertTrue(any(button.label == "Télécharger la préparation (.json)"
                                     for button in app.get("download_button")))
 
     def test_import_validates_before_replacing_current_selection(self):
@@ -308,7 +365,7 @@ class PreparationRecoveryTests(unittest.TestCase):
                 app = AppTest.from_string(script, default_timeout=20)
                 original = {"song_order": ["chants/a.md"], "song_moments": ["Envoi"], "song_verses": [["C3"]]}
                 for key, value in original.items():
-                    app.session_state[key] = value
+                    set_preparation_value(app, key, value)
                 app.run()
                 invalid = {**original, "song_order": ["chants/missing.md"]}
                 app.session_state["candidate"] = encode_preparation(invalid)
@@ -316,14 +373,14 @@ class PreparationRecoveryTests(unittest.TestCase):
                 self.assertFalse(app.exception)
                 self.assertIn("manque", app.session_state["import_error"])
                 for key, value in original.items():
-                    self.assertEqual(app.session_state[key], value)
+                    self.assertEqual(preparation_value(app, key), value)
                 imported = {"song_order": ["chants/a.md", "chants/a.md"],
                             "song_moments": ["Communion", "Envoi"], "song_verses": [[], ["C1", "C3"]]}
                 app.session_state["candidate"] = encode_preparation(imported)
                 app.run()
                 self.assertFalse(app.exception)
                 for key, value in imported.items():
-                    self.assertEqual(app.session_state[key], value)
+                    self.assertEqual(preparation_value(app, key), value)
 
 
 if __name__ == "__main__":

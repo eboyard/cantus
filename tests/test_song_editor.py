@@ -7,6 +7,8 @@ from urllib.error import HTTPError
 
 from streamlit.testing.v1 import AppTest
 
+from ui_helpers import preparation_value, set_preparation_value
+
 from scripts.markdown_to_pptx import build_slides
 from scripts.song_editor import SongDraft, load_song, parse_song, save_song, serialize_song
 
@@ -72,7 +74,7 @@ class SongEditorTests(unittest.TestCase):
                     patch("app.load_song", return_value=(song.read_text(encoding="utf-8"), "a" * 40)), \
                     patch("app.save_song", return_value="https://github.com/owner/repo/commit/" + "b" * 40) as save:
                 app = AppTest.from_string("from app import show_lyrics\nshow_lyrics()").run()
-                app.session_state["song_order"] = ["chants/song.md"]
+                set_preparation_value(app, "song_order", ["chants/song.md"])
                 app.selectbox[0].select("chants/song.md").run()
                 next(button for button in app.button if button.label == "Modifier").click().run()
                 app.text_input(key="song_edit_password").set_value("code-test")
@@ -87,7 +89,7 @@ class SongEditorTests(unittest.TestCase):
                 save.assert_called_once()
                 self.assertEqual(save.call_args.args[4], edited)
                 self.assertEqual(song.read_text(encoding="utf-8"), edited)
-                self.assertEqual(app.session_state["song_order"], ["chants/song.md"])
+                self.assertEqual(preparation_value(app, "song_order"), ["chants/song.md"])
                 self.assertIn("enregistré", app.success[0].value)
 
     def test_conflict_retains_draft_and_cancel_preserves_local_file(self):

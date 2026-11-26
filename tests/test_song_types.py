@@ -6,7 +6,8 @@ from unittest.mock import patch
 import pymupdf
 from streamlit.testing.v1 import AppTest
 
-from ui_helpers import export_downloads
+
+from ui_helpers import export_downloads, item_widget_key, preparation_value, set_preparation_value
 
 from scripts.markdown_to_pptx import build_slides
 from scripts.print_song_sheet import create_print_song_sheet
@@ -39,10 +40,10 @@ class SongTypesTests(unittest.TestCase):
                 markdown = f"<!-- titre: {title} -->\nParoles"
                 self.assertEqual(song_type(markdown), moment)
                 self.assertEqual(song_type(set_song_type(markdown, "Communion")), "Communion")
-        self.assertEqual(moment_insertion_index([MOMENTS[2], MOMENTS[4]], "Psaume"), 1)
+        self.assertEqual(moment_insertion_index([MOMENTS[2], "Cantique"], "Psaume"), 1)
         self.assertEqual(moment_insertion_index([MOMENTS[2]], "Psaume"), 1)
-        self.assertEqual(moment_insertion_index([MOMENTS[2], MOMENTS[3]], "Psaume"), 2)
-        self.assertEqual(moment_insertion_index([MOMENTS[2], MOMENTS[4]], ""), 2)
+        self.assertEqual(moment_insertion_index([MOMENTS[2], "Psaume"], "Psaume"), 2)
+        self.assertEqual(moment_insertion_index([MOMENTS[2], "Cantique"], ""), 2)
 
     def test_last_kyrie_is_not_relabelled_as_exit_in_html_pdf_or_saved_moments(self):
         from scripts.song_sheet import create_song_sheet
@@ -82,8 +83,8 @@ class SongTypesTests(unittest.TestCase):
                 app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=15).run()
                 app.selectbox(key="existing_sheet_choice").select("paroisse/2026-11-14/index.html").run()
                 self.assertFalse(app.exception)
-                self.assertEqual(app.session_state["song_moments"], ["Communion", "Préparation pénitentielle"])
-                self.assertEqual(app.selectbox(key="sheet_moment_1").value, "Préparation pénitentielle")
+                self.assertEqual(preparation_value(app, "song_moments"), ["Communion", "Préparation pénitentielle"])
+                self.assertEqual(app.selectbox(key=item_widget_key(app, "sheet_moment_1")).value, "Préparation pénitentielle")
 
     def test_boundary_defaults_do_not_override_known_moments(self):
         self.assertEqual(celebration_moments([]), [])
@@ -97,7 +98,7 @@ class SongTypesTests(unittest.TestCase):
         for title, moment in (("Gloria (Messe)", MOMENTS[2]),
                               ("Jésus, Verbe de Dieu (Kyrie)", MOMENTS[1]),
                               ("Sanctus", "Sanctus"), ("Anamnèse", "Anamnèse"),
-                              ("Agnus Dei", 'Agneau de Dieu'), ("Psaume 62", MOMENTS[3]),
+                              ("Agnus Dei", 'Agneau de Dieu'), ("Psaume 62", "Psaume"),
                               ("Alléluia (Messe de la grâce)", "Acclamation de l’Évangile"),
                               ("Écoute-nous (Prière universelle)", "Prières universelles"),
                               ("Psaume de la création", ""), ("Chante Alléluia au Seigneur", ""),
@@ -140,40 +141,41 @@ class SongTypesTests(unittest.TestCase):
                 create_print_song_sheet("Messe", [("Titre", path)], moments=[])
 
     def test_occurrences_keep_their_moments_when_moved_and_removed(self):
-        app = AppTest.from_string("from app import show_preparation\nshow_preparation()")
-        app.session_state["song_order"] = ["chants/kyrie_messe_de_st_augustin.md"] * 4
+        app = AppTest.from_string("from app import show_preparation\nshow_preparation()", default_timeout=20)
+        set_preparation_value(app, "song_order", ["chants/kyrie_messe_de_st_augustin.md"] * 4)
         app.run()
         self.assertFalse(app.exception)
-        self.assertEqual(app.session_state["song_moments"], [MOMENTS[1]] * 4)
-        self.assertFalse(app.selectbox(key="sheet_moment_0").disabled)
-        self.assertFalse(app.selectbox(key="sheet_moment_3").disabled)
-        self.assertEqual(app.selectbox(key="sheet_moment_0").value, MOMENTS[1])
-        self.assertEqual(app.selectbox(key="sheet_moment_3").value, MOMENTS[1])
-        options = app.selectbox(key="sheet_moment_2").options
-        self.assertEqual(options[options.index("4. Psaume") + 1], "5. Cantique")
-        app.selectbox(key="sheet_moment_1").select('Communion').run()
-        app.selectbox(key="sheet_moment_2").select("Cantique").run()
-        next(b for b in app.button if b.key == "up-1").click().run()
+        self.assertEqual(preparation_value(app, "song_moments"), [MOMENTS[1]] * 4)
+        self.assertFalse(app.selectbox(key=item_widget_key(app, "sheet_moment_0")).disabled)
+        self.assertFalse(app.selectbox(key=item_widget_key(app, "sheet_moment_3")).disabled)
+        self.assertEqual(app.selectbox(key=item_widget_key(app, "sheet_moment_0")).value, MOMENTS[1])
+        self.assertEqual(app.selectbox(key=item_widget_key(app, "sheet_moment_3")).value, MOMENTS[1])
+        options = app.selectbox(key=item_widget_key(app, "sheet_moment_2")).options
+        self.assertEqual(options[options.index(f"{MOMENTS.index('Psaume') + 1}. Psaume") + 1],
+                         f"{MOMENTS.index('Cantique') + 1}. Cantique")
+        app.selectbox(key=item_widget_key(app, "sheet_moment_1")).select('Communion').run()
+        app.selectbox(key=item_widget_key(app, "sheet_moment_2")).select("Cantique").run()
+        next(b for b in app.button if b.key == item_widget_key(app, "up-1")).click().run()
         self.assertFalse(app.exception)
-        self.assertEqual(app.selectbox(key="sheet_moment_0").value, 'Communion')
-        self.assertEqual(app.selectbox(key="sheet_moment_1").value, MOMENTS[1])
-        self.assertEqual(app.selectbox(key="sheet_moment_2").value, "Cantique")
-        next(b for b in app.button if b.key == "down-2").click().run()
-        self.assertEqual(app.selectbox(key="sheet_moment_2").value, MOMENTS[1])
-        self.assertEqual(app.selectbox(key="sheet_moment_3").value, "Cantique")
+        self.assertEqual(app.selectbox(key=item_widget_key(app, "sheet_moment_0")).value, 'Communion')
+        self.assertEqual(app.selectbox(key=item_widget_key(app, "sheet_moment_1")).value, MOMENTS[1])
+        self.assertEqual(app.selectbox(key=item_widget_key(app, "sheet_moment_2")).value, "Cantique")
+        next(b for b in app.button if b.key == item_widget_key(app, "down-2")).click().run()
+        self.assertEqual(app.selectbox(key=item_widget_key(app, "sheet_moment_2")).value, MOMENTS[1])
+        self.assertEqual(app.selectbox(key=item_widget_key(app, "sheet_moment_3")).value, "Cantique")
         next(b for b in app.button if b.label == "Créer la version à imprimer").click().run()
         self.assertTrue(export_downloads(app))
-        app.selectbox(key="sheet_moment_1").select("").run()
+        app.selectbox(key=item_widget_key(app, "sheet_moment_1")).select("").run()
         self.assertFalse(export_downloads(app))
-        next(b for b in app.button if b.key == "remove-0").click().run()
+        next(b for b in app.button if b.key == item_widget_key(app, "remove-0")).click().run()
         self.assertFalse(app.exception)
-        self.assertEqual(app.selectbox(key="sheet_moment_0").value, "")
-        self.assertEqual(app.selectbox(key="sheet_moment_2").value, "Cantique")
+        self.assertEqual(app.selectbox(key=item_widget_key(app, "sheet_moment_0")).value, "")
+        self.assertEqual(app.selectbox(key=item_widget_key(app, "sheet_moment_2")).value, "Cantique")
         next(b for b in app.button if b.label == "Ajouter le chant").click().run()
         self.assertFalse(app.exception)
-        self.assertEqual(app.selectbox(key="sheet_moment_2").value, "Cantique")
-        self.assertFalse(app.selectbox(key="sheet_moment_2").disabled)
-        self.assertEqual(app.selectbox(key="sheet_moment_3").value, "")
+        self.assertEqual(app.selectbox(key=item_widget_key(app, "sheet_moment_2")).value, "Cantique")
+        self.assertFalse(app.selectbox(key=item_widget_key(app, "sheet_moment_2")).disabled)
+        self.assertEqual(app.selectbox(key=item_widget_key(app, "sheet_moment_3")).value, "")
 
     def test_editor_saves_type_with_unchanged_lyrics(self):
         with TemporaryDirectory() as directory:
