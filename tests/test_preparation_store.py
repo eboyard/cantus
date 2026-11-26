@@ -340,7 +340,7 @@ class PreparationRecoveryTests(unittest.TestCase):
                 self.assertFalse(app.exception)
                 self.assertTrue(app.warning)
                 self.assertEqual(app.session_state["song_verses"], [["C1", "C3"]])
-                self.assertTrue(any(button.label == "Télécharger la préparation (.cantus.json)"
+                self.assertTrue(any(button.label == "Télécharger la préparation (.json)"
                                     for button in app.get("download_button")))
 
     def test_import_validates_before_replacing_current_selection(self):

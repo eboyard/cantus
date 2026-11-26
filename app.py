@@ -635,8 +635,8 @@ def show_preparation_backup() -> None:
         if notice := st.session_state.get("preparation_notice"):
             st.info(notice)
         st.write("Le lien de reprise est personnel : toute personne qui le possède peut ouvrir et modifier ce brouillon. Pour une copie indépendante du serveur, téléchargez le fichier de secours.")
-        st.download_button("Télécharger la préparation (.cantus.json)", encode_preparation(st.session_state),
-                           file_name="preparation.cantus.json", mime="application/json")
+        st.download_button("Télécharger la préparation (.json)", encode_preparation(st.session_state),
+                           file_name=f"preparation_cantus_{st.session_state.celebration_date:%Y_%m_%d}.json", mime="application/json")
 
 
 def show_preparation() -> None:

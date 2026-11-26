@@ -54,8 +54,8 @@ toute personne qui le possède peut reprendre et modifier le brouillon.
 Ouvrir Cantus sans ce lien commence une autre préparation.
 
 Dans **Sauvegarder la préparation**, cliquez sur
-**Télécharger la préparation (.cantus.json)** pour garder une copie sur votre
-ordinateur, indépendante du serveur. Pour la reprendre, ouvrez **Repartir d’une
+**Télécharger la préparation (.json)** pour garder une copie sur votre
+ordinateur, indépendante du serveur. Le nom du fichier contient la date de la messe, par exemple `preparation_cantus_2026_11_29.json`. Pour la reprendre, ouvrez **Repartir d’une
 feuille existante**, choisissez **Un fichier JSON sauvegardé**, puis utilisez
 **Charger un fichier JSON sauvegardé**. L’import remplace la sélection
 en cours et crée un nouveau brouillon ; téléchargez d’abord la préparation actuelle

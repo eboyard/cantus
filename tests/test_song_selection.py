@@ -147,7 +147,7 @@ class SongSelectionTests(unittest.TestCase):
                 app.checkbox(key="sheet_verses_0_C1").check()
                 app.checkbox(key="sheet_verses_0_C2").check().run()
                 self.assertEqual([button.label for button in app.get("download_button")],
-                                 ["Télécharger la préparation (.cantus.json)"])
+                                 ["Télécharger la préparation (.json)"])
                 next(b for b in app.button if b.label == "Créer le PowerPoint").click().run()
                 updated = Presentation(BytesIO(app.session_state["generated_presentation"][1]))
                 updated_text = "\n".join(shape.text for slide in updated.slides
